@@ -43,23 +43,21 @@
   }
 
   // ---------- Nominatim: tek kuyruk + bellek cache ----------
+  // Kuyrukta beklerken bayatlayan istekler (yeni arama/rota başladı) hiç gönderilmez.
   var nominatimQueue = C.createRateLimitedQueue(function (url) {
     return C.fetchJson(url, { timeoutMs: 15000 });
-  }, NOMINATIM_MIN_INTERVAL_MS);
-  var nominatimCache = C.createCache(200);
-
-  function nominatimGet(url) {
-    if (nominatimCache.has(url)) return nominatimCache.get(url);
-    var p = nominatimQueue(url);
-    nominatimCache.set(url, p); // uçuştaki aynı istek de paylaşılır
-    p.catch(function () {
-      // Hatalı yanıtlar cache'te kalmasın; tekrar denenebilsin
-      if (nominatimCache.has(url) && nominatimCache.get(url) === p) nominatimCache.delete(url);
-    });
-    return p;
-  }
+  }, NOMINATIM_MIN_INTERVAL_MS, {
+    shouldSkip: function (url, isStale) { return typeof isStale === 'function' && isStale(); }
+  });
+  var nominatimGet = C.createCachedFetcher(function (url, isStale) {
+    return nominatimQueue(url, isStale);
+  }, C.createCache(200));
 
   // ---------- Harita ----------
+  if (typeof L === 'undefined') {
+    setMsg('Harita kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.', 'err');
+    return;
+  }
   var map = L.map('map', { zoomControl: true }).setView([41.04, 28.98], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
@@ -77,11 +75,11 @@
     mode: 'car',
     routes: [],
     best: -1,
-    selected: -1,
-    routeSeq: 0
+    selected: -1
   };
+  var routeGuard = C.createSeqGuard();
   var markers = { from: null, to: null };
-  var searchSeq = { from: 0, to: 0 };
+  var searchGuard = { from: C.createSeqGuard(), to: C.createSeqGuard() };
   var inputs = { from: $('in-from'), to: $('in-to') };
   var candLists = { from: $('cand-from'), to: $('cand-to') };
   var resultEl = $('result');
@@ -105,7 +103,7 @@
   }
 
   function clearRoute() {
-    state.routeSeq++;
+    routeGuard.invalidate();
     state.routes = [];
     state.best = -1;
     state.selected = -1;
@@ -144,7 +142,10 @@
   function reverseLabel(which, place) {
     var url;
     try { url = C.buildReverseUrl(place.lat, place.lon); } catch (e) { return; }
-    nominatimGet(url).then(function (data) {
+    nominatimGet(url, function () {
+      var cur = state[which];
+      return !cur || cur.lat !== place.lat || cur.lon !== place.lon;
+    }).then(function (data) {
       var p = data && C.normalizePlace(data);
       if (!p || !p.label) return;
       var cur = state[which];
@@ -164,10 +165,10 @@
     var url;
     try { url = C.buildSearchUrl(q); } catch (e) { setMsg(e.message, 'err'); return; }
 
-    var seq = ++searchSeq[which];
+    var seq = searchGuard[which].next();
     setMsg('Aranıyor…', 'info');
-    nominatimGet(url).then(function (data) {
-      if (seq !== searchSeq[which]) return;
+    nominatimGet(url, function () { return !searchGuard[which].isCurrent(seq); }).then(function (data) {
+      if (!searchGuard[which].isCurrent(seq)) return;
       var all = (Array.isArray(data) ? data : []).map(C.normalizePlace).filter(Boolean);
       var kept = all.filter(function (p) {
         try { return C.isInEuropeanSide(p.lat, p.lon); } catch (e) { return false; }
@@ -185,7 +186,7 @@
       });
       setMsg(all.length > kept.length ? 'Avrupa yakası dışındaki sonuçlar gizlendi. Bir sonuç seçin.' : 'Bir sonuç seçin.', 'info');
     }).catch(function (err) {
-      if (seq !== searchSeq[which]) return;
+      if (!searchGuard[which].isCurrent(seq) || (err && err.skipped)) return;
       setMsg(err && err.message ? err.message : 'Arama başarısız oldu.', 'err');
     });
   }
@@ -197,6 +198,12 @@
   ['from', 'to'].forEach(function (which) {
     inputs[which].addEventListener('input', function () {
       candLists[which].textContent = '';
+      searchGuard[which].invalidate();
+      if (state[which]) {
+        state[which] = null;
+        updateMarker(which);
+        clearRoute();
+      }
     });
   });
 
@@ -290,28 +297,28 @@
       setMsg(e.message, 'err');
       return;
     }
-    var seq = ++state.routeSeq;
+    var seq = routeGuard.next();
     routeLayer.clearLayers();
     resultEl.textContent = '';
     setMsg('Rota hesaplanıyor…', 'info');
 
     C.fetchJson(url, { timeoutMs: 15000 }).then(function (data) {
-      if (seq !== state.routeSeq) return;
+      if (!routeGuard.isCurrent(seq)) return;
       var routes = C.parseRouteResponse(data);
       state.routes = routes;
       state.best = routes.indexOf(C.pickBestRoute(routes));
       if (state.best < 0) state.best = 0;
       state.selected = state.best;
       setMsg('', '');
-      drawRoutes(true);
+      drawRoutes(true, seq);
       renderResult();
     }).catch(function (err) {
-      if (seq !== state.routeSeq) return;
+      if (!routeGuard.isCurrent(seq)) return;
       setMsg(err && err.message ? err.message : 'Rota alınamadı.', 'err');
     });
   }
 
-  function drawRoutes(fit) {
+  function drawRoutes(fit, seq) {
     routeLayer.clearLayers();
     var bestColor = cssVar('--route-best', '#0b6bcb');
     var altColor = cssVar('--route-alt', '#7d8aa0');
@@ -341,6 +348,7 @@
       if (fit) {
         refreshMapSize();
         setTimeout(function () {
+          if (seq !== undefined && !routeGuard.isCurrent(seq)) return;
           map.fitBounds(selectedLayer.getBounds(), { padding: [30, 30] });
         }, 10);
       }
@@ -355,6 +363,15 @@
   }
 
   function renderResult() {
+    try {
+      renderResultUnsafe();
+    } catch (e) {
+      resultEl.textContent = '';
+      setMsg('Rota ayrıntıları gösterilemedi.', 'err');
+    }
+  }
+
+  function renderResultUnsafe() {
     resultEl.textContent = '';
     var r = state.routes[state.selected];
     if (!r) return;
