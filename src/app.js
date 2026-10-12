@@ -264,6 +264,7 @@
 
   // ---------- Değiştir ve mod ----------
   $('btn-swap').addEventListener('click', function () {
+    searchGuard.from.invalidate(); searchGuard.to.invalidate();
     var f = state.from, t = state.to;
     var fv = inputs.from.value, tv = inputs.to.value;
     state.from = t; state.to = f;
