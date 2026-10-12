@@ -333,6 +333,7 @@
           map.delete(map.keys().next().value);
         }
       },
+      delete: function (k) { return map.delete(k); },
       clear: function () { map.clear(); },
       get size() { return map.size; }
     };

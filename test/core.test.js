@@ -256,6 +256,8 @@ test('cache: get/set/has, LRU tahliye', () => {
   assert.equal(c.size, 2);
   c.set('c', 4);
   assert.equal(c.get('c'), 4);
+  assert.equal(c.delete('c'), true);
+  assert.equal(c.has('c'), false);
   c.clear();
   assert.equal(c.size, 0);
 });
