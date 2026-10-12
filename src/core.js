@@ -370,21 +370,36 @@
 
   // Aynı anahtar için tekrar istek atmaz (uçuştaki istek de paylaşılır);
   // reddedilen istekler cache'ten silinir ki tekrar denenebilsin.
+  // cached(key, isStale, ...): isStale() true ise çağıran artık sonucu istemiyor.
+  // Paylaşılan istek BAŞKA bir çağıranın bayatlığı yüzünden atlandıysa (err.skipped),
+  // bu çağıran hâlâ güncelse istek yeniden başlatılır; değilse skipped ile reddedilir.
   function createCachedFetcher(fetchFn, cache) {
-    return function cached(key) {
-      if (cache.has(key)) return cache.get(key);
+    function cached(key, isStale) {
+      var self = this;
+      var args = arguments;
       var p;
-      try {
-        p = Promise.resolve(fetchFn.apply(this, arguments));
-      } catch (e) {
-        p = Promise.reject(e);
+      if (cache.has(key)) {
+        p = cache.get(key);
+      } else {
+        try {
+          p = Promise.resolve(fetchFn.apply(self, args));
+        } catch (e) {
+          p = Promise.reject(e);
+        }
+        cache.set(key, p);
+        p.catch(function () {
+          if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+        });
       }
-      cache.set(key, p);
-      p.catch(function () {
-        if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+      return p.catch(function (err) {
+        if (err && err.skipped && !(typeof isStale === 'function' && isStale())) {
+          if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+          return cached.apply(self, args);
+        }
+        throw err;
       });
-      return p;
-    };
+    }
+    return cached;
   }
 
   // ---------- Zaman aşımlı fetch ----------

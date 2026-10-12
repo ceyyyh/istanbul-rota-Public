@@ -139,20 +139,22 @@
   }
 
   // Koordinattan etiket bul (kuyruktan, cache'li)
-  function reverseLabel(which, place) {
+  function boxOf(point) {
+    return state.from === point ? 'from' : (state.to === point ? 'to' : null);
+  }
+
+  // point: state'te saklanan nesne. Bayatlık nesne kimliğine göre; swap'ta nesne
+  // diğer kutuya geçse de etiket o an bulunduğu kutuya yazılır.
+  function reverseLabel(point) {
+    if (!point) return;
     var url;
-    try { url = C.buildReverseUrl(place.lat, place.lon); } catch (e) { return; }
-    nominatimGet(url, function () {
-      var cur = state[which];
-      return !cur || cur.lat !== place.lat || cur.lon !== place.lon;
-    }).then(function (data) {
+    try { url = C.buildReverseUrl(point.lat, point.lon); } catch (e) { return; }
+    nominatimGet(url, function () { return boxOf(point) === null; }).then(function (data) {
       var p = data && C.normalizePlace(data);
-      if (!p || !p.label) return;
-      var cur = state[which];
-      if (cur && cur.lat === place.lat && cur.lon === place.lon) {
-        cur.label = p.label;
-        inputs[which].value = p.label;
-      }
+      var box = boxOf(point);
+      if (!p || !p.label || !box) return;
+      point.label = p.label;
+      inputs[box].value = p.label;
     }).catch(function () { /* etiket isteğe bağlı; koordinat etiketi kalır */ });
   }
 
@@ -199,6 +201,7 @@
     inputs[which].addEventListener('input', function () {
       candLists[which].textContent = '';
       searchGuard[which].invalidate();
+      setMsg('', ''); // bekleyen "Aranıyor…" ekranda kalmasın
       if (state[which]) {
         state[which] = null;
         updateMarker(which);
@@ -224,7 +227,7 @@
         b.addEventListener('click', function () {
           map.closePopup();
           var place = { lat: lat, lon: lon, label: coordLabel(lat, lon) };
-          if (setPoint(which, place)) reverseLabel(which, place);
+          if (setPoint(which, place)) reverseLabel(state[which]);
         });
         box.appendChild(b);
       });

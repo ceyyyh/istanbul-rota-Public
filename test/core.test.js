@@ -22,7 +22,10 @@ test('Avrupa yakası içindeki noktalar kabul edilir', () => {
     Kumkapı: [41.003, 28.965],
     'Beylikdüzü (41.0)': [41.0, 28.64],
     'Arnavutköy (batı)': [41.18, 28.74],
-    Çatalca: [41.14, 28.46]
+    Çatalca: [41.14, 28.46],
+    Eminönü: [41.017, 28.97],
+    'Beşiktaş (41.043)': [41.043, 29.007],
+    'Karaköy (41.022)': [41.022, 28.977]
   };
   for (const [name, [lat, lon]] of Object.entries(inside)) {
     assert.equal(C.isInEuropeanSide(lat, lon), true, name);
@@ -42,6 +45,10 @@ test('Avrupa yakası dışındaki noktalar reddedilir', () => {
     Kandilli: [41.075, 29.057],
     Çubuklu: [41.105, 29.08],
     Beykoz: [41.13, 29.10],
+    Beylerbeyi: [41.045, 29.045],
+    Çengelköy: [41.05, 29.05],
+    'Anadolu Kavağı': [41.17, 29.09],
+    Ataşehir: [40.99, 29.11],
     Ankara: [39.93, 32.86],
     Batı: [41.1, 27.5]
   };
@@ -396,4 +403,48 @@ test('fetchJson: bozuk JSON, AbortController yokken zaman aşımı', async () =>
   } finally {
     global.AbortController = RealAC;
   }
+});
+
+// ---------- Gerçek kompozisyon: cache + kuyruk(shouldSkip) ----------
+test('entegrasyon: aynı anahtar, ilk çağıran bayatlar; ikinci çağıran sonucu alır, istek bir kez gider', async () => {
+  const clock = fakeClock();
+  let sent = 0;
+  const queue = C.createRateLimitedQueue(async (url) => { sent++; return 'veri:' + url; }, 1100, {
+    now: clock.now, sleep: clock.sleep,
+    shouldSkip: (url, isStale) => typeof isStale === 'function' && isStale()
+  });
+  const get = C.createCachedFetcher((url, isStale) => queue(url, isStale), C.createCache(10));
+
+  const blocker = get('baska', () => false); // kuyruğu meşgul eder
+  let firstStale = false;
+  const first = get('q', () => firstStale);
+  const second = get('q', () => false);
+  firstStale = true; // ilk çağıran bayatladı
+
+  const [b, r1, r2] = await Promise.allSettled([blocker, first, second]);
+  assert.equal(b.status, 'fulfilled');
+  assert.equal(r1.status, 'rejected');
+  assert.equal(r1.reason.skipped, true);
+  assert.equal(r2.status, 'fulfilled');
+  assert.equal(r2.value, 'veri:q');
+  assert.equal(sent, 2, 'baska + q bir kez');
+  assert.equal(await get('q', () => false), 'veri:q', 'cache');
+  assert.equal(sent, 2);
+});
+
+test('entegrasyon: tüm çağıranlar bayatsa istek hiç gitmez', async () => {
+  const clock = fakeClock();
+  let sent = 0;
+  const queue = C.createRateLimitedQueue(async () => { sent++; return 1; }, 1100, {
+    now: clock.now, sleep: clock.sleep,
+    shouldSkip: (u, isStale) => isStale()
+  });
+  const get = C.createCachedFetcher((u, s) => queue(u, s), C.createCache(10));
+  const blocker = get('b', () => false);
+  const a = get('q', () => true);
+  const b = get('q', () => true);
+  const res = await Promise.allSettled([blocker, a, b]);
+  assert.equal(res[1].status, 'rejected');
+  assert.equal(res[2].status, 'rejected');
+  assert.equal(sent, 1);
 });
