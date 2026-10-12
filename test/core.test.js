@@ -11,7 +11,18 @@ test('Avrupa yakası içindeki noktalar kabul edilir', () => {
     Şişli: [41.06, 28.987],
     Sarıyer: [41.167, 29.05],
     Beylikdüzü: [40.98, 28.64],
-    Silivri: [41.07, 28.25]
+    Silivri: [41.07, 28.25],
+    Rumelihisarı: [41.085, 29.055],
+    'Rumeli Hisarı kalesi': [41.0846, 29.0565],
+    'Arnavutköy-Boğaz': [41.0675, 29.043],
+    'Ortaköy Camii': [41.0473, 29.027],
+    Yeniköy: [41.12, 29.07],
+    Garipçe: [41.21, 29.10],
+    'Topkapı Sarayı': [41.0115, 28.9834],
+    Kumkapı: [41.003, 28.965],
+    'Beylikdüzü (41.0)': [41.0, 28.64],
+    'Arnavutköy (batı)': [41.18, 28.74],
+    Çatalca: [41.14, 28.46]
   };
   for (const [name, [lat, lon]] of Object.entries(inside)) {
     assert.equal(C.isInEuropeanSide(lat, lon), true, name);
@@ -23,7 +34,14 @@ test('Avrupa yakası dışındaki noktalar reddedilir', () => {
     Kadıköy: [40.99, 29.03],
     Üsküdar: [41.026, 29.015],
     Marmara: [40.8, 28.9],
-    Karadeniz: [41.6, 28.5],
+    Karadeniz: [41.7, 28.5],
+    'Anadolu Hisarı': [41.083, 29.067],
+    Kanlıca: [41.10, 29.065],
+    Kuzguncuk: [41.035, 29.03],
+    Vaniköy: [41.06, 29.06],
+    Kandilli: [41.075, 29.057],
+    Çubuklu: [41.105, 29.08],
+    Beykoz: [41.13, 29.10],
     Ankara: [39.93, 32.86],
     Batı: [41.1, 27.5]
   };
@@ -48,7 +66,7 @@ test('buildSearchUrl parametreleri ve encode', () => {
   assert.ok(u.startsWith('https://nominatim.openstreetmap.org/search?q='));
   assert.ok(u.includes('q=' + encodeURIComponent('Galata Kulesi & çay') + '&'));
   for (const p of ['format=jsonv2', 'limit=5', 'accept-language=tr', 'countrycodes=tr',
-    'viewbox=28.0,41.35,29.15,40.85', 'bounded=1']) {
+    'viewbox=28.0,41.6,29.15,40.85', 'bounded=1']) {
     assert.ok(u.includes(p), p);
   }
   assert.equal(C.buildSearchUrl('  a   b ').includes('q=a%20b&'), true);
@@ -296,4 +314,86 @@ test('fetchJson: başarı, HTTP hatası, ağ hatası, zaman aşımı', async () 
       })
     }),
     /zaman aşımı/);
+});
+
+// ---------- Sıra denetimi ----------
+test('createSeqGuard: yalnızca son kimlik geçerli', () => {
+  const g = C.createSeqGuard();
+  const a = g.next();
+  assert.equal(g.isCurrent(a), true);
+  const b = g.next();
+  assert.equal(g.isCurrent(a), false);
+  assert.equal(g.isCurrent(b), true);
+  g.invalidate();
+  assert.equal(g.isCurrent(b), false);
+});
+
+// ---------- Cache'li fetcher ----------
+test('createCachedFetcher: aynı anahtar tek istek; hata cache edilmez', async () => {
+  let calls = 0;
+  let fail = true;
+  const cached = C.createCachedFetcher(async (key) => {
+    calls++;
+    if (key === 'bad' && fail) throw new Error('ağ');
+    return key + '!';
+  }, C.createCache(10));
+
+  const [x, y] = await Promise.all([cached('a'), cached('a')]);
+  assert.equal(x, 'a!');
+  assert.equal(y, 'a!');
+  assert.equal(await cached('a'), 'a!');
+  assert.equal(calls, 1);
+
+  await assert.rejects(cached('bad'), /ağ/);
+  await new Promise((r) => setImmediate(r));
+  assert.equal(calls, 2);
+  fail = false;
+  assert.equal(await cached('bad'), 'bad!', 'hatadan sonra yeniden denenir');
+  assert.equal(calls, 3);
+});
+
+test('createCachedFetcher: senkron fırlatma reddedilir ve cache edilmez', async () => {
+  const cache = C.createCache(5);
+  const cached = C.createCachedFetcher(() => { throw new Error('sync'); }, cache);
+  await assert.rejects(cached('k'), /sync/);
+  await new Promise((r) => setImmediate(r));
+  assert.equal(cache.has('k'), false);
+});
+
+// ---------- Kuyrukta bayat istek ----------
+test('kuyruk: shouldSkip bayat isteği göndermez ve aralık tüketmez', async () => {
+  const clock = fakeClock();
+  const guard = C.createSeqGuard();
+  const sent = [];
+  const q = C.createRateLimitedQueue(async (x) => { sent.push(x); return x; }, 1100, {
+    now: clock.now, sleep: clock.sleep,
+    shouldSkip: (x, id) => id !== undefined && !guard.isCurrent(id)
+  });
+  const id1 = guard.next();
+  const p1 = q('eski', id1);
+  const p0 = q('ilk');
+  const id2 = guard.next(); // p1 artık bayat
+  const p2 = q('yeni', id2);
+  const settled = await Promise.allSettled([p1, p0, p2]);
+  assert.equal(settled[0].status, 'rejected');
+  assert.equal(settled[0].reason.skipped, true);
+  assert.deepEqual(sent, ['ilk', 'yeni']);
+  assert.equal(settled[2].value, 'yeni');
+});
+
+// ---------- fetchJson ek durumlar ----------
+test('fetchJson: bozuk JSON, AbortController yokken zaman aşımı', async () => {
+  await assert.rejects(
+    C.fetchJson('u', { fetchImpl: async () => ({ ok: true, json: async () => JSON.parse('{x') }) }),
+    /Sunucudan geçersiz yanıt/);
+
+  const RealAC = global.AbortController;
+  global.AbortController = undefined;
+  try {
+    await assert.rejects(
+      C.fetchJson('u', { timeoutMs: 20, fetchImpl: () => new Promise(() => {}) }),
+      /zaman aşımı/);
+  } finally {
+    global.AbortController = RealAC;
+  }
 });

@@ -12,7 +12,7 @@
 
   var NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
   var ROUTE_BASE = 'https://routing.openstreetmap.de';
-  var VIEWBOX = '28.0,41.35,29.15,40.85';
+  var VIEWBOX = '28.0,41.6,29.15,40.85';
 
   var MODES = {
     car: { profile: 'routed-car', label: 'Araba' },
@@ -44,19 +44,22 @@
   // [enlem, boylam]; Rumelifeneri'nden başlar, Boğaz kıyısı güneye, Marmara kıyısı batıya,
   // batı sınırı ~28.0, Karadeniz kıyısı doğuya doğru kapanır.
   var EUROPE_POLYGON = [
-    [41.2355, 29.115], // Rumelifeneri
-    [41.205, 29.085], // Garipçe
-    [41.173, 29.078], // Rumelikavağı
-    [41.16, 29.065], // Sarıyer
-    [41.135, 29.065], // Tarabya
-    [41.108, 29.06], // Yeniköy
-    [41.077, 29.048], // Bebek
-    [41.049, 29.03], // Ortaköy
-    [41.043, 29.008], // Beşiktaş
+    [41.2355, 29.12], // Rumelifeneri
+    [41.21, 29.105], // Garipçe
+    [41.16, 29.08], // Rumelikavağı / Sarıyer
+    [41.12, 29.074], // Yeniköy-Tarabya hattı
+    [41.1, 29.061], // Yeniköy güneyi (Kanlıca karşısı)
+    [41.0855, 29.0585], // Rumeli Hisarı
+    [41.08, 29.0565],
+    [41.0735, 29.0525], // Bebek
+    [41.06, 29.046], // Arnavutköy
+    [41.0475, 29.0295], // Ortaköy
+    [41.041, 29.0075], // Beşiktaş
     [41.0345, 28.996], // Kabataş
     [41.025, 28.984], // Karaköy
-    [41.016, 28.988], // Sarayburnu
-    [41.005, 28.97], // Kumkapı
+    [41.0165, 28.987], // Sarayburnu
+    [41.004, 28.982], // Ahırkapı
+    [40.999, 28.965], // Kumkapı kıyısı
     [40.995, 28.94], // Yenikapı
     [40.975, 28.9], // Zeytinburnu
     [40.955, 28.87], // Bakırköy kıyısı
@@ -70,7 +73,9 @@
     [41.055, 28.25], // Silivri
     [41.06, 28.1],
     [41.075, 28.0], // batı sınırı
-    [41.35, 28.0], // Karadeniz kıyısı (batı)
+    [41.6, 28.0], // il sınırının kuzeybatı ucu
+    [41.6, 28.55], // Karadeniz kıyısı (Yalıköy/Karacaköy açıkları)
+    [41.37, 28.65],
     [41.35, 28.67], // Karaburun
     [41.3, 28.85],
     [41.25, 29.03] // Kilyos
@@ -286,22 +291,33 @@
   // ---------- Hız sınırlı kuyruk ----------
 
   // fn çağrıları sıraya girer; ardışık çağrıların başlangıçları arasında en az minIntervalMs olur.
+  // opts.shouldSkip(...args) true dönerse çağrı gönderilmez (kuyrukta bayatlamış istek);
+  // promise, skipped=true işaretli bir Error ile reddedilir ve aralık tüketilmez.
   function createRateLimitedQueue(fn, minIntervalMs, opts) {
     opts = opts || {};
     var now = opts.now || function () { return Date.now(); };
     var sleep = opts.sleep || function (ms) {
       return new Promise(function (resolve) { setTimeout(resolve, ms); });
     };
+    var shouldSkip = opts.shouldSkip || null;
     var lastStart = null;
     var tail = Promise.resolve();
+
+    function skipError() {
+      var e = new Error('İstek atlandı (güncelliğini yitirdi).');
+      e.skipped = true;
+      return e;
+    }
 
     return function enqueue() {
       var args = arguments;
       var self = this;
       var run = tail.then(function () {
+        if (shouldSkip && shouldSkip.apply(self, args)) throw skipError();
         var wait = lastStart === null ? 0 : lastStart + minIntervalMs - now();
         var pre = wait > 0 ? Promise.resolve(sleep(wait)) : Promise.resolve();
         return pre.then(function () {
+          if (shouldSkip && shouldSkip.apply(self, args)) throw skipError();
           lastStart = now();
           return fn.apply(self, args);
         });
@@ -309,6 +325,19 @@
       // Hata zinciri bozmasın
       tail = run.then(function () {}, function () {});
       return run;
+    };
+  }
+
+  // ---------- Sıra (sequence) denetimi ----------
+  // Eski (geçersiz kalmış) yanıtları yok saymak için: next() yeni kimlik verir,
+  // isCurrent(id) yalnızca son verilen kimlik için true döner.
+  function createSeqGuard() {
+    var current = 0;
+    return {
+      next: function () { return ++current; },
+      invalidate: function () { return ++current; },
+      isCurrent: function (id) { return id === current; },
+      get value() { return current; }
     };
   }
 
@@ -339,6 +368,25 @@
     };
   }
 
+  // Aynı anahtar için tekrar istek atmaz (uçuştaki istek de paylaşılır);
+  // reddedilen istekler cache'ten silinir ki tekrar denenebilsin.
+  function createCachedFetcher(fetchFn, cache) {
+    return function cached(key) {
+      if (cache.has(key)) return cache.get(key);
+      var p;
+      try {
+        p = Promise.resolve(fetchFn.apply(this, arguments));
+      } catch (e) {
+        p = Promise.reject(e);
+      }
+      cache.set(key, p);
+      p.catch(function () {
+        if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+      });
+      return p;
+    };
+  }
+
   // ---------- Zaman aşımlı fetch ----------
 
   function fetchJson(url, opts) {
@@ -348,18 +396,16 @@
     if (!fetchImpl) return Promise.reject(new Error('Bu tarayıcı ağ isteklerini desteklemiyor.'));
     var controller = typeof AbortController === 'function' ? new AbortController() : null;
     var timedOut = false;
-    var timer = setTimeout(function () {
-      timedOut = true;
-      if (controller) controller.abort();
-    }, timeoutMs);
+    var timer;
+    var TIMEOUT_MSG = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
 
+    // AbortController olsa da olmasa da zaman aşımı doğrudan reject eder.
     var timeoutPromise = new Promise(function (_, reject) {
-      if (!controller) return;
-      controller.signal.addEventListener('abort', function () {
-        reject(new Error(timedOut
-          ? 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.'
-          : 'İstek iptal edildi.'));
-      });
+      timer = setTimeout(function () {
+        timedOut = true;
+        reject(new Error(TIMEOUT_MSG));
+        if (controller) controller.abort();
+      }, timeoutMs);
     });
 
     var req = Promise.resolve()
@@ -380,9 +426,10 @@
       })
       .catch(function (err) {
         if (err && err.name === 'AbortError') {
-          throw new Error(timedOut
-            ? 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.'
-            : 'İstek iptal edildi.');
+          throw new Error(timedOut ? TIMEOUT_MSG : 'İstek iptal edildi.');
+        }
+        if (err instanceof SyntaxError) {
+          throw new Error('Sunucudan geçersiz yanıt');
         }
         if (err instanceof TypeError) {
           throw new Error('Ağ hatası: sunucuya ulaşılamadı. Bağlantınızı kontrol edin.');
@@ -413,6 +460,8 @@
     normalizePlace: normalizePlace,
     createRateLimitedQueue: createRateLimitedQueue,
     createCache: createCache,
+    createCachedFetcher: createCachedFetcher,
+    createSeqGuard: createSeqGuard,
     fetchJson: fetchJson
   };
 });
