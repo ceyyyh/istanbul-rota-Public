@@ -1,0 +1,11 @@
+{
+  "name": "istanbul-maps",
+  "version": "1.0.0",
+  "private": true,
+  "description": "İstanbul Avrupa yakası için tek sayfalık harita/rota uygulaması",
+  "scripts": {
+    "test": "node --test",
+    "build": "node build.js"
+  },
+  "license": "MIT"
+}
