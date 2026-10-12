@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İstanbul Rota</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1b2330;
+  --muted: #5b6676;
+  --border: #d9dee6;
+  --accent: #0b6bcb;
+  --accent-text: #ffffff;
+  --warn-bg: #fff4d6;
+  --warn-text: #6a4a00;
+  --err-bg: #fde8e8;
+  --err-text: #8a1c1c;
+  --route-best: #0b6bcb;
+  --route-alt: #7d8aa0;
+  --gutter: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c;
+    --panel: #1b222d;
+    --text: #e8ecf2;
+    --muted: #9aa6b8;
+    --border: #2f3947;
+    --accent: #5aa8ff;
+    --accent-text: #08121f;
+    --warn-bg: #3b3115;
+    --warn-text: #f2d78a;
+    --err-bg: #3d1d1d;
+    --err-text: #ffb3b3;
+    --route-best: #5aa8ff;
+    --route-alt: #8794aa;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c;
+  --panel: #1b222d;
+  --text: #e8ecf2;
+  --muted: #9aa6b8;
+  --border: #2f3947;
+  --accent: #5aa8ff;
+  --accent-text: #08121f;
+  --warn-bg: #3b3115;
+  --warn-text: #f2d78a;
+  --err-bg: #3d1d1d;
+  --err-text: #ffb3b3;
+  --route-best: #5aa8ff;
+  --route-alt: #8794aa;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+#app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(180px, 1fr) auto;
+  grid-template-areas: "search" "map" "result";
+}
+#search { grid-area: search; }
+#map { grid-area: map; min-height: 0; background: var(--bg); }
+#result { grid-area: result; }
+
+.panel {
+  background: var(--panel);
+  padding: 12px var(--gutter);
+  border-bottom: 1px solid var(--border);
+}
+#result { border-top: 1px solid var(--border); border-bottom: 0; max-height: 42vh; overflow-y: auto; }
+#result:empty { display: none; }
+
+h1 { font-size: 17px; margin: 0 0 8px; }
+
+.field { display: flex; gap: 8px; margin-bottom: 8px; align-items: stretch; }
+.field input[type="text"] {
+  flex: 1 1 auto; min-width: 0;
+  font: inherit; font-size: 16px; /* iOS yakınlaştırmasını önler */
+  padding: 9px 10px;
+  color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+button {
+  font: inherit; cursor: pointer;
+  padding: 9px 12px;
+  color: var(--text); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 8px;
+  min-height: 40px;
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button[disabled] { opacity: .55; cursor: default; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.modes { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.modes button { border: 0; border-radius: 0; background: transparent; }
+.modes button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+
+.msg { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.msg:empty { display: none; }
+.msg.warn { background: var(--warn-bg); color: var(--warn-text); }
+.msg.err { background: var(--err-bg); color: var(--err-text); }
+.msg.info { background: var(--bg); color: var(--muted); }
+
+.candidates { list-style: none; margin: 0 0 8px; padding: 0; max-height: 28vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+.candidates:empty { display: none; }
+.candidates li button {
+  display: block; width: 100%; text-align: left; border: 0; border-radius: 0;
+  border-bottom: 1px solid var(--border); overflow-wrap: anywhere;
+}
+.candidates li:last-child button { border-bottom: 0; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-bottom: 8px; }
+.summary .big { font-size: 20px; font-weight: 700; }
+.summary .sub { color: var(--muted); }
+.alts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.alts button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.badge { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: 4px; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; }
+ol.steps li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); }
+ol.steps .txt { overflow-wrap: anywhere; }
+ol.steps .dist { color: var(--muted); white-space: nowrap; }
+
+.popup-actions { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+.popup-title { margin: 0 0 6px; font-size: 13px; color: #333; overflow-wrap: anywhere; max-width: 220px; }
+.popup-actions button { color: #1b2330; background: #fff; border-color: #c9d0da; }
+
+@media (min-width: 900px) {
+  #app {
+    grid-template-columns: 400px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "search map" "result map";
+  }
+  #result { max-height: none; }
+  #search { border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="search" class="panel" aria-label="Konum arama">
+    <h1>İstanbul Rota <span style="font-weight:400;color:var(--muted);font-size:13px">Avrupa yakası</span></h1>
+
+    <form class="field" id="form-from" autocomplete="off">
+      <input type="text" id="in-from" placeholder="Başlangıç" aria-label="Başlangıç" enterkeyhint="search">
+      <button type="submit" class="primary">Ara</button>
+      <button type="button" id="btn-locate" title="Konumumu başlangıç yap">Konumum</button>
+    </form>
+    <ul class="candidates" id="cand-from"></ul>
+
+    <form class="field" id="form-to" autocomplete="off">
+      <input type="text" id="in-to" placeholder="Varış" aria-label="Varış" enterkeyhint="search">
+      <button type="submit" class="primary">Ara</button>
+      <button type="button" id="btn-swap" title="Başlangıç ve varışı değiştir" aria-label="Başlangıç ve varışı değiştir">⇅</button>
+    </form>
+    <ul class="candidates" id="cand-to"></ul>
+
+    <div class="toolbar">
+      <div class="modes" role="group" aria-label="Ulaşım modu">
+        <button type="button" data-mode="car" aria-pressed="true">Araba</button>
+        <button type="button" data-mode="foot" aria-pressed="false">Yaya</button>
+        <button type="button" data-mode="bike" aria-pressed="false">Bisiklet</button>
+      </div>
+      <button type="button" class="primary" id="btn-route">Rota bul</button>
+    </div>
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  </section>
+
+  <main id="map" aria-label="Harita"></main>
+
+  <section id="result" class="panel" aria-label="Rota özeti"></section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/*__CORE__*/
+</script>
+<script>
+/*__APP__*/
+</script>
+</body>
+</html>
