@@ -1,85 +1,209 @@
 import * as THREE from 'three';
+import { bakeMilkyWay, createSky } from './sky.js';
+import { createGargantua } from './gargantua.js';
+import { createPlanets, dirFromAzEl } from './planets.js';
+import { RING_RADIUS, MODULE_WIDTH, WALL_THICKNESS, MODULE_HEIGHT } from '../world/ShipLayout.js';
 
 /**
- * Uzay ortamı (TASLAK — Ajan 2 "Uzay" yeniden yazacak; API sabit kalmalı).
+ * Uzay ortamı (Ajan 2 — Uzay & Görsel Efekt).
  *
- * İçerik engine.spaceScene'e eklenir (sonsuz uzaklıkta, kamera orijinde).
- * Gemiyi aydınlatan "güneş" (kara deliğin yığılma diski ışığı) ana sahnededir.
+ * İçerik engine.spaceScene'e eklenir (sonsuz uzaklıkta; uzay kamerası orijinde, sadece döner):
+ *   - gökyüzü küresi: prosedürel yıldızlar + başlangıçta küp haritaya pişirilen soluk Samanyolu
+ *   - Gargantua: billboard üzerinde Schwarzschild ışın yürütme (gölge, foton halkası, ince disk,
+ *     diskin merceklenmiş arka yüzü, arka plan yıldızlarının merceklenmesi)
+ *   - halkalı gaz devi + küresel solucan deliği, Miller (okyanus), Mann (buz)
+ * Gemiyi aydınlatan "güneş" (yığılma diskinin ışığı) ve hafif hemisfer ışığı ana sahnededir.
  *
- * API:
+ * API (sözleşme, docs/ARCHITECTURE.md §3):
  *   space.update(dt, t)
- *   space.spinSpeed               halkanın dönüş hızı (rad/s). Uzay, gemiye göre ters yönde döner.
+ *   space.spinSpeed                     halkanın dönüş hızı (rad/sn). Uzay içeriği dünya Y ekseni etrafında döner.
+ *   space.rotation                      birikmiş dönüş açısı (rad)
  *   space.setSpin(radPerSec, rampSeconds)
- *   space.getBlackHoleDirection(out?)   dünya uzayında kara deliğe birim yön (teleskop için)
- *   space.sunLight                THREE.DirectionalLight (ana sahnede)
+ *   space.getBlackHoleDirection(out?)   dünya uzayında kara deliğe birim yön (mevcut dönüş dahil; teleskop için)
+ *   space.getSunDirection(out?)         dünya uzayında güneş ışığının geldiği yön (birim)
+ *   space.sunLight                      THREE.DirectionalLight (ana sahnede, yüksek kalitede gölge atar)
+ *   space.hemiLight                     THREE.HemisphereLight
  */
+
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+/** Kara delik: azimut 345° (atan2(z, x)), yükseklik +3° → hem kumanda (+X) hem gözlem (330°) pencerelerinden görünür. */
+const BH_AZ = 345;
+const BH_EL = 3;
+/**
+ * Güneş ışığı aynı azimuttan ama daha yüksekten gelir (13°). Gerekçe: +3°'lik neredeyse yatay ışık
+ * pencereden girip zemine ulaşamaz (7 m'de yalnızca ~0.4 m alçalır) ve sadece iç duvara vurur.
+ * 13° ile pencere ışık lekeleri zemine düşer; diskin merceklenmiş üst hâlesi de ~+10°'ye uzandığı
+ * için görsel olarak tutarlı kalır.
+ */
+const SUN_EL = 13;
+const SUN_DISTANCE = 80;
+const SUN_COLOR = 0xffd9ae;
+const SUN_INTENSITY = 6.0;
+/** Gölgesiz kalitede, kamera geminin içindeyken güneşin çarpanı (duvarlardan sızmayı önler). */
+const SUN_INSIDE_NOSHADOW = 0.04;
+const HEMI_OUTSIDE = 0.45;
+const HEMI_INSIDE = 0.12;
+
+/** Kaliteye göre kara delik ışın yürütme adımı. */
+const BH_STEPS = { low: 80, medium: 120, high: 160 };
+
 export class SpaceEnvironment {
   constructor(ctx) {
     this.ctx = ctx;
+    const engine = ctx.engine;
     this.root = new THREE.Group();
     this.root.name = 'space';
-    ctx.engine.spaceScene.add(this.root);
+    engine.spaceScene.add(this.root);
+
     this.spinSpeed = 0;
+    this.rotation = 0;
+    this._spinFrom = 0;
     this._spinTarget = 0;
     this._spinRamp = 1;
-    this.rotation = 0;
+    this._spinDur = 1;
 
-    // Yıldızlar
-    const n = 6000;
-    const pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      const v = new THREE.Vector3().randomDirection().multiplyScalar(5000);
-      pos.set([v.x, v.y, v.z], i * 3);
+    /** Kök yerel uzayında (dönüş öncesi) yönler */
+    this.blackHoleDir = dirFromAzEl(BH_AZ, BH_EL);
+    this.sunDir = dirFromAzEl(BH_AZ, SUN_EL);
+
+    // Paylaşılan uniform'lar (tüm uzay shader'ları aynı nesneleri görür)
+    this.uniforms = {
+      uTime: { value: 0 },
+      uStarSigma: { value: 0.002 },
+      uMilky: { value: null },
+    };
+
+    // --- Gökyüzü ---
+    try {
+      this._milkyRT = bakeMilkyWay(engine.renderer, ctx.isTouch ? 256 : 512);
+      this.uniforms.uMilky.value = this._milkyRT.texture;
+    } catch (err) {
+      console.error('[uzay] Samanyolu pişirilemedi:', err);
+      this.uniforms.uMilky.value = new THREE.CubeTexture();
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.root.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false })));
+    this.sky = createSky(this.uniforms);
+    this.root.add(this.sky);
 
-    // Kara delik (yer tutucu)
-    this.blackHoleDir = new THREE.Vector3(1, 0.08, 0.15).normalize();
-    const bh = new THREE.Group();
-    bh.position.copy(this.blackHoleDir).multiplyScalar(4000);
-    bh.lookAt(0, 0, 0);
-    bh.add(new THREE.Mesh(new THREE.SphereGeometry(300, 32, 16), new THREE.MeshBasicMaterial({ color: 0x000000 })));
-    const disk = new THREE.Mesh(
-      new THREE.RingGeometry(380, 900, 64),
-      new THREE.MeshBasicMaterial({ color: 0xffc070, side: THREE.DoubleSide }),
-    );
-    disk.rotation.x = Math.PI / 2 - 0.1;
-    bh.add(disk);
-    this.blackHole = bh;
-    this.root.add(bh);
+    // --- Gargantua ---
+    const bh = createGargantua(this.blackHoleDir, this.uniforms, {
+      distance: 1000,
+      steps: BH_STEPS[engine.qualityName] ?? BH_STEPS.high,
+    });
+    this.blackHole = bh.group;
+    this.blackHoleMaterial = bh.material;
+    this.blackHoleAngularRadius = bh.angularRadius;
+    this.root.add(bh.group);
 
-    // Gemiyi aydınlatan ışık
-    this.sunLight = new THREE.DirectionalLight(0xffe2b8, 2.0);
-    this.sunLight.position.copy(this.blackHoleDir).multiplyScalar(80);
-    ctx.scene.add(this.sunLight);
-    ctx.scene.add(this.sunLight.target);
-    this.ambient = new THREE.HemisphereLight(0x8090a0, 0x202020, 0.15);
-    ctx.scene.add(this.ambient);
+    // --- Gezegenler + solucan deliği ---
+    this.planets = createPlanets(this.root, this.blackHoleDir, bh.group, this.uniforms);
 
-    ctx.bus.on('state:ring_spinning', (v) => this.setSpin(v ? 0.05 : 0, 6));
+    // --- Gemiyi aydınlatan ışıklar (ana sahne) ---
+    const sun = new THREE.DirectionalLight(SUN_COLOR, SUN_INTENSITY);
+    sun.name = 'gargantua-sun';
+    sun.castShadow = true; // her zaman açık: değiştirmek tüm shader'ları yeniden derletir
+    const sc = sun.shadow.camera;
+    // Işık Y etrafında döner, yüksekliği sabit → halka (yarıçap ~36 m, y ∈ [-2, 7]) için sabit sınırlar
+    const ext = RING_RADIUS + MODULE_WIDTH / 2 + WALL_THICKNESS + 6; // ≈ 42 m (dış donanım payı)
+    const se = Math.sin(THREE.MathUtils.degToRad(SUN_EL));
+    const ce = Math.cos(THREE.MathUtils.degToRad(SUN_EL));
+    const yTop = MODULE_HEIGHT + 4;
+    const yBot = -2;
+    sc.left = -ext;
+    sc.right = ext;
+    sc.top = yTop * ce + ext * se + 1;
+    sc.bottom = yBot * ce - ext * se - 1;
+    sc.near = SUN_DISTANCE - ext - 5;
+    sc.far = SUN_DISTANCE + ext + 5;
+    sc.updateProjectionMatrix();
+    // Akne/peter-panning dengesi: küçük sabit sapma + normal yönünde ofset (sığ açılı zeminler için)
+    sun.shadow.bias = -0.00015;
+    sun.shadow.normalBias = 0.045;
+    sun.shadow.radius = 2;
+    this.sunLight = sun;
+    ctx.scene.add(sun);
+    ctx.scene.add(sun.target);
+    sun.target.position.set(0, 0, 0);
+
+    this.hemiLight = new THREE.HemisphereLight(0x8c9bb0, 0x1c1814, HEMI_INSIDE);
+    this.hemiLight.name = 'space-hemi';
+    ctx.scene.add(this.hemiLight);
+    this.ambient = this.hemiLight; // eski ad (geriye uyumluluk)
+
+    this._insideK = 1; // 1 = kamera geminin içinde
+    this._tmp = new THREE.Vector3();
+    this._applyQuality(engine.quality, engine.qualityName);
+    ctx.bus.on('engine:quality', ({ name, quality }) => this._applyQuality(quality, name));
+
+    ctx.bus.on('state:ring_spinning', (v) => this.setSpin(v ? 0.05 : 0, 7));
+    if (ctx.state?.is?.('ring_spinning')) this.setSpin(0.05, 7);
+
+    this.update(0, 0);
   }
 
-  setSpin(radPerSec, rampSeconds = 4) {
+  _applyQuality(q, name) {
+    const size = q?.shadowMapSize || 1024;
+    const sh = this.sunLight.shadow;
+    if (sh.mapSize.x !== size) {
+      sh.mapSize.set(size, size);
+      if (sh.map) {
+        sh.map.dispose();
+        sh.map = null;
+      }
+    }
+    this._shadows = !!q?.shadows;
+    this.blackHoleMaterial.uniforms.uSteps.value = BH_STEPS[name] ?? BH_STEPS.high;
+  }
+
+  /** Halka dönüşünü hedef hıza yumuşakça (S-eğrisi) getirir. */
+  setSpin(radPerSec, rampSeconds = 7) {
     this._spinFrom = this.spinSpeed;
     this._spinTarget = radPerSec;
     this._spinRamp = 0;
     this._spinDur = Math.max(0.01, rampSeconds);
   }
 
+  /** Dünya uzayında kara deliğe birim yön (mevcut dönüş dahil). */
   getBlackHoleDirection(out = new THREE.Vector3()) {
-    return out.copy(this.blackHoleDir).applyAxisAngle(new THREE.Vector3(0, 1, 0), this.rotation);
+    return out.copy(this.blackHoleDir).applyAxisAngle(Y_AXIS, this.rotation);
   }
 
-  update(dt) {
+  /** Dünya uzayında güneş ışığının geldiği yön (sahneden ışığa doğru, birim). */
+  getSunDirection(out = new THREE.Vector3()) {
+    return out.copy(this.sunDir).applyAxisAngle(Y_AXIS, this.rotation);
+  }
+
+  update(dt, t) {
+    // Dönüş rampası
     if (this._spinRamp < 1) {
       this._spinRamp = Math.min(1, this._spinRamp + dt / this._spinDur);
-      this.spinSpeed = THREE.MathUtils.lerp(this._spinFrom, this._spinTarget, this._spinRamp);
+      const k = this._spinRamp * this._spinRamp * (3 - 2 * this._spinRamp);
+      this.spinSpeed = THREE.MathUtils.lerp(this._spinFrom, this._spinTarget, k);
     }
-    this.rotation += this.spinSpeed * dt;
+    this.rotation = (this.rotation + this.spinSpeed * dt) % (Math.PI * 2);
     this.root.rotation.y = this.rotation;
-    const d = this.getBlackHoleDirection();
-    this.sunLight.position.copy(d).multiplyScalar(80);
+
+    // Güneş
+    const d = this.getSunDirection(this._tmp);
+    this.sunLight.position.copy(d).multiplyScalar(SUN_DISTANCE);
+
+    // Kamera geminin (halka tüpünün) içinde mi? → gölgesiz modda güneşi kıs, ortam ışığını azalt
+    const cam = this.ctx.engine.camera.position;
+    const rr = Math.hypot(cam.x, cam.z);
+    const inside = Math.abs(rr - RING_RADIUS) < MODULE_WIDTH / 2 + 1.2 && cam.y > -0.6 && cam.y < MODULE_HEIGHT + 0.6;
+    const target = inside ? 1 : 0;
+    this._insideK += (target - this._insideK) * Math.min(1, dt * 4 || 1);
+    const sunK = this._shadows ? 1 : THREE.MathUtils.lerp(1, SUN_INSIDE_NOSHADOW, this._insideK);
+    this.sunLight.intensity = SUN_INTENSITY * sunK;
+    this.hemiLight.intensity = THREE.MathUtils.lerp(HEMI_OUTSIDE, HEMI_INSIDE, this._insideK);
+
+    // Shader zamanı ve piksel oranından bağımsız yıldız boyutu (CSS pikseli → radyan)
+    this.uniforms.uTime.value = t;
+    const renderer = this.ctx.renderer;
+    const h = renderer.domElement.clientHeight || window.innerHeight || 540;
+    const pr = renderer.getPixelRatio();
+    const fov = THREE.MathUtils.degToRad(this.ctx.engine.camera.fov);
+    const sigmaCss = Math.max(0.72, 0.7 / pr);
+    this.uniforms.uStarSigma.value = (sigmaCss * 2 * Math.tan(fov / 2)) / h;
   }
 }

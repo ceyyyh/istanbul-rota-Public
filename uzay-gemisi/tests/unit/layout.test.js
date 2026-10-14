@@ -73,3 +73,89 @@ describe('ShipLayout', () => {
     }
   });
 });
+
+describe('ShipLayout.ringPath', () => {
+  const path = L.ringPath();
+
+  it('modül başına giriş/merkez/çıkış: 36 nokta, halka sırasıyla', () => {
+    expect(path).toHaveLength(L.MODULE_COUNT * 3);
+    path.forEach((p, k) => {
+      expect(p.index).toBe(Math.floor(k / 3));
+      expect(p.kind).toBe(['enter', 'center', 'exit'][k % 3]);
+      expect(Number.isFinite(p.x) && Number.isFinite(p.z)).toBe(true);
+    });
+  });
+
+  it('her nokta kendi modülünün içinde ve kapıdan kapıya şeridinde (lz = 0, |lx| ≤ 5.5)', () => {
+    for (const p of path) {
+      const loc = L.locate(p.x, p.z);
+      expect(loc.index).toBe(p.index);
+      expect(loc.region).toBe('module');
+      expect(Math.abs(loc.lz)).toBeLessThan(1e-9);
+      expect(Math.abs(loc.lx)).toBeLessThanOrEqual(L.MODULE_LENGTH / 2);
+    }
+  });
+
+  it('noktalar halka yarıçapında (RING_RADIUS civarı)', () => {
+    for (const p of path) {
+      const r = Math.hypot(p.x, p.z);
+      expect(Math.abs(r - L.RING_RADIUS)).toBeLessThan(1);
+    }
+  });
+
+  it('ardışık noktalar arası mesafe makul ve döngü kapalı (son çıkış → ilk giriş)', () => {
+    for (let k = 0; k < path.length; k++) {
+      const a = path[k];
+      const b = path[(k + 1) % path.length];
+      const d = Math.hypot(b.x - a.x, b.z - a.z);
+      if (a.kind === 'exit') {
+        // koridor: kapıdan kapıya ≈ 0.6 + duvar + koridor + duvar + 0.6
+        const c = L.corridorInfo(a.index);
+        expect(d).toBeGreaterThan(c.length);
+        expect(d).toBeLessThan(c.length + 2 * (0.6 + L.WALL_THICKNESS) + 0.2);
+      } else {
+        expect(d).toBeCloseTo(L.MODULE_LENGTH / 2 - 0.6, 6);
+      }
+    }
+  });
+
+  it('ileri yön saat yönünün tersine (artan açı) ilerler', () => {
+    const ang = (p) => Math.atan2(p.z, p.x);
+    for (let i = 0; i < L.MODULE_COUNT; i++) {
+      const enter = path[i * 3];
+      const exit = path[i * 3 + 2];
+      let d = ang(exit) - ang(enter);
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      expect(d).toBeGreaterThan(0);
+    }
+  });
+
+  it('koridor merkezi iki modülün kapıları arasında ve region=corridor', () => {
+    for (let i = 0; i < L.MODULE_COUNT; i++) {
+      const c = L.corridorInfo(i);
+      expect(L.locate(c.center.x, c.center.z).region).toBe('corridor');
+      // koridor yarıçapı modül genişliğinin içinde: tüp, kapı boşluğuna oturur
+      expect(L.CORRIDOR_HALF_WIDTH * 2).toBeGreaterThanOrEqual(L.DOOR_WIDTH);
+    }
+  });
+
+  it('wrapIndex ve moduleIndexById kenar durumları', () => {
+    expect(L.wrapIndex(-1)).toBe(11);
+    expect(L.wrapIndex(12)).toBe(0);
+    expect(L.wrapIndex(25)).toBe(1);
+    expect(L.moduleIndexById('observation')).toBe(11);
+    expect(() => L.moduleIndexById('yok')).toThrow();
+    expect(L.spawnPoint('cryo').index).toBe(1);
+    expect(L.spawnPoint(13).index).toBe(1);
+  });
+
+  it('locate: tam halka açısı sınırlarında (modüller arası orta çizgi) geçerli indeks', () => {
+    for (let i = 0; i < L.MODULE_COUNT; i++) {
+      const a = (i + 0.5) * ((Math.PI * 2) / L.MODULE_COUNT);
+      const loc = L.locate(L.RING_RADIUS * Math.cos(a), L.RING_RADIUS * Math.sin(a));
+      expect(loc.index).toBeGreaterThanOrEqual(0);
+      expect(loc.index).toBeLessThan(12);
+      expect(L.MODULE_IDS[loc.index]).toBe(loc.id);
+    }
+  });
+});
