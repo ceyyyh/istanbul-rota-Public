@@ -52,13 +52,14 @@ page.on('pageerror', (err) => {
 });
 
 const t0 = Date.now();
-await page.goto(args.url, { waitUntil: 'load', timeout: 120000 });
-await page.waitForFunction(() => window.__game && document.body.dataset.ready === '1', null, { timeout: 120000 });
+page.setDefaultTimeout(240000);
+await page.goto(args.url, { waitUntil: 'load', timeout: 240000 });
+await page.waitForFunction(() => window.__game && document.body.dataset.ready === '1', null, { timeout: 240000 });
 if (args.eval) {
   await page.evaluate(args.eval);
 }
 await page.waitForTimeout(Number(args.wait || 1500));
-await page.screenshot({ path: out });
+await page.screenshot({ path: out, timeout: 240000 });
 const info = await page.evaluate(() => {
   const g = window.__game;
   const r = g.ctx.renderer.info;

@@ -158,7 +158,7 @@ export default {
     addCylinder(door, { radius: 0.035, height: 0.08, segments: 8, pos: [-0.78, 0, -0.09], rot: [Math.PI / 2, 0, 0], material: M.metal });
     finalizeDynamic(wheel);
     finalizeDynamic(door);
-    addLabel(g, 'HAVA KİLİDİ — RANGER KENETLENME TÜNELİ', { pos: [0, 2.5, 3.495], rot: [0, Math.PI, 0], height: 0.075, style: 'warn' });
+    addLabel(g, 'HAVA KİLİDİ — RANGER KENETLENME TÜNELİ', { pos: [0, 2.5, 3.41], rot: [0, Math.PI, 0], height: 0.075, style: 'warn' });
     addLabel(g, 'BASINÇ FARKI VARKEN AÇMAYIN', { pos: [0, 0.16, 3.41], rot: [0, Math.PI, 0], height: 0.05, style: 'red' });
     addFloorHazard(g, { w: 2.2, d: 0.1, pos: [0, 2.75] });
     addFloorHazard(g, { w: 2.2, d: 0.1, pos: [0, 2.25] });
@@ -174,17 +174,17 @@ export default {
     // Kontrol paneli (kapağın solunda, +X)
     const CX = 1.62;
     addBox(g, { size: [0.6, 0.85, 0.12], pos: [CX, 1.3, 3.44], material: M.panelMid });
-    addLabel(g, 'KİLİT KONTROL', { pos: [CX, 1.66, 3.398], rot: [0, Math.PI, 0], height: 0.045, style: 'black' });
-    const scr = addScreen(g, M, { size: [0.46, 0.28], pos: [CX, 1.43, 3.395], rot: [0, Math.PI, 0], res: [448, 272], color: '#ffb347', background: '#0a0602' });
+    addLabel(g, 'KİLİT KONTROL', { pos: [CX, 1.66, 3.378], rot: [0, Math.PI, 0], height: 0.045, style: 'black' });
+    const scr = addScreen(g, M, { size: [0.46, 0.28], pos: [CX, 1.43, 3.372], rot: [0, Math.PI, 0], res: [448, 272], color: '#ffb347', background: '#0a0602', depth: 0.03 });
     const btn = new THREE.Group();
     btn.name = 'döngü-düğmesi';
-    btn.position.set(CX + 0.12, 1.06, 3.39);
+    btn.position.set(CX + 0.12, 1.06, 3.368);
     addCylinder(btn, { radius: 0.065, height: 0.03, segments: 14, rot: [Math.PI / 2, 0, 0], material: M.warning });
     const cap = addCylinder(btn, { radius: 0.05, height: 0.05, segments: 14, pos: [0, 0, -0.035], rot: [Math.PI / 2, 0, 0], material: T.toolRed });
     g.add(btn);
-    addLabel(g, 'DÖNGÜ', { pos: [CX - 0.12, 1.09, 3.399], rot: [0, Math.PI, 0], height: 0.04, style: 'white' });
-    addLabel(g, 'EVA', { pos: [CX - 0.12, 1.03, 3.399], rot: [0, Math.PI, 0], height: 0.03, style: 'orange' });
-    addBox(g, { size: [0.05, 0.05, 0.02], pos: [CX - 0.2, 1.2, 3.395], material: M.ledGreen });
+    addLabel(g, 'DÖNGÜ', { pos: [CX - 0.12, 1.09, 3.378], rot: [0, Math.PI, 0], height: 0.04, style: 'white' });
+    addLabel(g, 'EVA', { pos: [CX - 0.12, 1.03, 3.378], rot: [0, Math.PI, 0], height: 0.03, style: 'orange' });
+    addBox(g, { size: [0.05, 0.05, 0.02], pos: [CX - 0.2, 1.2, 3.375], material: M.ledGreen });
     // basınç göstergesi (kapağın sağında, -X)
     addBox(g, { size: [0.5, 0.62, 0.1], pos: [-1.62, 1.42, 3.45], material: M.panelMid });
     const gauge = addGauge(g, { pos: [-1.62, 1.48, 3.38], rot: [0, Math.PI, 0], radius: 0.19, value: P_ATM / 200, dynamic: true });

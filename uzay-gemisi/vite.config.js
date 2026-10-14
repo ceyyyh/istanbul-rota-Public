@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     chunkSizeWarningLimit: 2000,
   },
-  server: { host: '127.0.0.1' },
+  // NO_HMR=1 → başka dosyalar değişince açık sayfa yeniden yüklenmez (ekran görüntüsü alırken)
+  server: { host: '127.0.0.1', hmr: process.env.NO_HMR ? false : undefined },
   test: {
     include: ['tests/unit/**/*.test.js'],
     environment: 'node',

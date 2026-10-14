@@ -18,6 +18,7 @@ node scripts/shot.mjs --url "http://127.0.0.1:5181/?autostart=1&nointro=1&tp=cry
 node scripts/walk-check.mjs "http://127.0.0.1:5181/?autostart=1&nointro=1&flags=power_restored&quality=low"   # halka yürünebilir mi?
 ```
 
+Sunucuyu `NO_HMR=1 npx vite ...` ile başlatırsanız başka ajanların değişiklikleri çekim sırasında sayfayı yeniden yüklemez.
 Ekran görüntüsü SwiftShader (CPU) ile alınır: yavaştır (~5–20 sn). Küçük boyut ve `quality=low|medium` kullanın.
 `shots/` git'e girmez.
 
