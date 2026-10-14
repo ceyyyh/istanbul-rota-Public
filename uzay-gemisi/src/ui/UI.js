@@ -56,6 +56,7 @@ const KEYS_DESKTOP = [
   [['E'], 'Etkileşim'],
   [['F'], 'El feneri'],
   [['M', 'Tab'], 'Harita'],
+  [['1–9'], 'Terminalde seç'],
   [['Esc'], 'Duraklat · Ayarlar'],
 ];
 const KEYS_TOUCH = [

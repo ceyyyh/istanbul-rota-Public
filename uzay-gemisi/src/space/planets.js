@@ -40,7 +40,7 @@ ${GLSL_COMMON}
 float ringDensity(float rr) {
   float t = (rr - uRing.x) / (uRing.y - uRing.x);
   if (t < 0.0 || t > 1.0) return 0.0;
-  float d = 0.55 + 0.25 * sin(t * 61.0) + 0.15 * sin(t * 173.0 + 1.3);
+  float d = 0.66 + 0.2 * sin(t * 47.0) + 0.07 * sin(t * 131.0 + 1.3);
   d *= smoothstep(0.0, 0.08, t) * (1.0 - smoothstep(0.9, 1.0, t));
   d *= 1.0 - 0.92 * exp(-pow((t - 0.63) / 0.025, 2.0)); // Cassini boşluğu
   return clamp(d, 0.0, 1.0);
@@ -101,7 +101,7 @@ ${GLSL_COMMON}
 float ringDensity(float rr) {
   float t = (rr - uRing.x) / (uRing.y - uRing.x);
   if (t < 0.0 || t > 1.0) return 0.0;
-  float d = 0.55 + 0.25 * sin(t * 61.0) + 0.15 * sin(t * 173.0 + 1.3);
+  float d = 0.66 + 0.2 * sin(t * 47.0) + 0.07 * sin(t * 131.0 + 1.3);
   d *= smoothstep(0.0, 0.08, t) * (1.0 - smoothstep(0.9, 1.0, t));
   d *= 1.0 - 0.92 * exp(-pow((t - 0.63) / 0.025, 2.0));
   return clamp(d, 0.0, 1.0);
@@ -137,7 +137,6 @@ uniform float uTheta;     // kürenin açısal yarıçapı (radyan)
 uniform float uOuter;     // merceklenme bölgesinin dış sınırı (uTheta katı)
 uniform mat3 uToSky;
 uniform samplerCube uMilky;
-uniform float uStarSigma;
 uniform float uTime;
 varying vec2 vLocal;
 ${GLSL_COMMON}
@@ -162,17 +161,17 @@ vec3 galaxy(vec3 d) {
   return col * facing * 0.55;
 }
 
-vec3 otherSky(vec3 d, float sg) {
-  vec3 c = starField(d, sg, 40.0, (uStarSigma * uStarSigma) / (sg * sg)) * 1.6;
-  c += galaxy(d);
-  // soluk mavi-mor bulutsu
+vec3 otherSky(vec3 d, vec3 J1, vec3 J2) {
+  // öteki evren bizimkinden belirgin biçimde parlak ve mavi-mor: küre "başka bir gökyüzüne açılan pencere"
+  vec3 c = starField(d, J1, J2, 1.0, 40.0) * 2.2;
+  c += galaxy(d) * 2.4;
   float neb = fbm3(d * 2.4 + 7.0);
-  c += vec3(0.10, 0.12, 0.30) * smoothstep(0.45, 0.85, neb) * 0.25;
-  return c + vec3(0.002, 0.003, 0.006);
+  c += vec3(0.10, 0.13, 0.34) * smoothstep(0.40, 0.85, neb) * 0.55;
+  return c + vec3(0.012, 0.018, 0.045);
 }
 
-vec3 ourSky(vec3 s, float sg) {
-  return textureCube(uMilky, s).rgb + starField(s, sg, 0.0, (uStarSigma * uStarSigma) / (sg * sg));
+vec3 ourSky(vec3 s, vec3 J1, vec3 J2, float gain) {
+  return textureCube(uMilky, s).rgb + starField(s, J1, J2, gain, 0.0);
 }
 
 void main() {
@@ -189,20 +188,26 @@ void main() {
   float bIn = -uTheta * (2.0 - rho) * 1.4;
   float bs = rho < 1.0 ? bIn : bOut;
   vec3 s = uToSky * normalize(vec3(az * tan(bs), -1.0));
-  // türevler dallanmadan önce
-  float sgO = max(uStarSigma, length(fwidth(od)) * 0.6);
-  float sgS = max(uStarSigma, length(fwidth(s)) * 0.6);
+  vec3 nom = uToSky * dl;
+  // türevler (Jacobian) dallanmadan önce
+  vec3 Jo1 = dFdx(od);
+  vec3 Jo2 = dFdy(od);
+  vec3 Js1 = dFdx(s);
+  vec3 Js2 = dFdy(s);
+  float gS = lensGain(Js1, Js2, dFdx(nom), dFdy(nom), 6.0);
+  float rw = max(0.012, 1.1 * fwidth(rho)); // kenar parıltısı ekranda ≥ ~1 px
   if (rho > uOuter) discard;
   vec3 col;
   if (rho < 1.0) {
-    col = otherSky(od, sgO);
+    col = otherSky(od, Jo1, Jo2);
     float edge = smoothstep(0.82, 1.0, rho);
-    col = mix(col, ourSky(s, sgS) * 1.3, edge * 0.7);
-    col += vec3(0.7, 0.8, 1.0) * exp(-pow((rho - 0.985) / 0.012, 2.0)) * 0.35;
+    col = mix(col, ourSky(s, Js1, Js2, gS) * 1.3, edge * 0.7);
     col *= 0.85 + 0.15 * smoothstep(1.0, 0.6, rho);
   } else {
-    col = ourSky(s, sgS);
+    col = ourSky(s, Js1, Js2, gS);
   }
+  // küre kenarı: ince, soğuk beyaz parıltı (iki yandan yumuşak)
+  col += vec3(0.62, 0.78, 1.0) * exp(-pow((rho - 1.0) / rw, 2.0)) * 0.9;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -272,7 +277,7 @@ export function createPlanets(root, bhDir, bhFrame, shared) {
     name: 'saturn',
     dir: satDir,
     distance: 3000,
-    angRadiusDeg: 2.4,
+    angRadiusDeg: 4.0,
     kind: 0,
     tilt: [0.38, 0.0, 0.42],
     lightPos: lightFar,
@@ -306,9 +311,9 @@ export function createPlanets(root, bhDir, bhFrame, shared) {
   out.saturn = sat.mesh;
 
   // --- Küresel solucan deliği (Satürn'ün yakınında) ---
-  const wDir = dirFromAzEl(246.5, -3.2);
+  const wDir = dirFromAzEl(236, 3.5);
   const wDist = 2000;
-  const wTheta = THREE.MathUtils.degToRad(1.5);
+  const wTheta = THREE.MathUtils.degToRad(3.0);
   const wOuter = 2.6;
   const wGroup = new THREE.Object3D();
   wGroup.name = 'wormhole';
@@ -323,7 +328,8 @@ export function createPlanets(root, bhDir, bhFrame, shared) {
       uOuter: { value: wOuter },
       uToSky: { value: new THREE.Matrix3().setFromMatrix4(wGroup.matrix) },
       uMilky: shared.uMilky,
-      uStarSigma: shared.uStarSigma,
+      uStarPx: shared.uStarPx,
+      uPixScale: shared.uPixScale,
       uTime: shared.uTime,
     },
     vertexShader: WORM_VERT,
@@ -346,7 +352,7 @@ export function createPlanets(root, bhDir, bhFrame, shared) {
     name: 'miller',
     dir: millerDir,
     distance: 800,
-    angRadiusDeg: 0.75,
+    angRadiusDeg: 1.1,
     kind: 1,
     tilt: [0.2, 0, 0.1],
     lightPos: millerLightPos,

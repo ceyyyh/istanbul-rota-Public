@@ -33,6 +33,9 @@ export const MODULE_SHORT = {
 };
 
 const NS = 'http://www.w3.org/2000/svg';
+/** Büyük harita: etiketler için yatayda geniş kutu / dar ekranda (telefon dikey) yalnızca numaralar için kare kutu */
+const WIDE_BOX = '-212 -128 424 256';
+const SQUARE_BOX = '-128 -128 256 256';
 const DEG = Math.PI / 180;
 const STEP = 360 / MODULE_COUNT;
 
@@ -76,12 +79,13 @@ export class RingMap {
     this.R = R;
     this.r = r;
     this.mid = (R + r) / 2;
-    const vb = big ? 168 : 60;
+    const vb = 60;
     this.svg = el('svg', {
       class: `ui-ringmap${big ? ' big' : ''}`,
-      viewBox: `${-vb} ${-vb} ${vb * 2} ${vb * 2}`,
+      viewBox: big ? WIDE_BOX : `${-vb} ${-vb} ${vb * 2} ${vb * 2}`,
       'aria-hidden': 'true',
     });
+    this._compact = false;
 
     // Göbek ve tellikler (Endurance'ın merkez yapısı)
     const hub = el('g', { class: 'rm-hub' }, this.svg);
@@ -104,15 +108,11 @@ export class RingMap {
       const p = el('path', { d: sectorPath(r, R, a - STEP / 2 + gap / 2, a + STEP / 2 - gap / 2), class: 'rm-seg' }, segG);
       this.segments.push(p);
       if (big) {
-        const [lx, ly] = polar(R + 12, a);
-        const cos = Math.cos(a * DEG);
-        const anchor = Math.abs(cos) < 0.2 ? 'middle' : cos > 0 ? 'start' : 'end';
-        const t = el('text', { x: lx.toFixed(1), y: (ly + 3).toFixed(1), 'text-anchor': anchor, class: 'rm-label' }, this.svg);
+        const t = el('text', { class: 'rm-label' }, this.svg);
         const num = el('tspan', { class: 'rm-num' }, t);
-        num.textContent = String(i + 1).padStart(2, '0') + '  ';
-        const name = el('tspan', {}, t);
+        const name = el('tspan', { class: 'rm-name' }, t);
         name.textContent = MODULE_SHORT[MODULE_IDS[i]];
-        this.labels.push({ text: t, name });
+        this.labels.push({ text: t, num, name, a });
       }
     }
 
@@ -138,6 +138,31 @@ export class RingMap {
     this._cur = -1;
     this._target = null;
     this._locked = new Set();
+    if (big) this._placeLabels();
+  }
+
+  /** Dar ekran kipi: etiketlerde yalnızca modül numarası (adlar arayüzde listelenir). */
+  setCompact(c) {
+    c = !!c;
+    if (!this.big || c === this._compact) return;
+    this._compact = c;
+    this.svg.setAttribute('viewBox', c ? SQUARE_BOX : WIDE_BOX);
+    this.svg.classList.toggle('compact', c);
+    this._placeLabels();
+  }
+
+  _placeLabels() {
+    const R = this.R;
+    this.labels.forEach((l, i) => {
+      const compact = this._compact;
+      const [lx, ly] = polar(R + (compact ? 11 : 12), l.a);
+      const cos = Math.cos(l.a * DEG);
+      const anchor = compact || Math.abs(cos) < 0.2 ? 'middle' : cos > 0 ? 'start' : 'end';
+      l.text.setAttribute('x', lx.toFixed(1));
+      l.text.setAttribute('y', (ly + (compact ? 3.4 : 3)).toFixed(1));
+      l.text.setAttribute('text-anchor', anchor);
+      l.num.textContent = String(i + 1).padStart(2, '0') + (compact ? '' : '  ');
+    });
   }
 
   setCurrent(i) {

@@ -163,8 +163,8 @@ vec3 starField(vec3 d, vec3 J1, vec3 J2, float gain, float seed) {
   vec3 A; vec3 U; vec3 V; vec2 e; float face;
   cubeCoord(d, A, U, V, e, face);
   vec3 c = starLayer(d, J1, J2, G, A, U, V, e, face, 11.0, seed + 1.0, 0.16, 0.5, 5.0, 1.3, 0.0);
-  c += starLayer(d, J1, J2, G, A, U, V, e, face, 27.0, seed + 2.0, 0.26, 0.09, 0.6, 1.0, 0.5);
-  c += starLayer(d, J1, J2, G, A, U, V, e, face, 50.0, seed + 3.0, 0.30, 0.018, 0.11, 1.0, 1.6);
+  c += starLayer(d, J1, J2, G, A, U, V, e, face, 27.0, seed + 2.0, 0.16, 0.09, 0.6, 1.0, 0.6);
+  c += starLayer(d, J1, J2, G, A, U, V, e, face, 50.0, seed + 3.0, 0.17, 0.018, 0.11, 1.0, 1.8);
   return c * gain;
 }
 

@@ -96,13 +96,13 @@ void main() {
 
 const SKY_FRAG = /* glsl */ `
 uniform samplerCube uMilky;
-uniform float uStarSigma;
 varying vec3 vDir;
 ${GLSL_COMMON}
 ${GLSL_STARS}
 void main() {
   vec3 d = normalize(vDir);
-  vec3 c = textureCube(uMilky, d).rgb + starField(d, uStarSigma, 0.0, 1.0);
+  // yıldızlar ekran düzleminde çizilir: yön türevleri (Jacobian) piksel ofsetine çevirir
+  vec3 c = textureCube(uMilky, d).rgb + starField(d, dFdx(d), dFdy(d), 1.0, 0.0);
   // 8 bit çıktıda bantlanmayı önlemek için çok küçük titreşim (dither)
   c += (hash12(gl_FragCoord.xy) - 0.5) * 0.0003;
   gl_FragColor = vec4(max(c, 0.0), 1.0);
@@ -111,11 +111,11 @@ void main() {
 
 /**
  * Gökyüzü küresi (kök grubun çocuğu → halka dönüşüyle birlikte döner).
- * @param shared  { uStarSigma, uMilky } paylaşılan uniform nesneleri
+ * @param shared  { uStarPx, uPixScale, uMilky } paylaşılan uniform nesneleri
  */
 export function createSky(shared) {
   const mat = new THREE.ShaderMaterial({
-    uniforms: { uMilky: shared.uMilky, uStarSigma: shared.uStarSigma },
+    uniforms: { uMilky: shared.uMilky, uStarPx: shared.uStarPx, uPixScale: shared.uPixScale },
     vertexShader: SKY_VERT,
     fragmentShader: SKY_FRAG,
     side: THREE.BackSide,

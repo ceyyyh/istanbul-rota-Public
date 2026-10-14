@@ -20,8 +20,8 @@ import { GLSL_COMMON, GLSL_STARS } from './glsl.js';
 export const BH = {
   camDist: 32, // kameranın kara deliğe uzaklığı → açısal boyut
   sphere: 13.5, // ışın integrasyon küresi (billboard yarıçapı bunun açısal karşılığı)
-  diskIn: 3.0, // yığılma diskinin iç kenarı (ISCO)
-  diskOut: 11.0, // dış kenar
+  diskIn: 2.1, // yığılma diskinin iç kenarı (filmdeki hızlı dönen delik gibi foton küresine yakın → hâle gölgeye yapışık)
+  diskOut: 10.5, // dış kenar
   tiltDeg: 9.5, // kameranın disk düzlemine göre yüksekliği (neredeyse kenardan)
 };
 
@@ -44,10 +44,10 @@ uniform float uCosE;
 uniform float uDiskIn;
 uniform float uDiskOut;
 uniform float uDiskGain;
+uniform float uRingGain;
 uniform int uSteps;
 uniform mat3 uToSky;
 uniform samplerCube uMilky;
-uniform float uStarSigma;
 varying vec2 vLocal;
 ${GLSL_COMMON}
 ${GLSL_STARS}
@@ -82,9 +82,10 @@ vec4 diskSample(vec3 hp, float r, vec3 rayDir) {
   float dop = 1.0 + 0.22 * beta * dot(orb, -rayDir);
   float streak = 0.45 + 1.1 * n * n;
   float bright = uDiskGain * prof * dop * streak;
-  vec3 hot = vec3(1.0, 0.86, 0.66);
-  vec3 warm = vec3(1.0, 0.56, 0.24);
-  vec3 col = mix(warm, hot, clamp(prof * 1.25 + 0.15 * (n - 0.5), 0.0, 1.0));
+  // iç kenar beyaz-sıcak, dışa doğru turuncu
+  vec3 hot = vec3(1.0, 0.92, 0.78);
+  vec3 warm = vec3(1.0, 0.50, 0.19);
+  vec3 col = mix(warm, hot, smoothstep(0.08, 0.75, prof * 1.5 + 0.2 * (n - 0.5)));
   float a = edge * clamp(0.55 + 0.9 * (n - 0.35) + 0.5 * (1.0 - x), 0.0, 1.0);
   return vec4(col * bright, a);
 }
@@ -96,65 +97,74 @@ void main() {
   vec3 cam = uRcam * vec3(0.0, uSinE, uCosE);
   float tca = -dot(cam, d);
   float b2 = dot(cam, cam) - tca * tca;
-  if (b2 > uRb * uRb) discard;
+  bool inside = b2 <= uRb * uRb;   // integrasyon küresinin dışı: ışın yürütme yok (köşeler ucuz)
   float b = sqrt(max(b2, 0.0));
-
-  // integrasyon küresine giriş noktası (dışarıda düz çizgi)
-  vec3 pos = cam + d * (tca - sqrt(uRb * uRb - b2));
-  vec3 vel = d;
-  vec3 hv = cross(pos, vel);
-  float h2 = dot(hv, hv);
+  float fwb = length(vec2(dFdx(b), dFdy(b)));
 
   vec3 col = vec3(0.0);
   float alpha = 0.0;
   float rmin = 1e9;
   bool captured = false;
-  bool escaped = false;
-  for (int i = 0; i < MAX_STEPS; i++) {
-    if (i >= uSteps) break;
-    float r2 = dot(pos, pos);
-    float r = sqrt(r2);
-    rmin = min(rmin, r);
-    float ds = clamp(0.075 * r, 0.04, 1.6);
-    float dt = ds / length(vel);
-    vel += (-1.5 * h2 / (r2 * r2 * r)) * pos * dt;
-    vec3 npos = pos + vel * dt;
-    // disk düzlemi (y = 0) geçişi
-    if (pos.y * npos.y < 0.0) {
-      vec3 hp = mix(pos, npos, pos.y / (pos.y - npos.y));
-      float rh = length(hp.xz);
-      if (rh > uDiskIn && rh < uDiskOut) {
-        vec4 dc = diskSample(hp, rh, normalize(vel));
-        col += (1.0 - alpha) * dc.a * dc.rgb;
-        alpha += (1.0 - alpha) * dc.a;
-        if (alpha > 0.985) break;
+  vec3 vel = d;
+  if (inside) {
+    // integrasyon küresine giriş noktası (dışarıda düz çizgi)
+    vec3 pos = cam + d * (tca - sqrt(max(uRb * uRb - b2, 0.0)));
+    vec3 hv = cross(pos, vel);
+    float h2 = dot(hv, hv);
+    bool escaped = false;
+    for (int i = 0; i < MAX_STEPS; i++) {
+      if (i >= uSteps) break;
+      float r2 = dot(pos, pos);
+      float r = sqrt(r2);
+      rmin = min(rmin, r);
+      float ds = clamp(0.075 * r, 0.04, 1.6);
+      float dt = ds / length(vel);
+      vel += (-1.5 * h2 / (r2 * r2 * r)) * pos * dt;
+      vec3 npos = pos + vel * dt;
+      // disk düzlemi (y = 0) geçişi
+      if (pos.y * npos.y < 0.0) {
+        vec3 hp = mix(pos, npos, pos.y / (pos.y - npos.y));
+        float rh = length(hp.xz);
+        if (rh > uDiskIn && rh < uDiskOut) {
+          vec4 dc = diskSample(hp, rh, normalize(vel));
+          col += (1.0 - alpha) * dc.a * dc.rgb;
+          alpha += (1.0 - alpha) * dc.a;
+          if (alpha > 0.985) break;
+        }
       }
+      pos = npos;
+      float nr2 = dot(pos, pos);
+      if (nr2 < 1.0) { captured = true; break; }
+      if (nr2 > uRb * uRb && dot(pos, vel) > 0.0) { escaped = true; break; }
     }
-    pos = npos;
-    float nr2 = dot(pos, pos);
-    if (nr2 < 1.0) { captured = true; break; }
-    if (nr2 > uRb * uRb && dot(pos, vel) > 0.0) { escaped = true; break; }
+    if (!escaped && rmin < 3.0) captured = true;
   }
-  if (!escaped && rmin < 3.0) captured = true;
 
-  // Kaçan ışının yönü → gökyüzü (türevler dallanma dışında hesaplanmalı)
+  // Kaçan ışının yönü → gökyüzü. Türevler (Jacobian) dallanmanın DIŞINDA hesaplanır.
   vec3 vd = normalize(vel);
   // kenara doğru sapmayı yumuşakça sıfırla (gökyüzüyle dikişsiz birleşim)
   float w = smoothstep(uRb, uRb * 0.72, b);
   vd = normalize(mix(d, vd, w));
   vec3 bl = vec3(vd.x, vd.y * uCosE - vd.z * uSinE, vd.y * uSinE + vd.z * uCosE);
-  vec3 sky = uToSky * bl;
-  // ön süzme: mercek sıkıştırdığı yerde yıldızları genişlet ve sönükleştir (kıpırtı olmasın)
-  float fw = length(fwidth(sky));
-  float sg = max(uStarSigma, fw * 0.6);
+  vec3 sky = uToSky * bl;       // merceklenmiş yön
+  vec3 nom = uToSky * dl;       // merceksiz (piksel yönü)
+  vec3 J1 = dFdx(sky);
+  vec3 J2 = dFdy(sky);
+  // büyütme: merceksiz piksel alanı / merceklenmiş piksel alanı (yıldız parlaklığı bununla ölçeklenir)
+  float gain = lensGain(J1, J2, dFdx(nom), dFdy(nom), 7.0);
+
+  if (!inside) discard;
+
   vec3 bg = vec3(0.0);
   if (!captured && alpha < 0.985) {
-    float gain = (uStarSigma * uStarSigma) / (sg * sg);
-    bg = textureCube(uMilky, sky).rgb + starField(sky, sg, 0.0, gain);
+    bg = textureCube(uMilky, sky).rgb + starField(sky, J1, J2, gain, 0.0);
   }
-  // foton halkası: kritik yörüngeye yaklaşan ışınlara ince bir parıltı
-  float ring = exp(-pow((rmin - 1.52) * 9.0, 2.0)) * (captured ? 0.0 : 1.0);
-  col += (1.0 - alpha) * ring * vec3(1.0, 0.8, 0.55) * 0.9;
+  // foton halkası: kritik çarpma parametresinde (b_c = 3√3/2 ≈ 2.598) ince parıltı. Analitik → pürüzsüz;
+  // genişliği ekran pikseline bağlı (her görüş alanında ≥ ~1.2 px) ki titreşmesin.
+  float bc = 2.598;
+  float rw = max(0.03, 1.1 * fwb);
+  float ring = exp(-pow((b - bc - 0.4 * rw) / rw, 2.0));
+  col += (1.0 - alpha) * ring * vec3(1.0, 0.86, 0.66) * uRingGain;
   gl_FragColor = vec4(col + (1.0 - alpha) * bg, 1.0);
 }
 `;
@@ -162,7 +172,7 @@ void main() {
 /**
  * Gargantua billboard'unu oluşturur.
  * @param {THREE.Vector3} dirLocal  kök yerel uzayında kara deliğe birim yön
- * @param shared {uTime, uStarSigma, uMilky}
+ * @param shared {uTime, uStarPx, uPixScale, uMilky}
  * @returns {{ group: THREE.Object3D, material: THREE.ShaderMaterial, angularRadius: number }}
  */
 export function createGargantua(dirLocal, shared, { distance = 1000, steps = 120 } = {}) {
@@ -180,7 +190,8 @@ export function createGargantua(dirLocal, shared, { distance = 1000, steps = 120
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uTime: shared.uTime,
-      uStarSigma: shared.uStarSigma,
+      uStarPx: shared.uStarPx,
+      uPixScale: shared.uPixScale,
       uMilky: shared.uMilky,
       uDq: { value: distance },
       uRcam: { value: BH.camDist },
@@ -189,7 +200,8 @@ export function createGargantua(dirLocal, shared, { distance = 1000, steps = 120
       uCosE: { value: Math.cos(tilt) },
       uDiskIn: { value: BH.diskIn },
       uDiskOut: { value: BH.diskOut },
-      uDiskGain: { value: 3.2 },
+      uDiskGain: { value: 2.7 },
+      uRingGain: { value: 1.1 },
       uSteps: { value: steps },
       uToSky: { value: toSky },
     },

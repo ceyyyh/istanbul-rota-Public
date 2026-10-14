@@ -41,7 +41,7 @@ const SUN_DISTANCE = 80;
 const SUN_COLOR = 0xffd9ae;
 const SUN_INTENSITY = 6.0;
 /** Gölgesiz kalitede, kamera geminin içindeyken güneşin çarpanı (duvarlardan sızmayı önler). */
-const SUN_INSIDE_NOSHADOW = 0.04;
+const SUN_INSIDE_NOSHADOW = 0.0;
 const HEMI_OUTSIDE = 0.45;
 const HEMI_INSIDE = 0.12;
 
@@ -70,7 +70,8 @@ export class SpaceEnvironment {
     // Paylaşılan uniform'lar (tüm uzay shader'ları aynı nesneleri görür)
     this.uniforms = {
       uTime: { value: 0 },
-      uStarSigma: { value: 0.002 },
+      uStarPx: { value: 0.8 }, // yıldız Gauss yarıçapı (cihaz pikseli)
+      uPixScale: { value: 400 }, // 1 / merkezdeki piksel açısı (radyan)
       uMilky: { value: null },
     };
 
@@ -103,8 +104,9 @@ export class SpaceEnvironment {
     sun.name = 'gargantua-sun';
     sun.castShadow = true; // her zaman açık: değiştirmek tüm shader'ları yeniden derletir
     const sc = sun.shadow.camera;
-    // Işık Y etrafında döner, yüksekliği sabit → halka (yarıçap ~36 m, y ∈ [-2, 7]) için sabit sınırlar
-    const ext = RING_RADIUS + MODULE_WIDTH / 2 + WALL_THICKNESS + 6; // ≈ 42 m (dış donanım payı)
+    // Işık Y etrafında döner, yüksekliği sabit → halka (yarıçap ~36 m, y ∈ [-2, 7]) için sabit sınırlar.
+    // Yatayda ±45 m (halka + dış donanım payı); dikeyde ışık uzayında sıkı sınır → doku yoğunluğu ~3 kat artar.
+    const ext = Math.max(45, RING_RADIUS + MODULE_WIDTH / 2 + WALL_THICKNESS + 6);
     const se = Math.sin(THREE.MathUtils.degToRad(SUN_EL));
     const ce = Math.cos(THREE.MathUtils.degToRad(SUN_EL));
     const yTop = MODULE_HEIGHT + 4;
@@ -197,13 +199,14 @@ export class SpaceEnvironment {
     this.sunLight.intensity = SUN_INTENSITY * sunK;
     this.hemiLight.intensity = THREE.MathUtils.lerp(HEMI_OUTSIDE, HEMI_INSIDE, this._insideK);
 
-    // Shader zamanı ve piksel oranından bağımsız yıldız boyutu (CSS pikseli → radyan)
+    // Shader zamanı + yıldızların ekran boyutu (cihaz pikselinde; gölgelendiriciler yıldızları görüntü
+    // düzleminde çizer, bkz. glsl.js). Piksel oranı düşükken bile yıldız ≥ ~0.7 px kalır (titreme olmasın).
     this.uniforms.uTime.value = t;
     const renderer = this.ctx.renderer;
-    const h = renderer.domElement.clientHeight || window.innerHeight || 540;
+    const hDev = renderer.domElement.height || 540;
     const pr = renderer.getPixelRatio();
     const fov = THREE.MathUtils.degToRad(this.ctx.engine.camera.fov);
-    const sigmaCss = Math.max(0.72, 0.7 / pr);
-    this.uniforms.uStarSigma.value = (sigmaCss * 2 * Math.tan(fov / 2)) / h;
+    this.uniforms.uPixScale.value = hDev / (2 * Math.tan(fov / 2));
+    this.uniforms.uStarPx.value = Math.max(0.72 * pr, 0.7);
   }
 }

@@ -3,7 +3,7 @@ import { buildShell } from '../structure/shell.js';
 import { addBox, addCylinder, addMesh, addSphere } from '../utils.js';
 import { getTechMaterials, canvasTex, rng } from './tech/materials.js';
 import { addLabel } from './tech/labels.js';
-import { addRod, addBench, addShelf, addCableBundle, addScreen, drawNoPower, screenOn, nearChecker, finalizeDynamic, addVent } from './tech/kit.js';
+import { addRod, addBench, addShelf, addCableBundle, addScreen, drawNoPower, screenOn, nearChecker, finalizeDynamic, addVent, addOpenRack, applyMetricUVs } from './tech/kit.js';
 
 /**
  * Bilim Laboratuvarı (modül 4).
@@ -182,7 +182,6 @@ export default {
       addBox(g, { size: [0.12, 0.02, 0.02], pos: [x, 1.82, -3.105], material: M.metal });
     }
     addBox(g, { size: [5.4, 0.025, 0.08], pos: [-2.1, 1.74, -3.2], material: M.lightPanel });
-    addLabel(g, 'BİLİM LABORATUVARI  L-4', { pos: [-2.1, 2.42, -3.488], height: 0.09, style: 'stencil' });
     addCableBundle(g, [-4.9, 1.72, -3.4], [-0.9, 1.72, -3.4], { sag: 0.06, count: 2, spread: 0.02, radius: 0.008 });
 
     // Mikroskop (+Z'ye, oyuncuya doğru bakar) — etkileşimli
@@ -386,15 +385,16 @@ export default {
       const tex = canvasTex(1024, 512, drawWhiteboard);
       const wbMat = new THREE.MeshStandardMaterial({ map: tex, color: tex ? 0xffffff : 0xe9eae4, roughness: 0.35, metalness: 0 });
       wbMat.name = 'lab.whiteboard';
-      addBox(g, { size: [2.92, 1.42, 0.04], pos: [bx, 1.65, 3.48], material: M.aluminium });
-      const board = addMesh(g, new THREE.PlaneGeometry(2.8, 1.3), wbMat, { pos: [bx, 1.65, 3.455], rot: [0, Math.PI, 0], name: 'beyaz-tahta' });
-      addBox(g, { size: [2.4, 0.03, 0.08], pos: [bx, 0.93, 3.43], material: M.aluminium });
+      addBox(g, { size: [2.92, 1.42, 0.04], pos: [bx, 1.65, 3.4], material: M.aluminium });
+      const board = addMesh(g, new THREE.PlaneGeometry(2.8, 1.3), wbMat, { pos: [bx, 1.65, 3.378], rot: [0, Math.PI, 0], name: 'beyaz-tahta' });
+      addBox(g, { size: [2.4, 0.03, 0.08], pos: [bx, 0.97, 3.35], material: M.aluminium });
       for (const [x, mat] of [
         [-0.5, M.fabricBlue],
         [-0.3, M.accentOrange],
         [0.2, M.plasticDark],
-      ]) addCylinder(g, { radius: 0.01, height: 0.13, segments: 6, pos: [bx + x, 0.955, 3.42], rot: [0, 0, Math.PI / 2], material: mat });
-      addBox(g, { size: [0.14, 0.05, 0.06], pos: [bx + 0.6, 0.97, 3.42], material: M.plasticDark });
+      ]) addCylinder(g, { radius: 0.01, height: 0.13, segments: 6, pos: [bx + x, 0.995, 3.34], rot: [0, 0, Math.PI / 2], material: mat });
+      addBox(g, { size: [0.14, 0.05, 0.06], pos: [bx + 0.6, 1.01, 3.34], material: M.plasticDark });
+      for (const dx of [-1.25, 0.25]) addBox(g, { size: [0.06, 0.06, 0.1], pos: [bx + dx, 2.2, 3.44], material: M.metalDark });
       mctx.interactions.add(board, {
         id: 'lab.whiteboard',
         prompt: 'Tahtadaki notları oku',
@@ -479,18 +479,18 @@ export default {
     // Kimyasal rafı + laboratuvar önlüğü
     {
       const sx = 4.0;
-      addBox(g, { size: [1.3, 1.9, 0.42], pos: [sx, 0.95, 3.27], material: M.metalDark, collide: true });
-      for (let i = 0; i < 4; i++) {
-        const y = 0.3 + i * 0.45;
-        addBox(g, { size: [1.24, 0.025, 0.38], pos: [sx, y, 3.25], material: M.metal });
+      const ys = addOpenRack(g, M, { x: sx, z: 3.25, w: 1.3, h: 1.95, d: 0.42, shelves: 4, side: -1 });
+      ys.forEach((y, i) => {
         for (let k = 0; k < 6; k++) {
           const x = sx - 0.5 + k * 0.2;
           const tall = 0.12 + ((k * 7 + i * 3) % 5) * 0.03;
           const mat = [M.plasticWhite, T.pipeBlue, M.accentOrange, M.glassFrosted, M.plasticDark][(k + i) % 5];
-          addCylinder(g, { radius: 0.04, height: tall, segments: 8, pos: [x, y + 0.012 + tall / 2, 3.2], material: mat });
+          if (i === 3 && tall > 0.2) continue;
+          addCylinder(g, { radius: 0.04, height: tall, segments: 8, pos: [x, y + tall / 2, 3.2], material: mat });
         }
-      }
-      addLabel(g, 'KİMYASAL — KAPAĞI KAPALI TUT', { pos: [sx, 1.98, 3.055], rot: [0, Math.PI, 0], height: 0.04, style: 'warn' });
+      });
+      addBox(g, { size: [1.0, 0.09, 0.015], pos: [sx, 2.02, 3.05], material: M.metalDark });
+      addLabel(g, 'KİMYASAL — KAPAĞI KAPALI TUT', { pos: [sx, 2.02, 3.041], rot: [0, Math.PI, 0], height: 0.045, style: 'warn' });
       // askıda önlük
       addCylinder(g, { radius: 0.012, height: 0.08, segments: 6, pos: [3.05, 1.85, 3.46], rot: [Math.PI / 2, 0, 0], material: M.metal });
       addBox(g, { size: [0.42, 0.95, 0.06], pos: [3.05, 1.35, 3.42], material: M.padding });
@@ -500,7 +500,9 @@ export default {
     addVent(g, M, { pos: [-0.9, 2.65, 3.49], rot: [0, Math.PI, 0], w: 0.7, h: 0.35 });
     addShelf(g, M, { x: 0.4, y: 2.2, z: 3.35, w: 1.3, d: 0.3, side: -1 });
     for (let i = 0; i < 5; i++) addBox(g, { size: [0.18, 0.22, 0.24], pos: [-0.1 + i * 0.25, 2.33, 3.35], material: i % 2 ? M.plasticWhite : M.fabricBlue });
-    addLabel(g, 'GÖZ DUŞU', { pos: [1.35, 1.5, 3.495], rot: [0, Math.PI, 0], height: 0.05, style: 'blue' });
+    addLabel(g, 'GÖZ DUŞU', { pos: [1.42, 1.5, 3.41], rot: [0, Math.PI, 0], height: 0.05, style: 'blue' });
+
+    applyMetricUVs(g, M);
 
     // ------------------------------------------------------------------
     // Güncelleme: santrifüj ve spektrometre (sadece yakındayken)

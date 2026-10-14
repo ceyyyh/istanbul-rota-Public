@@ -11,7 +11,6 @@ import {
   addGauge,
   addHazard,
   addCableBundle,
-  addHandrail,
   addVent,
   addExtinguisher,
   addBlocker,
@@ -21,6 +20,7 @@ import {
   nearChecker,
   finalizeDynamic,
   accusative,
+  applyMetricUVs,
 } from './tech/kit.js';
 import { FusePuzzle, FUSE_ORDER, FUSE_NAMES } from './tech/fusePuzzle.js';
 import { createSparks } from './tech/sparks.js';
@@ -334,14 +334,14 @@ export default {
       });
       const noteMat = new THREE.MeshStandardMaterial({ map: tex, color: tex ? 0xffffff : 0xe9e2cc, roughness: 0.9 });
       noteMat.name = 'engine.note';
-      addMesh(g, new THREE.PlaneGeometry(0.2, 0.25), noteMat, { pos: [0.05, 1.3, 3.485], rot: [0, Math.PI, 0.06] });
-      addBox(g, { size: [0.09, 0.025, 0.002], pos: [0.05, 1.425, 3.483], rot: [0, 0, 0.3], material: T.tape });
+      addMesh(g, new THREE.PlaneGeometry(0.2, 0.25), noteMat, { pos: [0.25, 1.52, 3.465], rot: [0, Math.PI, 0.06] });
+      addBox(g, { size: [0.09, 0.025, 0.002], pos: [0.25, 1.645, 3.463], rot: [0, 0, 0.3], material: T.tape });
     }
 
     // ------------------------------------------------------------------
     // Soğutucu ana vanası (iç duvar, -X tarafı) — etkileşimli
     // ------------------------------------------------------------------
-    const VX = -2.9;
+    const VX = -3.2;
     addPipe(g, [[VX, 0.0, 3.3], [VX, 3.2, 3.3]], { radius: 0.07, material: T.pipeBlue, flanges: false });
     addPipe(g, [[VX, 0.35, 3.3], [-4.15, 0.35, 3.3], [-4.15, 0.0, 3.3]], { radius: 0.06, material: T.pipeBlue, flanges: false });
     addMesh(g, new THREE.SphereGeometry(0.075, 10, 6), T.pipeBlue, { pos: [VX, 0.35, 3.3] });
@@ -352,7 +352,7 @@ export default {
     wheel.position.set(VX, 1.2, 3.05);
     wheel.rotation.y = Math.PI;
     g.add(wheel);
-    addLabel(g, 'SOĞUTUCU ANA VANA  V-12', { pos: [VX + 0.55, 1.5, 3.495], rot: [0, Math.PI, 0], height: 0.045, style: 'blue' });
+    addLabel(g, 'SOĞUTUCU ANA VANA  V-12', { pos: [VX - 0.62, 1.6, 3.465], rot: [0, Math.PI, 0], height: 0.045, style: 'blue' });
     const valveGauge = addGauge(g, { pos: [VX - 0.32, 1.25, 3.4], rot: [0, Math.PI, 0], radius: 0.1, value: 0.15, dynamic: true });
     addPipe(g, [[VX - 0.32, 1.25, 3.42], [VX - 0.32, 1.25, 3.48]], { radius: 0.015, material: M.metal, flanges: false });
     let valveSpin = 0;
@@ -376,7 +376,6 @@ export default {
     for (const sx of [-1, 1]) addBox(g, { size: [0.03, 0.18, 0.03], pos: [-4.75 + sx * 0.06, 1.1, 2.91], material: M.metal });
     addLabel(g, 'ALET DOLABI', { pos: [-4.75, 1.8, 2.92], rot: [0, Math.PI, 0], height: 0.06, style: 'white' });
     addExtinguisher(g, M, { x: -1.6, z: 3.42, side: -1 });
-    addHandrail(g, M, { x0: -4.1, x1: -3.3, y: 1.15, z: 3.5, side: -1 });
     addVent(g, M, { pos: [-1.6, 2.6, 3.49], rot: [0, Math.PI, 0], w: 0.6, h: 0.35 });
     // tavanda iç tarafta borular (askılı)
     for (const [z, mat, r] of [
@@ -390,12 +389,8 @@ export default {
       addBox(g, { size: [0.03, 0.2, 0.8], pos: [x, 3.05, 2.05], material: M.metalDark });
     }
     addLabel(g, 'O₂ HATTI', { pos: [-1.2, 2.95, 1.635], rot: [0, Math.PI, 0], height: 0.045, style: 'stencil' });
-    // tavanda kablo tavası (dış taraf)
-    addBox(g, { size: [10.9, 0.04, 0.4], pos: [0, 3.0, -1.25], material: M.metalDark });
-    for (let i = 0; i < 6; i++) addCableBundle(g, [-5.2 + i * 1.8, 2.99, -1.3], [-3.6 + i * 1.8, 2.99, -1.3], { sag: 0.12, count: 2, spread: 0.06 });
-    // modül adı
-    addLabel(g, 'MOTOR VE ENERJİ  M-6', { pos: [5.49, 2.6, -1.8], rot: [0, -Math.PI / 2, 0], height: 0.11, style: 'white' });
-    addLabel(g, 'MOTOR VE ENERJİ  M-6', { pos: [-5.49, 2.6, 1.8], rot: [0, Math.PI / 2, 0], height: 0.11, style: 'white' });
+    // tavan kirişinden sarkan kablolar (dış taraf)
+    for (let i = 0; i < 6; i++) addCableBundle(g, [-5.2 + i * 1.8, 3.08, -1.78], [-3.6 + i * 1.8, 3.08, -1.78], { sag: 0.12, count: 2, spread: 0.05 });
 
     // ------------------------------------------------------------------
     // Reaktör durum konsolu (enerji gerekir)
@@ -761,6 +756,7 @@ export default {
       wasNear = true;
     });
 
+    applyMetricUVs(g, M);
     // Testler / diğer sistemler için küçük bir kapı (salt okunur kullanım önerilir)
     mctx.group.userData.fusePuzzle = puzzle;
   },

@@ -859,3 +859,117 @@ export function eyeDistance(mctx, local) {
   const p = mctx.playerLocal();
   return Math.hypot(p.x - local[0], 1.65 - local[1], p.z - local[2]);
 }
+
+// ---------------------------------------------------------------------------
+// Yerleşim ve mobilya yardımcıları (quarters / medical / comms / observation)
+// ---------------------------------------------------------------------------
+/** Konumlandırılmış boş grup (yerel mobilya kökü). rotY: 0 → ön yüz +Z, Math.PI → ön yüz -Z. */
+export function place(parent, pos = [0, 0, 0], rotY = 0, name) {
+  const g = new THREE.Group();
+  g.position.set(pos[0], pos[1] ?? 0, pos[2]);
+  g.rotation.y = rotY;
+  if (name) g.name = name;
+  parent.add(g);
+  return g;
+}
+
+/** Kitap geometrisi (köşe renkli kutu). Sırt +Z yüzünde. */
+export function bookGeometry(w, h, d, color) {
+  return colorize(new THREE.BoxGeometry(w, h, d), color);
+}
+
+export const BOOK_COLORS = [0x7a2e24, 0x2f4a63, 0x3d5a3a, 0x8a6a2a, 0x4a3a5a, 0x6b6257, 0xa0522d, 0x23323f, 0x7b5434, 0x58634a, 0x9a3b2c, 0x394a5d];
+
+/** Dönen büro koltuğu. Oturan kişi +Z'ye bakar. */
+export function addChair(parent, { pos, rotY = 0, M, color = 0x2f3b4c, tilt = 0 }) {
+  const g = place(parent, pos, rotY);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.3;
+    addRod(g, [0, 0.1, 0], [Math.cos(a) * 0.27, 0.045, Math.sin(a) * 0.27], { radius: 0.014, material: M.metalDark, segments: 6 });
+    vCyl(g, { radius: 0.025, height: 0.03, segments: 8, color: 0x111111, pos: [Math.cos(a) * 0.27, 0.02, Math.sin(a) * 0.27] });
+  }
+  addCylinder(g, { radius: 0.028, height: 0.3, segments: 8, pos: [0, 0.25, 0], material: M.metal });
+  vBox(g, { size: [0.46, 0.07, 0.44], color, matte: true, pos: [0, 0.47, 0] });
+  const back = place(g, [0, 0.5, -0.22]);
+  back.rotation.x = -0.14 + tilt;
+  vBox(back, { size: [0.44, 0.46, 0.06], color, matte: true, pos: [0, 0.3, 0] });
+  addBox(back, { size: [0.04, 0.2, 0.04], pos: [0, 0.05, 0.02], material: M.metalDark });
+  for (const sx of [-1, 1]) addBox(g, { size: [0.04, 0.03, 0.26], pos: [sx * 0.26, 0.66, -0.02], material: M.plasticDark });
+  for (const sx of [-1, 1]) addBox(g, { size: [0.03, 0.16, 0.03], pos: [sx * 0.26, 0.58, 0.04], material: M.plasticDark });
+  return g;
+}
+
+/** Çalışma masası (yan çekmeceli). Ön yüz +Z (oturan kişi +Z tarafında). */
+export function addDesk(parent, { pos, rotY = 0, w = 1.6, d = 0.7, h = 0.76, M, drawers = true, topMaterial }) {
+  const C = crewMaterials();
+  const g = place(parent, pos, rotY);
+  addBox(g, { size: [w, 0.04, d], pos: [0, h - 0.02, 0], material: topMaterial ?? M.panelLight });
+  addBox(g, { size: [w + 0.01, 0.012, 0.012], pos: [0, h - 0.045, d / 2], material: M.rubber });
+  addBox(g, { size: [0.04, h - 0.04, d - 0.04], pos: [-w / 2 + 0.02, (h - 0.04) / 2, 0], material: M.panelMid });
+  addBox(g, { size: [w - 0.04, h * 0.55, 0.02], pos: [0, h * 0.72 - 0.02, -d / 2 + 0.03], material: M.panelMid });
+  if (drawers) {
+    const dw = 0.44;
+    addBox(g, { size: [dw, h - 0.04, d - 0.04], pos: [w / 2 - dw / 2 - 0.02, (h - 0.04) / 2, 0], material: M.panelMid });
+    for (let i = 0; i < 3; i++) {
+      const y = 0.15 + i * 0.2;
+      addBox(g, { size: [dw - 0.04, 0.17, 0.016], pos: [w / 2 - dw / 2 - 0.02, y + 0.02, d / 2 - 0.01], material: M.panelLight });
+      addBox(g, { size: [0.14, 0.014, 0.02], pos: [w / 2 - dw / 2 - 0.02, y + 0.08, d / 2 + 0.006], material: M.metalDark });
+    }
+  } else {
+    addBox(g, { size: [0.04, h - 0.04, d - 0.04], pos: [w / 2 - 0.02, (h - 0.04) / 2, 0], material: M.panelMid });
+  }
+  vBox(g, { size: [w, 0.03, 0.04], color: 0x222426, pos: [0, 0.03, d / 2 - 0.1] });
+  void C;
+  return g;
+}
+
+/** Sunucu / ekipman rafı (ön yüz +Z). LED'ler paylaşılan göstergelerle (güç moduna bağlı). */
+export function addRack(parent, { pos, rotY = 0, w = 0.7, h = 2.0, d = 0.55, M, seed = 5, units = 8, text }) {
+  const C = crewMaterials();
+  const r = rng(seed);
+  const g = place(parent, pos, rotY);
+  addBox(g, { size: [w, h, d - 0.04], pos: [0, h / 2, -0.02], material: M.panelDark });
+  const uh = (h - 0.3) / units;
+  for (let k = 0; k < units; k++) {
+    const y = 0.15 + uh * (k + 0.5);
+    addBox(g, { size: [w - 0.06, uh - 0.015, 0.02], pos: [0, y, d / 2 - 0.03], material: r() > 0.5 ? C.console : M.metalDark });
+    vBox(g, { size: [w * 0.34, uh * 0.4, 0.008], color: 0x121416, pos: [-w * 0.2, y, d / 2 - 0.016] });
+    const n = 3 + Math.floor(r() * 5);
+    for (let j = 0; j < n; j++) addBox(g, { size: [0.011, 0.011, 0.006], pos: [w * 0.05 + j * 0.026, y + uh * 0.18, d / 2 - 0.018], material: r() > 0.7 ? C.indAmber : C.indGreen });
+    addBox(g, { size: [0.016, uh * 0.5, 0.02], pos: [w * 0.4, y, d / 2 - 0.012], material: M.metal });
+  }
+  if (text) label(g, text, { pos: [0, h - 0.07, d / 2 - 0.018], height: 0.04, color: '#e8e2d0' });
+  return g;
+}
+
+/**
+ * Yanıp sönen gösterge malzemesi (modüle özel; enerji yokken sönük). Oyuncu yakınken `update` ile sürülür.
+ * Dönen: { material, update(t, powered) }
+ */
+export function createBlinker(color, { period = 1.2, duty = 0.5, base = 1.6, phase = 0 } = {}) {
+  const material = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.4, emissive: color, emissiveIntensity: 0 });
+  material.name = 'crewBlinker';
+  return {
+    material,
+    update(t, powered) {
+      const on = powered && (((t + phase) % period) / period < duty);
+      material.emissiveIntensity = on ? base : powered ? base * 0.08 : 0;
+    },
+  };
+}
+
+/** Küçük ekran: kapak açıkken yatan/dikey sıvı torbası vb. için saydam plastik malzeme. */
+let _bag = null;
+export function bagMaterial() {
+  if (!_bag) {
+    _bag = new THREE.MeshStandardMaterial({ color: 0xdbe9ee, roughness: 0.2, metalness: 0, transparent: true, opacity: 0.55, depthWrite: false });
+    _bag.name = 'crewBag';
+  }
+  return _bag;
+}
+
+/** İki nokta arasında esnek (damlayan) hortum — yerel noktalar. */
+export function addTube(parent, a, b, { sag = 0.15, radius = 0.006, material, segments = 14 } = {}) {
+  const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - sag, (a[2] + b[2]) / 2];
+  return addHose(parent, [a, mid, b], { radius, material, segments, radial: 5 });
+}

@@ -60,7 +60,7 @@ function nonIndexed(g) {
  * @param {number} o.seed
  * @returns {{ plant: THREE.BufferGeometry, cob: THREE.BufferGeometry, husk: THREE.BufferGeometry }}
  */
-export function createCornGeometries({ height = 1.7, seed = 3, leaves = 9, cobs = 2, tassel = true } = {}) {
+export function createCornGeometries({ height = 1.7, seed = 3, leaves = 11, cobs = 2, tassel = true } = {}) {
   const r = rng(seed);
   const plantParts = [];
   const stalk = new THREE.CylinderGeometry(0.013, 0.024, height, 5, 3, true);
@@ -75,7 +75,7 @@ export function createCornGeometries({ height = 1.7, seed = 3, leaves = 9, cobs 
     plantParts.push(
       leafGeometry({
         length,
-        width: 0.075 - t * 0.02,
+        width: 0.11 - t * 0.035,
         azimuth: az,
         baseY,
         rise: 0.75 + r() * 0.3 - t * 0.2,
@@ -91,7 +91,7 @@ export function createCornGeometries({ height = 1.7, seed = 3, leaves = 9, cobs 
   for (let i = 0; i < cobs; i++) {
     const y = height * (0.45 + i * 0.13);
     const a = r() * Math.PI * 2;
-    const tilt = 0.45 + r() * 0.2;
+    const tilt = 0.32 + r() * 0.18;
     const cob = new THREE.CylinderGeometry(0.02, 0.03, 0.17, 6, 1);
     cob.translate(0, 0.1, 0);
     // eğim yerel +X'e doğru: önce z ekseninde eğ, sonra azimut
@@ -101,8 +101,8 @@ export function createCornGeometries({ height = 1.7, seed = 3, leaves = 9, cobs 
     const xf = new THREE.Matrix4().multiply(tr).multiply(yaw).multiply(q);
     cob.applyMatrix4(xf);
     cobParts.push(nonIndexed(cob));
-    const husk = new THREE.CylinderGeometry(0.012, 0.036, 0.15, 6, 1, true);
-    husk.translate(0, 0.075, 0);
+    const husk = new THREE.CylinderGeometry(0.03, 0.04, 0.16, 6, 1, true);
+    husk.translate(0, 0.08, 0);
     husk.applyMatrix4(xf);
     huskParts.push(nonIndexed(husk));
   }
@@ -145,9 +145,9 @@ export function buildCornField(materials, positions, { seed = 5, height = 1.7, b
   const v = new THREE.Vector3();
   const s = new THREE.Vector3();
   const c = new THREE.Color();
-  const leafCols = colors?.leaf ?? [0x5d8f2c, 0x689c33, 0x547f27, 0x73a03a, 0x86953a];
-  const cobCols = colors?.cob ?? [0xe6c146, 0xf0cf5a, 0xd9b23c];
-  const huskCols = colors?.husk ?? [0x9fae5a, 0xb4b26a, 0x8fa04e];
+  const leafCols = colors?.leaf ?? [0x4f7f26, 0x5b8b2c, 0x476f22, 0x638f32, 0x7d8a34];
+  const cobCols = colors?.cob ?? [0xd8b040, 0xe2bf4e, 0xc9a237];
+  const huskCols = colors?.husk ?? [0x8fa24e, 0xa3a85e, 0x7f9646];
   positions.forEach((p, i) => {
     e.set((r() - 0.5) * 0.08, p.rot ?? r() * Math.PI * 2, (r() - 0.5) * 0.08);
     q.setFromEuler(e);

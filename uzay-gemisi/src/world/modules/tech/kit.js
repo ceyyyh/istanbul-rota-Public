@@ -344,3 +344,74 @@ export function wrapText(g, text, maxW) {
   if (line) lines.push(line);
   return lines;
 }
+
+/**
+ * Kütüphane malzemeli (ctx.materials) kutu / silindir / düzlem geometrilerinin UV'lerini metreye
+ * göre ölçekler (döşenebilir dokular yüzey boyunca doğru tekrarlansın diye). Kabuk ve kapılar
+ * (Ajan 1) atlanır; etiket atlası, ekranlar ve teknik malzemeler dokunulmaz.
+ * Her build() sonunda bir kez çağrılır. tile: dokunun bir tekrarının metre cinsinden boyu.
+ */
+export function applyMetricUVs(root, M, tile = 1) {
+  const lib = new Set(Object.values(M));
+  const visit = (o) => {
+    if (o !== root && (o.name === 'shell' || o.name === 'door')) return;
+    if (o.isMesh && !o.isInstancedMesh && lib.has(o.material)) {
+      const geo = o.geometry;
+      const p = geo.parameters;
+      const uv = geo.attributes.uv;
+      if (p && uv && !geo.userData.metricUV) {
+        geo.userData.metricUV = true;
+        if (geo.type === 'BoxGeometry' && p.widthSegments === 1 && p.heightSegments === 1 && p.depthSegments === 1) {
+          const dims = [
+            [p.depth, p.height],
+            [p.depth, p.height],
+            [p.width, p.depth],
+            [p.width, p.depth],
+            [p.width, p.height],
+            [p.width, p.height],
+          ];
+          for (let f = 0; f < 6; f++) {
+            for (let k = 0; k < 4; k++) {
+              const i = f * 4 + k;
+              uv.setXY(i, (uv.getX(i) * dims[f][0]) / tile, (uv.getY(i) * dims[f][1]) / tile);
+            }
+          }
+        } else if (geo.type === 'CylinderGeometry') {
+          const r = (p.radiusTop + p.radiusBottom) / 2;
+          const torso = (p.radialSegments + 1) * (p.heightSegments + 1);
+          for (let i = 0; i < uv.count; i++) {
+            if (i < torso) uv.setXY(i, (uv.getX(i) * 2 * Math.PI * r) / tile, (uv.getY(i) * p.height) / tile);
+            else uv.setXY(i, (uv.getX(i) * 2 * r) / tile, (uv.getY(i) * 2 * r) / tile);
+          }
+        } else if (geo.type === 'PlaneGeometry') {
+          for (let i = 0; i < uv.count; i++) uv.setXY(i, (uv.getX(i) * p.width) / tile, (uv.getY(i) * p.height) / tile);
+        }
+        uv.needsUpdate = true;
+      }
+    }
+    for (const c of o.children) visit(c);
+  };
+  visit(root);
+}
+
+/**
+ * Açık raf ünitesi (arka panel + dikmeler + raflar); içerik görünür kalır. Çarpışma kutusu dahil.
+ * Ön yüz `side` yönüne bakar (-1 → -Z, iç duvar rafları; +1 → +Z, dış duvar rafları).
+ * @returns {number[]} raf tablası yükseklikleri
+ */
+export function addOpenRack(parent, M, { x, z, w, h = 2.0, d = 0.45, shelves = 4, side = -1, material, y0 = 0.12 }) {
+  const mat = material || M.metalDark;
+  const back = z - side * (d / 2 - 0.015);
+  addBox(parent, { size: [w, h, 0.03], pos: [x, h / 2, back], material: mat });
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) addBox(parent, { size: [0.04, h, 0.04], pos: [x + sx * (w / 2 - 0.02), h / 2, z + sz * (d / 2 - 0.02)], material: mat });
+  for (const sx of [-1, 1]) addBox(parent, { size: [0.02, h - 0.04, d - 0.06], pos: [x + sx * (w / 2 - 0.02), h / 2, z], material: M.metal });
+  const ys = [];
+  for (let r = 0; r < shelves; r++) {
+    const y = y0 + (r * (h - y0 - 0.1)) / Math.max(1, shelves - 1);
+    addBox(parent, { size: [w - 0.04, 0.025, d - 0.02], pos: [x, y, z], material: M.metal });
+    addBox(parent, { size: [w - 0.04, 0.04, 0.015], pos: [x, y + 0.02, z + side * (d / 2 - 0.01)], material: M.warning });
+    ys.push(y + 0.0125);
+  }
+  addBlocker(parent, { size: [w, Math.min(h, 1.8), d], pos: [x, Math.min(h, 1.8) / 2 + 0.05, z] });
+  return ys;
+}

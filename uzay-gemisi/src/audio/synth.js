@@ -127,7 +127,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 // ------------------------------------------------------------------ efektler
 export const SFX = {
   beep(k, out, t) {
-    tone(k, out, { t, freq: 1046.5, dur: 0.11, gain: 0.16, a: 0.004 });
+    tone(k, out, { t, freq: 1046.5, dur: 0.11, gain: 0.2, a: 0.004 });
     tone(k, out, { t, freq: 2093, dur: 0.06, gain: 0.03, a: 0.004 });
     return 0.15;
   },
@@ -176,11 +176,11 @@ export const SFX = {
   door_locked(k, out, t) {
     for (let i = 0; i < 2; i++) {
       const tt = t + i * 0.17;
-      const o = tone(k, out, { t: tt, type: 'square', freq: 128, dur: 0.12, gain: 0.07, a: 0.004, curve: 'lin' });
+      const o = tone(k, out, { t: tt, type: 'square', freq: 128, dur: 0.12, gain: 0.1, a: 0.004, curve: 'lin' });
       o.o.frequency.setValueAtTime(128, tt);
     }
-    tone(k, out, { t, freq: 392, dur: 0.12, gain: 0.04 });
-    tone(k, out, { t: t + 0.17, freq: 330, dur: 0.18, gain: 0.04 });
+    tone(k, out, { t, freq: 392, dur: 0.12, gain: 0.06 });
+    tone(k, out, { t: t + 0.17, freq: 330, dur: 0.18, gain: 0.06 });
     relay(k, out, t, 0.12, 1800);
     return 0.4;
   },
@@ -222,10 +222,10 @@ export const SFX = {
   alarm(k, out, t) {
     for (let i = 0; i < 2; i++) {
       const tt = t + i * 0.7;
-      const s = tone(k, out, { t: tt, type: 'sawtooth', freq: 660, dur: 0.62, gain: 0.07, a: 0.02, curve: 'lin' });
+      const s = tone(k, out, { t: tt, type: 'sawtooth', freq: 660, dur: 0.62, gain: 0.1, a: 0.02, curve: 'lin' });
       s.o.frequency.setValueAtTime(660, tt);
       s.o.frequency.setValueAtTime(520, tt + 0.31);
-      tone(k, out, { t: tt, freq: 660, dur: 0.6, gain: 0.05, a: 0.02, curve: 'lin' }).o.frequency.setValueAtTime(520, tt + 0.31);
+      tone(k, out, { t: tt, freq: 660, dur: 0.6, gain: 0.07, a: 0.02, curve: 'lin' }).o.frequency.setValueAtTime(520, tt + 0.31);
     }
     return 1.5;
   },
@@ -252,15 +252,15 @@ export const SFX = {
   },
 
   error(k, out, t) {
-    tone(k, out, { t, type: 'square', freq: 240, dur: 0.12, gain: 0.06, curve: 'lin' });
-    tone(k, out, { t: t + 0.14, type: 'square', freq: 180, dur: 0.2, gain: 0.06, curve: 'lin' });
+    tone(k, out, { t, type: 'square', freq: 240, dur: 0.12, gain: 0.11, curve: 'lin' });
+    tone(k, out, { t: t + 0.14, type: 'square', freq: 180, dur: 0.2, gain: 0.11, curve: 'lin' });
     return 0.4;
   },
 
   success(k, out, t) {
     const notes = [784, 987.8, 1318.5];
     notes.forEach((f, i) => {
-      tone(k, out, { t: t + i * 0.09, freq: f, dur: 0.9, gain: 0.07, a: 0.006 });
+      tone(k, out, { t: t + i * 0.09, freq: f, dur: 0.9, gain: 0.1, a: 0.006 });
       tone(k, out, { t: t + i * 0.09, type: 'triangle', freq: f * 2, dur: 0.35, gain: 0.012 });
     });
     return 1.2;
@@ -286,18 +286,18 @@ export const SFX = {
 
   servo(k, out, t, opts = {}) {
     const dur = opts.duration ?? 0.7;
-    const s = tone(k, out, { t, type: 'sawtooth', freq: 150, dur, gain: 0.05, a: 0.05, curve: 'lin' });
+    const s = tone(k, out, { t, type: 'sawtooth', freq: 150, dur, gain: 0.1, a: 0.05, curve: 'lin' });
     s.o.frequency.linearRampToValueAtTime(260, t + dur * 0.4);
     s.o.frequency.linearRampToValueAtTime(170, t + dur);
-    noise(k, out, { t, dur, gain: 0.04, freq: 900, Q: 3, a: 0.05, curve: 'lin' });
+    noise(k, out, { t, dur, gain: 0.08, freq: 900, Q: 3, a: 0.05, curve: 'lin' });
     relay(k, out, t + dur, 0.1, 1900);
     return dur + 0.1;
   },
 
   /** TARS konuşmadan önce kısa robot sinyali */
   blip(k, out, t) {
-    tone(k, out, { t, type: 'square', freq: 1480, dur: 0.035, gain: 0.03, curve: 'lin' });
-    tone(k, out, { t: t + 0.055, type: 'square', freq: 1975, dur: 0.045, gain: 0.03, curve: 'lin' });
+    tone(k, out, { t, type: 'square', freq: 1480, dur: 0.035, gain: 0.1, curve: 'lin' });
+    tone(k, out, { t: t + 0.055, type: 'square', freq: 1975, dur: 0.045, gain: 0.1, curve: 'lin' });
     return 0.12;
   },
 };
