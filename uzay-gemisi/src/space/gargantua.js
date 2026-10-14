@@ -5,12 +5,17 @@ import { GLSL_COMMON, GLSL_STARS } from './glsl.js';
  * GARGANTUA — kameraya bakan büyük bir billboard + fragment shader'da Schwarzschild ışın yürütme.
  *
  * Birimler: Schwarzschild yarıçapı r_s = 1 (olay ufku r = 1, foton küresi r = 1.5,
- * gölge yarıçapı b_c = 3√3/2 ≈ 2.6, ISCO r = 3).
+ * gölge yarıçapı b_c = 3√3/2 ≈ 2.6). Disk iç kenarı sanatsal olarak ISCO'dan (3) içeride, 2.1'de:
+ * filmdeki hızla dönen deliğin gölgeye yapışık parlak hâlesini verir.
  * Foton yolu (Binet denkleminin Kartezyen biçimi):  x'' = -1.5 · h² · x / r⁵,  h = |x × x'| (sabit).
  *
  * Billboard yerel uzayı: +Z kameraya bakar, kamera (0, 0, uDq)'da. Her piksel için ışın yönü
  * normalize(x, y, -uDq). "Kara delik uzayı"nda disk y = 0 düzlemindedir ve kamera disk
- * düzleminin uTilt kadar üstündedir.
+ * düzleminin BH.tiltDeg kadar üstündedir.
+ *
+ * Maliyet: ışın küresinin dışındaki köşeler ışın yürütmeden geçmez; ışınların çoğu ~30–60 adımda
+ * çıkar (adım uzunluğu yarıçapla orantılı), uSteps (kalite) yalnızca üst sınırdır.
+ * Yıldızlar ekran düzleminde çizilir (glsl.js): mercek bölgesinde nokta kalır, parlaklığı büyütmeyle ölçeklenir.
  *
  * Merceklenmiş arka plan, gökyüzüyle AYNI fonksiyonla (küp harita Samanyolu + starField)
  * örneklenir; integrasyon küresi kenarında sapma sıfıra indiği için dikiş yoktur.
@@ -52,12 +57,15 @@ varying vec2 vLocal;
 ${GLSL_COMMON}
 ${GLSL_STARS}
 
-// Diskteki türbülans: Kepler kaymasıyla gerilen açısal çizgiler.
+// Diskteki türbülans: Kepler kaymasıyla gerilen açısal çizgiler. Alan bükme (açıda periyodik) ızgara
+// hizalı kutucukların oluşmasını önler (büyük yakınlaştırmada, teleskopta görünür olurdu).
 float diskPattern(float r, float phi, float seed) {
   float u = phi / TAU;
-  float a = pnoise2(vec2(r * 2.2 + seed * 17.0, u * 20.0), 20.0);
-  float b = pnoise2(vec2(r * 6.5 + seed * 5.0, u * 56.0), 56.0);
-  float c = pnoise2(vec2(r * 17.0 + seed * 3.0, u * 120.0), 120.0);
+  float wa = sin(TAU * (u * 3.0) + r * 1.3 + seed * 2.0);
+  float wb = sin(TAU * (u * 7.0) - r * 2.1 + seed * 3.0);
+  float a = pnoise2(vec2(r * 2.2 + seed * 17.0 + 0.5 * wb, u * 20.0 + 0.8 * wa), 20.0);
+  float b = pnoise2(vec2(r * 6.5 + seed * 5.0 + 0.4 * wa, u * 56.0 + 2.0 * wb), 56.0);
+  float c = pnoise2(vec2(r * 17.0 + seed * 3.0 - 0.3 * wb, u * 120.0 + 4.0 * wa), 120.0);
   return a * 0.5 + b * 0.32 + c * 0.18;
 }
 

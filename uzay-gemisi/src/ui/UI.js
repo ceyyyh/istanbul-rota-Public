@@ -1,6 +1,6 @@
 import './ui.css';
 import { MODULE_IDS, locate } from '../world/ShipLayout.js';
-import { RingMap, MODULE_NAMES } from './RingMap.js';
+import { RingMap, MODULE_NAMES, MODULE_SHORT } from './RingMap.js';
 import { Modal } from './Terminal.js';
 import { loadSettings, saveSettings, BASE_SENSITIVITY } from './settings.js';
 
@@ -135,6 +135,7 @@ export class UI {
         <div class="ui-map-inner">
           <div class="ui-map-head">HALKA PLANI · AZİM</div>
           <div class="ui-map-svg"></div>
+          <div class="ui-map-legend">${MODULE_IDS.map((id, i) => `<span data-i="${i}"><b>${String(i + 1).padStart(2, '0')}</b>${MODULE_SHORT[id]}</span>`).join('')}</div>
           <div class="ui-map-info"><span class="c">KONUM&nbsp; <b></b></span><span class="t">HEDEF&nbsp; <b></b></span></div>
           <div class="ui-map-close">${this.isTouch ? 'KAPATMAK İÇİN DOKUN' : 'M · KAPAT'}</div>
         </div>
@@ -185,7 +186,29 @@ export class UI {
     this.bigMap = new RingMap({ big: true });
     q('.ui-map-svg').appendChild(this.bigMap.svg);
     this.$.map.addEventListener('click', () => this.toggleMap(false));
+    this._legend = [...ui.querySelectorAll('.ui-map-legend [data-i]')];
+    this._checkCompact();
     this._refreshTargetText();
+  }
+
+  /** Dar (telefon dikey) ekranda büyük haritada yalnızca numaralar; adlar altta liste olarak. */
+  _checkCompact() {
+    const compact = window.innerWidth < 560;
+    this.$.map.classList.toggle('compact', compact);
+    this.bigMap.setCompact(compact);
+  }
+
+  _syncLegend() {
+    const locked = !this.ctx.state?.is?.('power_restored');
+    this._legend?.forEach((el, i) => {
+      el.classList.toggle('cur', i === this._curIndex);
+      el.classList.toggle('target', i === this._targetIndex);
+      el.classList.toggle('locked', i === 0 && locked);
+    });
+  }
+
+  _syncOverlay() {
+    this.el.classList.toggle('overlay', !!(this._modal || this._pauseVisible || this._mapVisible));
   }
 
   _bindEvents() {
@@ -212,7 +235,10 @@ export class UI {
       if (this._lockFailures >= 2) return;
       this._requestLock();
     });
-    window.addEventListener('resize', () => this._clampCursor());
+    window.addEventListener('resize', () => {
+      this._clampCursor();
+      this._checkCompact();
+    });
   }
 
   // ===================================================================== API
@@ -342,6 +368,14 @@ export class UI {
       this._started = true;
       this._syncHud();
       this._scheduleInputEnable();
+      // Telefonda adres çubuğu oyun alanını yemesin: mümkünse tam ekran (başarısızlık sessizce yok sayılır)
+      if (this.isTouch && !document.fullscreenElement) {
+        try {
+          document.documentElement.requestFullscreen?.()?.catch?.(() => {});
+        } catch {
+          /* desteklenmiyor (ör. iPhone Safari) */
+        }
+      }
       try {
         onStart?.();
       } catch (err) {
@@ -421,6 +455,7 @@ export class UI {
     this._mapVisible = show;
     this.$.map.classList.toggle('show', show);
     this.$.map.style.pointerEvents = show ? 'auto' : '';
+    this._syncOverlay();
     if (show) {
       this._updateBigMap();
       this._sfx('beep', 0.25);
@@ -435,6 +470,7 @@ export class UI {
     this._pauseShownAt = now();
     this._renderPause('main');
     this.$.pause.classList.add('show');
+    this._syncOverlay();
     this._blockInput();
     this.ctx.bus.emit('ui:pause', { open: true });
   }
@@ -499,6 +535,7 @@ export class UI {
       if (!m.closed) m.el.classList.add('show');
     });
     if (kind === 'terminal') this._sfx('terminal', 0.6);
+    this._syncOverlay();
     if (!wasOpen) {
       this._blockInput();
       this.ctx.bus.emit('ui:modal', { open: true });
@@ -512,6 +549,7 @@ export class UI {
     if (this._modal !== m) return;
     this._modal = null;
     if (this._replacing) return;
+    this._syncOverlay();
     this.$.modalLayer.classList.remove('open');
     this.ctx.bus.emit('ui:modal', { open: false });
     this._scheduleInputEnable();
@@ -558,8 +596,13 @@ export class UI {
     this._lockLostAt = now();
     this._updateCursorMode();
     if (!this._started || this._endingVisible || this._startVisible || this.isTouch) return;
-    // Esc fare kilidini bıraktı: modal açıksa nazikçe kapat, duraklatma menüsünü göster
-    if (this._modal) this._modal.close('escape');
+    // Esc fare kilidini bıraktı. Terminal/diyalog açıksa yalnızca onu kapat (duraklatma menüsü açma):
+    // tarayıcı ilk Esc'yi kilit için tüketir; oyuncu çoğunlukla terminalden çıkmak istemiştir.
+    if (this._modal) {
+      this._modal.close('escape');
+      this._showHint('Devam etmek için ekrana tıkla', 60000);
+      return;
+    }
     this.showPause();
   }
 
@@ -603,6 +646,7 @@ export class UI {
     if (!this._pauseVisible) return;
     this._pauseVisible = false;
     this.$.pause.classList.remove('show');
+    this._syncOverlay();
     this.ctx.bus.emit('ui:pause', { open: false });
     if (resumeInput) this._scheduleInputEnable();
   }
@@ -637,7 +681,7 @@ export class UI {
     } else {
       body = this._settingsHTML();
     }
-    el.innerHTML = `<div class="pz-panel"><div class="pz-brand">AZİM</div><div class="pz-title">${titles[view]}</div>${body}</div>`;
+    el.innerHTML = `<div class="pz-panel ${view}"><div class="pz-brand">AZİM</div><div class="pz-title">${titles[view]}</div>${body}</div>`;
     el.onclick = (e) => {
       const b = e.target.closest('[data-act]');
       if (!b) return;
@@ -668,6 +712,7 @@ export class UI {
     const toggle = (key, label, on) =>
       `<div class="pz-row"><span class="l">${label}</span><button class="ui-toggle${on ? ' on' : ''}" data-tog="${key}" aria-pressed="${on}"></button></div>`;
     return `
+      <div class="pz-cols">
       <div class="pz-sec-title">KONTROL</div>
       ${range('sensitivity', this.isTouch ? 'Bakış hassasiyeti' : 'Fare hassasiyeti', 0.2, 3, 0.05, s.sensitivity, this._fmt.sensitivity)}
       ${toggle('invertY', 'Y eksenini ters çevir', s.invertY)}
@@ -680,6 +725,7 @@ export class UI {
       <div class="pz-row"><span class="l">Kalite</span><div class="ui-seg" data-quality>
         <button data-q="low" class="${q === 'low' ? 'on' : ''}">DÜŞÜK</button><button data-q="medium" class="${q === 'medium' ? 'on' : ''}">ORTA</button><button data-q="high" class="${q === 'high' ? 'on' : ''}">YÜKSEK</button>
       </div></div>
+      </div>
       <div class="pz-back"><button class="ui-btn" data-act="back">‹  GERİ</button></div>`;
   }
 
@@ -766,12 +812,25 @@ export class UI {
     this.bigMap.setCurrent(index);
     this._refreshLocation();
     this._refreshTargetText();
+    this._syncLegend();
   }
 
   _refreshLocation() {
     const id = MODULE_IDS[this._curIndex];
     const name = this._moduleName(id);
-    this.$.miniLoc.textContent = this._curRegion === 'corridor' ? 'KORİDOR' : upperTR(name);
+    // dar ekranda mini haritanın altında kısa ad (CSS .f / .s seçer)
+    const loc = this.$.miniLoc;
+    loc.textContent = '';
+    const full = document.createElement('span');
+    full.className = 'f';
+    const short = document.createElement('span');
+    short.className = 's';
+    if (this._curRegion === 'corridor') full.textContent = short.textContent = 'KORİDOR';
+    else {
+      full.textContent = upperTR(name);
+      short.textContent = MODULE_SHORT[id] || upperTR(name);
+    }
+    loc.append(full, short);
     this.$.mapCur.textContent = this._curRegion === 'corridor' ? `Koridor · ${name}` : name;
   }
 
@@ -782,6 +841,7 @@ export class UI {
   _refreshLocks() {
     const locked = !this.ctx.state?.is?.('power_restored');
     this.bigMap.setLocked(0, locked);
+    this._syncLegend();
   }
 
   _inferTarget(text) {
@@ -827,6 +887,7 @@ export class UI {
     this.miniMap.setTarget(index);
     this.bigMap.setTarget(index);
     this._refreshTargetText();
+    this._syncLegend();
   }
 
   _refreshTargetText() {

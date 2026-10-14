@@ -26,6 +26,7 @@ import {
   sfx,
 } from './crew/kit.js';
 import { drawPatch } from './crew/pictures.js';
+import { CLOCK, fmtDur } from './crew/texts.js';
 
 /**
  * Kumanda Modülü (kokpit) — enerji gelene kadar KİLİTLİ.
@@ -600,20 +601,13 @@ function drawRing(scr, t, sim) {
   });
 }
 
-function fmtDur(totalSec) {
-  const y = Math.floor(totalSec / 31557600);
-  const d = Math.floor((totalSec % 31557600) / 86400);
-  const s = Math.floor(totalSec % 86400);
-  return `${y}y ${String(d).padStart(3, '0')}g ${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-}
-
 function drawTime(scr, t) {
   const c = GREEN;
   scr.draw((g, w, h) => {
     const hh = draw2d.header(g, w, h, 'ZAMAN GENİŞLEMESİ', c);
-    const ship = 2 * 31557600 + 118 * 86400 + 6 * 3600 + t;
-    const gamma = 1.0000231;
-    const earth = 23 * 31557600 + 247 * 86400 + 13 * 3600 + t * gamma;
+    const ship = CLOCK.ship0 + t;
+    const gamma = CLOCK.gamma;
+    const earth = CLOCK.earth0 + t * gamma;
     draw2d.text(g, 'GEMİ SAATİ', 12, hh + 8, 16, c);
     draw2d.text(g, fmtDur(ship), 12, hh + 26, 22, c);
     draw2d.text(g, 'DÜNYA SAATİ', 12, hh + 58, 16, c);

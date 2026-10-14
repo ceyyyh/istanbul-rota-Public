@@ -16,6 +16,8 @@ export function makeCanvas(w, h = w) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
+  // CPU destekli bağlam: getImageData/putImageData GPU geri okumasına takılmaz (üretim çok hızlanır)
+  c.getContext('2d', { willReadFrequently: true });
   return c;
 }
 
@@ -177,10 +179,14 @@ function paint(w, h, fn) {
   return c;
 }
 
-/** Kenara taşan çizimleri 9 kopya ile sararak döşenebilir çizer. */
-function wrapDraw(g, w, h, fn) {
+/**
+ * Kenara taşan çizimleri sararak döşenebilir çizer. bb = [x0, y0, x1, y1] verilirse yalnızca
+ * tuvale değen kopyalar çizilir (hız).
+ */
+function wrapDraw(g, w, h, fn, bb) {
   for (const ox of [-w, 0, w]) {
     for (const oy of [-h, 0, h]) {
+      if (bb && (bb[2] + ox < 0 || bb[0] + ox > w || bb[3] + oy < 0 || bb[1] + oy > h)) continue;
       g.save();
       g.translate(ox, oy);
       fn(g);
@@ -189,17 +195,30 @@ function wrapDraw(g, w, h, fn) {
   }
 }
 
-function blurCanvas(c, px) {
-  const t = makeCanvas(c.width, c.height);
-  const tg = t.getContext('2d');
-  // Kenarlarda sarma: önce 3x3 döşeyip ortasını al
-  tg.filter = `blur(${px}px)`;
-  for (const ox of [-c.width, 0, c.width]) for (const oy of [-c.height, 0, c.height]) tg.drawImage(c, ox, oy);
-  tg.filter = 'none';
-  const g = c.getContext('2d');
-  g.clearRect(0, 0, c.width, c.height);
-  g.drawImage(t, 0, 0);
-  return c;
+/** Yükseklik dizisine döşenebilir (sarmalı) küçük kutu bulanıklığı. px: ~yarıçap (piksel). */
+function blurArr(src, w, h, px = 1) {
+  const passes = Math.max(1, Math.round(px));
+  const side = Math.min(1, px / passes);
+  const norm = 1 / (1 + 2 * side);
+  let a = src;
+  let b = new Float32Array(src.length);
+  for (let p = 0; p < passes; p++) {
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      for (let x = 0; x < w; x++) {
+        b[row + x] = (a[row + x] + side * (a[row + ((x + w - 1) % w)] + a[row + ((x + 1) % w)])) * norm;
+      }
+    }
+    const c = a === src ? new Float32Array(src.length) : a;
+    for (let y = 0; y < h; y++) {
+      const up = ((y + h - 1) % h) * w;
+      const dn = ((y + 1) % h) * w;
+      const row = y * w;
+      for (let x = 0; x < w; x++) c[row + x] = (b[row + x] + side * (b[up + x] + b[dn + x])) * norm;
+    }
+    a = c;
+  }
+  return a;
 }
 
 export function toTexture(canvas, { srgb = false, aniso = 8 } = {}) {
@@ -250,8 +269,7 @@ export function panelTextures(S = 512, seed = 11) {
     hg.fillStyle = gray(0.5);
     hg.fillRect(x * S - sr, y * S - sr * 0.2, sr * 2, sr * 0.4);
   }
-  blurCanvas(hc, S / 512);
-  const hgt = readHeight(hc);
+  const hgt = blurArr(readHeight(hc), S, S, S / 512);
   const grime = fbm(S, S, { px: 3, octaves: 5, seed });
   const fine = fbm(S, S, { px: 32, octaves: 2, seed: seed + 1 });
   const color = paint(S, S, (x, y, i, o) => {
@@ -353,11 +371,11 @@ export function hullPanelTextures(S = 512, seed = 31) {
       wrapDraw(cg, S, S, (g) => {
         g.fillStyle = gray(tone);
         g.fillRect(a, y0, b - a, rh);
-      });
+      }, [a, y0, b, y0 + rh]);
       wrapDraw(hg, S, S, (g) => {
         g.fillStyle = gray(ht);
         g.fillRect(a, y0, b - a, rh);
-      });
+      }, [a, y0, b, y0 + rh]);
       seams.push([a, y0, a, y0 + rh]);
     }
     seams.push([0, y0, S, y0]);
@@ -371,7 +389,7 @@ export function hullPanelTextures(S = 512, seed = 31) {
       g.moveTo(x0, y0);
       g.lineTo(x1, y1);
       g.stroke();
-    });
+    }, [Math.min(x0, x1) - 3, Math.min(y0, y1) - 3, Math.max(x0, x1) + 3, Math.max(y0, y1) + 3]);
     wrapDraw(cg, S, S, (g) => {
       g.strokeStyle = 'rgba(40,40,40,0.55)';
       g.lineWidth = S / 400;
@@ -379,7 +397,7 @@ export function hullPanelTextures(S = 512, seed = 31) {
       g.moveTo(x0, y0);
       g.lineTo(x1, y1);
       g.stroke();
-    });
+    }, [Math.min(x0, x1) - 3, Math.min(y0, y1) - 3, Math.max(x0, x1) + 3, Math.max(y0, y1) + 3]);
     // perçinler: derzin iki yanında
     const len = Math.hypot(x1 - x0, y1 - y0);
     const nx = (y1 - y0) / len;
@@ -390,18 +408,19 @@ export function hullPanelTextures(S = 512, seed = 31) {
       for (const side of [-1, 1]) {
         const rx = px + nx * side * S * 0.011;
         const ry = py + ny * side * S * 0.011;
+        const rb = [rx - 3, ry - 3, rx + 3, ry + 3];
         wrapDraw(hg, S, S, (g) => {
           g.fillStyle = gray(0.95);
           g.beginPath();
           g.arc(rx, ry, S / 420, 0, Math.PI * 2);
           g.fill();
-        });
+        }, rb);
         wrapDraw(cg, S, S, (g) => {
           g.fillStyle = 'rgba(120,120,115,0.6)';
           g.beginPath();
           g.arc(rx, ry, S / 520, 0, Math.PI * 2);
           g.fill();
-        });
+        }, rb);
       }
     }
   }
@@ -429,8 +448,7 @@ export function hullPanelTextures(S = 512, seed = 31) {
       });
     }
   }
-  blurCanvas(hc, S / 700);
-  const hgt = readHeight(hc);
+  const hgt = blurArr(readHeight(hc), S, S, Math.max(0.7, S / 700));
   const grime = fbm(S, S, { px: 3, octaves: 5, seed: seed + 7 });
   const streak = fbm(S, S, { px: 24, py: 2, octaves: 3, seed: seed + 9 });
   const base = cc.getContext('2d').getImageData(0, 0, S, S).data;
@@ -478,8 +496,7 @@ export function mliTextures(S = 512, seed = 41) {
       g.stroke();
     });
   }
-  blurCanvas(cc, S / 600);
-  const crease = readHeight(cc);
+  const crease = blurArr(readHeight(cc), S, S, Math.max(0.7, S / 600));
   const tape = S / 40;
   const hgt = new Float32Array(S * S);
   const isTape = new Uint8Array(S * S);
@@ -879,8 +896,7 @@ export function doorLeafTextures() {
     img.data[i * 4 + 2] *= k;
   }
   cg.putImageData(img, 0, 0);
-  blurCanvas(hc, 0.8);
-  const hgt = readHeight(hc);
+  const hgt = blurArr(readHeight(hc), W, H, 0.8);
   const map = toTexture(cc, { srgb: true });
   const normalMap = toTexture(heightToNormal(hgt, W, H, 3));
   for (const t of [map, normalMap]) {

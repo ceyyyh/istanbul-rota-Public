@@ -548,9 +548,9 @@ export function addSwitchBank(parent, { pos, rot = [0, 0, 0], cols = 6, rows = 2
       const x = -W / 2 + 0.015 + dx * (cx + 0.5);
       const y = H / 2 - 0.01 - dy * (ry + 0.5) - 0.006;
       // somun + kol
-      vCyl(g, { radius: 0.007, height: 0.008, segments: 6, color: 0x9a9a96, pos: [x, y, 0.016], rot: [Math.PI / 2, 0, 0] });
+      vCyl(g, { radius: 0.007, height: 0.008, segments: 4, color: 0x9a9a96, pos: [x, y, 0.016], rot: [Math.PI / 2, Math.PI / 4, 0] });
       const up = r() > 0.45;
-      const lever = vCyl(g, { radius: 0.0032, height: 0.03, segments: 6, color: 0xc8c8c4, pos: [x, y + (up ? 0.008 : -0.008), 0.03], rot: [Math.PI / 2 + (up ? -0.55 : 0.55), 0, 0] });
+      const lever = vCyl(g, { radius: 0.0032, height: 0.03, segments: 4, color: 0xc8c8c4, pos: [x, y + (up ? 0.008 : -0.008), 0.03], rot: [Math.PI / 2 + (up ? -0.55 : 0.55), 0, 0] });
       lever.userData.noShadow = true;
       if (caps) vBox(g, { size: [0.008, 0.008, 0.008], color: capColors[Math.floor(r() * capColors.length)], pos: [x, y + (up ? 0.015 : -0.015), 0.042] });
       // açıklama şeridi
@@ -972,4 +972,14 @@ export function bagMaterial() {
 export function addTube(parent, a, b, { sag = 0.15, radius = 0.006, material, segments = 14 } = {}) {
   const mid = [(a[0] + b[0]) / 2, Math.min(a[1], b[1]) - sag, (a[2] + b[2]) / 2];
   return addHose(parent, [a, mid, b], { radius, material, segments, radial: 5 });
+}
+
+/** Masa üstü monitör: taban + boyun + CRT ekran. Ön yüz +Z. Dönen: { group, screen } */
+export function addMonitor(parent, { pos, rotY = 0, w = 0.4, h = 0.26, res, color = '#52ff7a', tilt = -0.08, standH = 0.12 }) {
+  const C = crewMaterials();
+  const g = place(parent, pos, rotY);
+  addBox(g, { size: [0.22, 0.015, 0.16], pos: [0, 0.0075, 0], material: C.consoleEdge });
+  addBox(g, { size: [0.05, standH, 0.03], pos: [0, 0.015 + standH / 2, -0.035], material: C.consoleEdge });
+  const screen = addScreen(g, { pos: [0, 0.015 + standH + h / 2 + 0.01, 0.0], rot: [tilt, 0, 0], w, h, res, color, depth: 0.045 });
+  return { group: g, screen };
 }

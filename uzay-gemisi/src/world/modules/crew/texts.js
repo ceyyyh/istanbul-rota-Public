@@ -82,3 +82,21 @@ export const MORSE = {
     { ch: 'L', code: '·−··' },
   ],
 };
+
+/** Gemi ve Dünya saatleri (kumanda ve iletişim ekranları aynı değerleri kullanır; saniye cinsinden başlangıç) */
+export const CLOCK = {
+  ship0: 2 * 31557600 + 118 * 86400 + 6 * 3600,
+  earth0: 23 * 31557600 + 247 * 86400 + 13 * 3600,
+  gamma: 1.0000231,
+};
+
+/** Saniye → "2y 118g 06:41:09" */
+export function fmtDur(totalSec) {
+  const y = Math.floor(totalSec / 31557600);
+  const d = Math.floor((totalSec % 31557600) / 86400);
+  const s = Math.floor(totalSec % 86400);
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor(s / 60) % 60).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${y}y ${String(d).padStart(3, '0')}g ${hh}:${mm}:${ss}`;
+}

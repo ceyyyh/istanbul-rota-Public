@@ -65,7 +65,7 @@ float fbm3(vec3 p) {
 float pnoise2(vec2 p, float per) {
   vec2 i = floor(p);
   vec2 f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
+  f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0); // beşinci derece geçiş: ızgara çizgileri belirginleşmez
   float y0 = mod(i.y, per);
   float y1 = mod(i.y + 1.0, per);
   float a = hash12(vec2(i.x, y0));

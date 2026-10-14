@@ -126,7 +126,7 @@ function createLibrary() {
     hazardStripe: textured('hazardStripe', T.hazard, { color: 0xffffff, metalness: 0.1, normalScale: 0.8 }),
     doorLeaf: textured('doorLeaf', T.door, { color: 0xffffff, metalness: 0.15, normalScale: 1.0 }),
     // Ranger/Lander alt yüzü: siyah ısı kalkanı
-    heatShield: textured('heatShield', T.grime, { color: 0x1b1b1d, roughness: 0.8, relativeRough: true, metalness: 0.2 }),
+    heatShield: textured('heatShield', T.hull, { color: 0x232326, metalness: 0.15, normalScale: 1.0 }),
   };
   lib._texMs = T._ms || 0;
   return lib;

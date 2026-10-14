@@ -90,6 +90,8 @@ export class AudioManager {
     this._gestured = false;
     this._resumeAt = 0;
     this._hiddenSuspend = false;
+    this._unlockAt = -1e9;
+    this._pending = []; // bağlam çalışmaya geçene dek (ilk ~1 sn) bekleyen sesler
     this._live = []; // { name, end }
     this._last = {}; // ad → son çalma zamanı (ac.currentTime)
     this._speech = null;
@@ -130,7 +132,10 @@ export class AudioManager {
     if (!this._gestured && act && !act.hasBeenActive) return false;
     this._gestured = true;
     try {
-      if (!this.ac) this._init();
+      if (!this.ac) {
+        this._init();
+        this._unlockAt = performance.now();
+      }
       const ac = this.ac;
       if (ac && ac.state !== 'running') {
         const p = ac.resume();
@@ -219,6 +224,11 @@ export class AudioManager {
   /** Bağlam çalışır duruma geçtiğinde bekleyen müzik / ortam isteklerini uygula. */
   _onRunning() {
     if (!this.running || this._failed) return;
+    if (this._pending.length) {
+      const list = this._pending.splice(0);
+      const t = performance.now();
+      for (const p of list) if (t - p.at < 1200) this.play(p.name, p.opts);
+    }
     try {
       if (this._appliedAmbient !== this.ambient) {
         this._appliedAmbient = this.ambient;
@@ -302,9 +312,16 @@ export class AudioManager {
    * @returns {boolean} gerçekten çalındı mı
    */
   play(name, opts = {}) {
-    if (!this.running || this._failed) return false;
+    if (this._failed) return false;
     const fn = SFX[name];
     if (typeof fn !== 'function') return false;
+    if (!this.running) {
+      // Bağlam yeni açıldıysa (resume bekleniyor) ilk ~1 sn'deki sesleri sıraya al
+      if (this.ac && performance.now() - this._unlockAt < 1500 && this._pending.length < 8) {
+        this._pending.push({ name, opts: { ...opts }, at: performance.now() });
+      }
+      return false;
+    }
     opts = opts || {};
     try {
       const ac = this.ac;

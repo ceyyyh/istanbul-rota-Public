@@ -67,9 +67,9 @@ export class TouchControls {
       <button class="tb" data-b="jump" ${pos(142, 40)}>${ICONS.jump}<span>ZIPLA</span></button>
       <button class="tb" data-b="crouch" ${pos(136, 128)}>${ICONS.crouch}<span>EĞİL</span></button>
       <button class="tb" data-b="sprint" ${pos(49, 176)}>${ICONS.sprint}<span>KOŞ</span></button>
-      <button class="tb tb-sm" data-b="menu" ${posTL(14, 14)} aria-label="Menü">${ICONS.menu}</button>
-      <button class="tb tb-sm" data-b="map" ${posTL(66, 14)} aria-label="Harita">${ICONS.map}</button>
-      <button class="tb tb-sm" data-b="light" ${posTL(118, 14)} aria-label="El feneri">${ICONS.light}</button>`;
+      <button class="tb tb-sm" data-b="menu" ${posTL(12, 14)} aria-label="Menü">${ICONS.menu}</button>
+      <button class="tb tb-sm" data-b="map" ${posTL(12, 66)} aria-label="Harita">${ICONS.map}</button>
+      <button class="tb tb-sm" data-b="light" ${posTL(12, 118)} aria-label="El feneri">${ICONS.light}</button>`;
     host.appendChild(el);
     this.el = el;
     this.joyEl = el.querySelector('.joy');
@@ -232,7 +232,8 @@ export class TouchControls {
 
   update() {
     const ui = this.ctx.ui;
-    const hidden = !!ui?.isBlocked?.();
+    // modal / duraklatma / başlangıç / harita açıkken kontroller gizlenir (harita kendi dokunuşuyla kapanır)
+    const hidden = !!ui?.isBlocked?.() || !!ui?._mapVisible;
     if (hidden !== this._hidden) {
       this._hidden = hidden;
       this.el.classList.toggle('off', hidden);

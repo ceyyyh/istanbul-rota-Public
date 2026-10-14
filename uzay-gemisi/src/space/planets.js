@@ -166,8 +166,8 @@ vec3 otherSky(vec3 d, vec3 J1, vec3 J2) {
   vec3 c = starField(d, J1, J2, 1.0, 40.0) * 2.2;
   c += galaxy(d) * 2.4;
   float neb = fbm3(d * 2.4 + 7.0);
-  c += vec3(0.10, 0.13, 0.34) * smoothstep(0.40, 0.85, neb) * 0.55;
-  return c + vec3(0.012, 0.018, 0.045);
+  c += vec3(0.12, 0.13, 0.30) * smoothstep(0.40, 0.85, neb) * 0.40;
+  return c + vec3(0.020, 0.026, 0.050);
 }
 
 vec3 ourSky(vec3 s, vec3 J1, vec3 J2, float gain) {
@@ -195,7 +195,7 @@ void main() {
   vec3 Js1 = dFdx(s);
   vec3 Js2 = dFdy(s);
   float gS = lensGain(Js1, Js2, dFdx(nom), dFdy(nom), 6.0);
-  float rw = max(0.012, 1.1 * fwidth(rho)); // kenar parıltısı ekranda ≥ ~1 px
+  float rw = max(0.012, 0.8 * fwidth(rho)); // kenar parıltısı ekranda ≥ ~1 px
   if (rho > uOuter) discard;
   vec3 col;
   if (rho < 1.0) {
@@ -207,7 +207,7 @@ void main() {
     col = ourSky(s, Js1, Js2, gS);
   }
   // küre kenarı: ince, soğuk beyaz parıltı (iki yandan yumuşak)
-  col += vec3(0.62, 0.78, 1.0) * exp(-pow((rho - 1.0) / rw, 2.0)) * 0.9;
+  col += vec3(0.62, 0.78, 1.0) * exp(-pow((rho - 1.0) / rw, 2.0)) * 0.6;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -369,7 +369,7 @@ export function createPlanets(root, bhDir, bhFrame, shared) {
     name: 'mann',
     dir: dirFromAzEl(118, 14),
     distance: 3500,
-    angRadiusDeg: 0.9,
+    angRadiusDeg: 1.5,
     kind: 2,
     tilt: [0.5, 0, -0.3],
     lightPos: lightFar,

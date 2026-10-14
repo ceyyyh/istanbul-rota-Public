@@ -54,16 +54,30 @@ export function addWorldBox(parent, { size = [1, 1, 1], pos = [0, 0, 0], materia
   return addMesh(parent, geo, material, { pos, ...opts });
 }
 
-/** İki nokta arasında çubuk/boru (açık uçlu silindir). Kafes kirişler, borular için. */
-export function addRod(parent, a, b, radius, material, { segments = 6, openEnded = true, ...opts } = {}) {
+/**
+ * İki nokta arasında çubuk/boru (varsayılan açık uçlu silindir). Kafes kirişler, borular için.
+ * mpr verilirse UV metre tabanlıya çevrilir (uzun beyaz tüpler için): { mpr: 4 }.
+ */
+export function addRod(parent, a, b, radius, material, { segments = 6, openEnded = true, mpr, ...opts } = {}) {
   const va = new THREE.Vector3(a[0], a[1], a[2]);
   const vb = new THREE.Vector3(b[0], b[1], b[2]);
   const len = va.distanceTo(vb);
   const geo = new THREE.CylinderGeometry(radius, radius, len, segments, 1, openEnded);
+  if (mpr) scaleCylinderUVs(geo, radius, len, mpr);
   const m = addMesh(parent, geo, material, opts);
   m.position.copy(va).add(vb).multiplyScalar(0.5);
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vb.sub(va).normalize());
   return m;
+}
+
+/** Silindirin UV'sini metre tabanlıya çevirir (çevre en az 1 tekrar, tam sayıya yuvarlanır). */
+export function scaleCylinderUVs(geo, radius, length, mpr = 4) {
+  const uv = geo.attributes.uv;
+  const repU = Math.max(1, Math.round((2 * Math.PI * radius) / mpr));
+  const repV = Math.max(0.25, length / mpr);
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * repU, uv.getY(i) * repV);
+  uv.needsUpdate = true;
+  return geo;
 }
 
 /** Altıgen başlı cıvata/perçin: yüzey düzlemine dik eksen verilir ('x' | 'y' | 'z'). */

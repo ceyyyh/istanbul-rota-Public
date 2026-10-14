@@ -106,8 +106,8 @@ export default {
       });
     }
     label(root, 'ANILAR · DOKUNMAYIN, SADECE BAKIN', { pos: [0.05, 1.28, -3.49], height: 0.035, color: '#1c1c1c', bg: '#e8e2cf' });
-    label(root, 'YAŞAM ALANI', { pos: [-3.2, 2.62, -3.49], height: 0.09, color: '#2a2a2a' });
-    label(root, 'SESSİZ SAATLER 22:00 – 06:00', { pos: [-3.2, 2.42, -3.49], height: 0.04, color: '#1a1a1a', bg: '#d8a21a' });
+    label(root, 'YAŞAM ALANI', { pos: [-3.2, 2.6, -3.49], height: 0.16, color: '#2a2a2a' });
+    label(root, 'SESSİZ SAATLER 22:00 – 06:00', { pos: [-3.2, 2.36, -3.49], height: 0.06, color: '#1a1a1a', bg: '#d8a21a' });
 
     // ------------------------------------------------------------------
     // Yemek masası + banklar
@@ -241,7 +241,7 @@ export default {
     addPlant(root, { pos: [4.75, 0, -3.0], size: 1.7, seed: 31, pot: 0x6b5a4a, M });
     addRail(root, [3.8, 1.1, -3.4], [5.25, 1.1, -3.4], { material: M.handrail, out: [0, 0, 1], depth: 0.07, standoffs: 3 });
     label(root, 'BİR ÖNCEKİ VARDİYA: TEMİZLİK', { pos: [4.5, 1.65, -3.49], height: 0.04, color: '#1a1a1a', bg: '#d8a21a' });
-    label(root, 'MUTFAK · KİTAPLIK · DİNLENME', { pos: [2.9, 2.7, 3.49], rot: [0, PI, 0], height: 0.06, color: '#3a3a3a' });
+    label(root, 'MUTFAK · KİTAPLIK · DİNLENME', { pos: [2.9, 2.75, 3.49], rot: [0, PI, 0], height: 0.1, color: '#3a3a3a' });
 
     // ------------------------------------------------------------------
     // Ekranlar (yalnızca oyuncu yakınken güncellenir)
@@ -349,6 +349,7 @@ function drawWatchFace(g, w, h) {
 
 function buildWatch(mctx, M, C, timers, table) {
   const wRoot = place(table, [-0.62, 0.77, -0.05], 0.55, 'watch');
+  wRoot.scale.setScalar(1.6); // oyun için biraz iri bir saat: uzaktan fark edilsin
   const flat = new THREE.Group();
   flat.rotation.x = -PI / 2;
   wRoot.add(flat);
@@ -370,7 +371,7 @@ function buildWatch(mctx, M, C, timers, table) {
   vBox(pivot, { size: [0.0016, 0.027, 0.0008], color: 0xd23a22, pos: [0, 0.0085, 0] });
   vCyl(pivot, { radius: 0.0032, height: 0.002, segments: 8, color: 0xd23a22, rot: [PI / 2, 0, 0] });
   const proxy = addProxy(wRoot, { size: [0.13, 0.1, 0.2], pos: [0, 0.03, 0] });
-  void proxy;
+  proxy.userData.dynamic = false; // üst grup zaten dinamik
 
   // Mors: K A L → saniye ibresi ritmi
   const code = MORSE.letters.map((l) => dashDot(l.code));
@@ -513,9 +514,11 @@ function buildBookshelf(mctx, M, C, timers, root) {
     { row: 2, ch: 'L', code: dashDot(MORSE.letters[2].code) },
   ];
   const sx = -0.5;
-  const units = []; // dışarı itilip düşen kitap grupları (dinamik)
+  const units = []; // dışarı itilip düşen kitap grupları (hepsi tek dinamik kökün altında)
+  const dynRoot = place(g, [0, 0, 0], 0, 'book-units');
+  dynRoot.userData.dynamic = true;
   const makeUnit = (geoms, { kind, ch, cx, y0, n, h, row }) => {
-    const mesh = addMesh(g, mergeGeometries(geoms), C.vcMatte, { dynamic: true, pos: [cx, y0, BZ] });
+    const mesh = addMesh(dynRoot, mergeGeometries(geoms), C.vcMatte, { pos: [cx, y0, BZ] });
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.name = `book-${ch}-${kind}`;
@@ -785,8 +788,7 @@ function buildGalley(mctx, M, C, timers, root) {
   label(fr, 'SOĞUK DEPO · 4 °C', { pos: [0.04, 1.8, 0.325], height: 0.032, color: '#1c1c1c', bg: '#e8e2cf' });
   addBox(fr, { size: [0.03, 0.03, 0.01], pos: [0.28, 1.72, 0.325], material: C.indGreen });
   fr.userData.collide = true;
-  label(root, 'MUTFAK', { pos: [1.5, 2.45, 3.49], rot: [0, PI, 0], height: 0.07, color: '#3a3a3a' });
-  return { group: g, screen, coffee };
+    return { group: g, screen, coffee };
 }
 
 function buildCoffee(mctx, M, C, timers, galleyGroup, lxPos) {
@@ -808,7 +810,6 @@ function buildCoffee(mctx, M, C, timers, galleyGroup, lxPos) {
   const handle = vBox(mug, { size: [0.025, 0.05, 0.008], color: 0xe9e6dc, pos: [0.05, 0.045, 0] });
   void handle;
   const liquid = vCyl(mug, { radius: 0.034, height: 0.07, segments: 14, color: 0x2b1a10, pos: [0, 0.04, 0] });
-  liquid.userData.dynamic = true;
   liquid.scale.y = 0.001;
   liquid.position.y = 0.005;
   // buhar: üç yumuşak düzlem
@@ -816,12 +817,12 @@ function buildCoffee(mctx, M, C, timers, galleyGroup, lxPos) {
   const steamMat = new THREE.MeshBasicMaterial({ color: 0xe8e8ee, transparent: true, opacity: 0, depthWrite: false });
   steamMat.name = 'crewSteam';
   for (let i = 0; i < 3; i++) {
-    const s = addMesh(mug, new THREE.PlaneGeometry(0.04, 0.09), steamMat, { dynamic: true, pos: [(i - 1) * 0.012, 0.12, 0] });
+    const s = addMesh(mug, new THREE.PlaneGeometry(0.04, 0.09), steamMat, { pos: [(i - 1) * 0.012, 0.12, 0] });
     s.userData.noShadow = true;
     steam.push(s);
   }
   const proxy = addProxy(g, { size: [0.4, 0.62, 0.42], pos: [0, 0.3, 0.02] });
-  void proxy;
+  proxy.userData.dynamic = false; // üst grup zaten dinamik
 
   const st = { phase: 'idle', t: 0, fill: 0 };
   const worldPos = () => g.getWorldPosition(new THREE.Vector3());

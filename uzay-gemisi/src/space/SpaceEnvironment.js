@@ -31,19 +31,23 @@ const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const BH_AZ = 345;
 const BH_EL = 3;
 /**
- * Güneş ışığı aynı azimuttan ama daha yüksekten gelir (13°). Gerekçe: +3°'lik neredeyse yatay ışık
+ * Güneş ışığı aynı azimuttan ama daha yüksekten gelir (25°). Gerekçe: +3°'lik neredeyse yatay ışık
  * pencereden girip zemine ulaşamaz (7 m'de yalnızca ~0.4 m alçalır) ve sadece iç duvara vurur.
- * 13° ile pencere ışık lekeleri zemine düşer; diskin merceklenmiş üst hâlesi de ~+10°'ye uzandığı
- * için görsel olarak tutarlı kalır.
+ * 25° ile pencere ışık lekeleri zemine düşer; ışık, deliğin merceklenmiş hâlesinden ve disk ışığının
+ * toplamından geliyormuş gibi okunur. Eğim büyüdükçe dikey yüzeyler (koltuk, duvar) az, zemin çok
+ * aydınlanır → lekeler belirgin, beyaz yüzeyler patlamaz.
  */
-const SUN_EL = 13;
+const SUN_EL = 25;
 const SUN_DISTANCE = 80;
 const SUN_COLOR = 0xffd9ae;
-const SUN_INTENSITY = 6.0;
-/** Gölgesiz kalitede, kamera geminin içindeyken güneşin çarpanı (duvarlardan sızmayı önler). */
+/** Dış gövdeyi (kamera dışarıdayken) patlatmayan şiddet; beyaz paneller ~0.6–0.7 HDR'de kalır. */
+const SUN_OUTSIDE = 2.6;
+/** Kamera geminin içindeyken (gölge açıkken) şiddet: zemindeki pencere lekeleri için biraz daha güçlü. */
+const SUN_INSIDE = 3.6;
+/** Gölgesiz kalitede, kamera geminin içindeyken güneşin şiddeti (duvarlardan sızmayı önler). */
 const SUN_INSIDE_NOSHADOW = 0.0;
-const HEMI_OUTSIDE = 0.45;
-const HEMI_INSIDE = 0.12;
+const HEMI_OUTSIDE = 0.4;
+const HEMI_INSIDE = 0.08;
 
 /** Kaliteye göre kara delik ışın yürütme adımı. */
 const BH_STEPS = { low: 80, medium: 120, high: 160 };
@@ -100,7 +104,7 @@ export class SpaceEnvironment {
     this.planets = createPlanets(this.root, this.blackHoleDir, bh.group, this.uniforms);
 
     // --- Gemiyi aydınlatan ışıklar (ana sahne) ---
-    const sun = new THREE.DirectionalLight(SUN_COLOR, SUN_INTENSITY);
+    const sun = new THREE.DirectionalLight(SUN_COLOR, SUN_OUTSIDE);
     sun.name = 'gargantua-sun';
     sun.castShadow = true; // her zaman açık: değiştirmek tüm shader'ları yeniden derletir
     const sc = sun.shadow.camera;
@@ -189,14 +193,17 @@ export class SpaceEnvironment {
     const d = this.getSunDirection(this._tmp);
     this.sunLight.position.copy(d).multiplyScalar(SUN_DISTANCE);
 
-    // Kamera geminin (halka tüpünün) içinde mi? → gölgesiz modda güneşi kıs, ortam ışığını azalt
+    // Kamera geminin (halka tüpünün) içinde mi?
+    //  - gölge VARSA: güneş duvarlarda doğal olarak durur; içeride biraz güçlenir (pencere lekeleri).
+    //  - gölge YOKSA: yönlü ışık duvarları delip iç mekânı (ör. iç duvarı) aydınlatırdı → içeride 0'a iner.
+    //  - hemisfer ışığı dışarıda biraz, içeride çok hafif (acil durum karanlığını bozmasın).
     const cam = this.ctx.engine.camera.position;
     const rr = Math.hypot(cam.x, cam.z);
     const inside = Math.abs(rr - RING_RADIUS) < MODULE_WIDTH / 2 + 1.2 && cam.y > -0.6 && cam.y < MODULE_HEIGHT + 0.6;
     const target = inside ? 1 : 0;
     this._insideK += (target - this._insideK) * Math.min(1, dt * 4 || 1);
-    const sunK = this._shadows ? 1 : THREE.MathUtils.lerp(1, SUN_INSIDE_NOSHADOW, this._insideK);
-    this.sunLight.intensity = SUN_INTENSITY * sunK;
+    const inK = this._insideK;
+    this.sunLight.intensity = THREE.MathUtils.lerp(SUN_OUTSIDE, this._shadows ? SUN_INSIDE : SUN_INSIDE_NOSHADOW, inK);
     this.hemiLight.intensity = THREE.MathUtils.lerp(HEMI_OUTSIDE, HEMI_INSIDE, this._insideK);
 
     // Shader zamanı + yıldızların ekran boyutu (cihaz pikselinde; gölgelendiriciler yıldızları görüntü
