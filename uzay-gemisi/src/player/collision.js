@@ -125,6 +125,8 @@ export class CollisionWorld {
       collider.segments.forEach((s) => this.remove(s));
       return;
     }
+    if (collider._removed) return;
+    collider._removed = true;
     for (const key of collider._cells || []) {
       const arr = this.cells.get(key);
       if (!arr) continue;
@@ -148,7 +150,8 @@ export class CollisionWorld {
           if (c._stamp === stamp) continue;
           c._stamp = stamp;
           if (!c.enabled) continue;
-          if (c.yMax < yMin || c.yMin > yMax) continue;
+          // Sınıra tam değen engeller (ör. tam 0.3 m basamak) engellemez; Float32 sınır kutuları için tolerans
+          if (c.yMax <= yMin + 1e-4 || c.yMin >= yMax - 1e-4) continue;
           out.push(c);
         }
       }
@@ -207,6 +210,34 @@ export class CollisionWorld {
       if (!moved) break;
     }
     return collided;
+  }
+
+  /**
+   * Görüş hattı: from → to (3B noktalar) arasındaki XZ doğru parçası etkin bir engeli kesiyor mu?
+   * Kesişme noktasındaki ışın yüksekliği engelin [yMin, yMax] aralığındaysa engellenmiş sayılır.
+   * Hedefe `endTolerance` metreden yakın kesişmeler yok sayılır (hedef engelin yüzeyindeyse).
+   * `ignore`: yok sayılacak segmentlerin Set'i (ör. hedef nesnenin kendi engelleri).
+   */
+  lineBlocked(from, to, endTolerance = 0.15, ignore = null) {
+    const dx = to.x - from.x;
+    const dz = to.z - from.z;
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-6) return false;
+    const list = this.query((from.x + to.x) / 2, (from.z + to.z) / 2, len / 2 + 0.1);
+    const tMax = 1 - endTolerance / len;
+    for (const c of list) {
+      if (c.type !== 'seg' || ignore?.has(c)) continue;
+      const denom = dx * c.dz - dz * c.dx;
+      if (Math.abs(denom) < 1e-12) continue;
+      const ox = c.ax - from.x;
+      const oz = c.az - from.z;
+      const t = (ox * c.dz - oz * c.dx) / denom; // ışın parametresi
+      const u = (ox * dz - oz * dx) / denom; // segment parametresi
+      if (t <= 0 || t >= tMax || u < 0 || u > 1) continue;
+      const y = from.y + (to.y - from.y) * t;
+      if (y >= c.yMin && y <= c.yMax) return true;
+    }
+    return false;
   }
 
   /**

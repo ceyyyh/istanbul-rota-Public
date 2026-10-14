@@ -52,6 +52,7 @@ export function markDynamic(object) {
 /**
  * root altındaki statik meshleri malzemeye göre tek meshlerde birleştirir
  * (çizim çağrısı sayısını büyük ölçüde düşürür).
+ * userData.exterior işaretli meshler ayrı kovalarda birleştirilir (görünürlük ayıklaması için).
  * Atlananlar: userData.dynamic / userData.noMerge alt ağaçları, çoklu malzemeli,
  * InstancedMesh, SkinnedMesh, görünmez meshler.
  */
@@ -90,8 +91,9 @@ export function mergeStatic(root) {
       g.clearGroups();
       rel.multiplyMatrices(inv, o.matrixWorld);
       g.applyMatrix4(rel);
-      const key = o.material.uuid + (useColor ? ':c' : '');
-      if (!buckets.has(key)) buckets.set(key, { material: o.material, geoms: [], noShadow: false });
+      const exterior = !!o.userData.exterior;
+      const key = o.material.uuid + (useColor ? ':c' : '') + (exterior ? ':x' : '');
+      if (!buckets.has(key)) buckets.set(key, { material: o.material, geoms: [], noShadow: false, exterior });
       const b = buckets.get(key);
       b.geoms.push(g);
       if (o.userData.noShadow) b.noShadow = true;
@@ -118,7 +120,7 @@ export function mergeStatic(root) {
   }
 
   let mergedCount = 0;
-  for (const { material, geoms, noShadow } of buckets.values()) {
+  for (const { material, geoms, noShadow, exterior } of buckets.values()) {
     const merged = geoms.length === 1 ? geoms[0] : mergeGeometries(geoms, false);
     if (!merged) {
       console.warn('[mergeStatic] birleştirilemedi:', material.name);
@@ -133,6 +135,7 @@ export function mergeStatic(root) {
     mesh.castShadow = !material.transparent && !noShadow;
     mesh.receiveShadow = true;
     mesh.userData.merged = true;
+    if (exterior) mesh.userData.exterior = true;
     root.add(mesh);
     mergedCount++;
   }

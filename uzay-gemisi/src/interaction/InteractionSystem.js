@@ -16,8 +16,10 @@ import * as THREE from 'three';
  * Ship statik birleştirme (merge) sırasında onlara dokunmaz.
  */
 export class InteractionSystem {
-  constructor({ camera, input, bus, getUI }) {
+  constructor({ camera, input, bus, getUI, collision = null }) {
     this.camera = camera;
+    /** Verilirse (CollisionWorld) duvar/kapalı kapı arkasındaki nesneler seçilmez */
+    this.collision = collision;
     this.input = input;
     this.bus = bus;
     this.getUI = getUI;
@@ -81,6 +83,7 @@ export class InteractionSystem {
         if (!h) continue;
         if (hit.distance > h.distance) break;
         if (!this._isEnabled(h)) continue;
+        if (this.collision?.lineBlocked(this.raycaster.ray.origin, hit.point, 0.15, ownColliders(h))) break;
         found = { handle: h, hit };
         break;
       }
@@ -113,6 +116,22 @@ export class InteractionSystem {
   }
 }
 
+/** Etkileşimli nesnenin kendisine, alt ağacına ve üst gruplarına ait çarpışma segmentleri (önbellekli). */
+function ownColliders(h) {
+  if (h._ownColliders) return h._ownColliders;
+  const set = new Set();
+  const addFrom = (o) => {
+    const c = o.userData.collider;
+    if (!c) return;
+    if (c.type === 'group') c.segments.forEach((sg) => set.add(sg));
+    else set.add(c);
+  };
+  h.object.traverse(addFrom);
+  for (let o = h.object.parent; o && !o.isScene; o = o.parent) addFrom(o);
+  h._ownColliders = set;
+  return set;
+}
+
 /** Nesnenin malzemelerini geçici olarak klonlayıp emissive ile parlatır. */
 function setHighlight(object, on) {
   object.traverse((o) => {
@@ -123,11 +142,15 @@ function setHighlight(object, on) {
       const m = o.material.clone();
       m.emissive = m.emissive.clone().add(new THREE.Color(0x1d2a33));
       m.emissiveIntensity = Math.max(1, m.emissiveIntensity);
+      o.userData._hlMaterial = m;
       o.material = m;
-    } else if (o.userData._origMaterial) {
-      o.material.dispose();
-      o.material = o.userData._origMaterial;
+    } else if (o.userData._hlMaterial) {
+      const clone = o.userData._hlMaterial;
+      // Vurgu sırasında malzemeyi başka kod değiştirdiyse yenisini koru
+      if (o.material === clone) o.material = o.userData._origMaterial;
+      clone.dispose();
       delete o.userData._origMaterial;
+      delete o.userData._hlMaterial;
     }
   });
 }

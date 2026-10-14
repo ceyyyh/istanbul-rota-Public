@@ -32,6 +32,8 @@ export class LightingManager {
     this._transition = 1; // 0..1 geçiş ilerlemesi
     this._flicker = 0;
     this.pool = [];
+    /** Ortam haritası (PBR yansımaları) şiddeti — acil durumda gemi gerçekten karanlık olsun */
+    this.envIntensity = { normal: 0.35, emergency: 0.05 };
     this.setPoolSize(poolSize);
     this._tmp = new THREE.Vector3();
   }
@@ -86,6 +88,10 @@ export class LightingManager {
     this.mode = mode;
     this._transition = transitionSeconds > 0 ? 0 : 1;
     this._transitionDur = transitionSeconds;
+    if (this._transition >= 1) {
+      for (const e of this.emissives) this._applyEmissive(e, 1);
+      this.scene.environmentIntensity = this.envIntensity[mode];
+    }
   }
 
   _applyEmissive(rec, k) {
@@ -105,6 +111,8 @@ export class LightingManager {
       const flick = Math.sin(time * 53) * Math.sin(time * 17.3) > 0.2 ? 1 : 0.15;
       k = t < 0.85 ? flick * t : 1;
       for (const e of this.emissives) this._applyEmissive(e, k);
+      const env = this.envIntensity;
+      this.scene.environmentIntensity = THREE.MathUtils.lerp(env[this.mode === 'normal' ? 'emergency' : 'normal'], env[this.mode], this._transition);
     }
 
     // En yakın ışıkları seç

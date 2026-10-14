@@ -180,7 +180,7 @@ describe('CollisionWorld — kenar durumları', () => {
     });
 
     // collision.js remove(): aynı engel iki kez kaldırılınca `count` yine azalır (negatife düşebilir).
-    knownBug('aynı engeli iki kez kaldırmak count değerini bozmamalı', () => {
+    it('aynı engeli iki kez kaldırmak count değerini bozmamalı', () => {
       const w = new CollisionWorld();
       const s = w.addSegment(0, 0, 1, 0);
       w.addSegment(0, 1, 1, 1);
@@ -235,7 +235,7 @@ describe('CollisionWorld — kenar durumları', () => {
     // Belge §4: "Zeminden ≤0.3 m yükseklikteki … engeller oyuncuyu durdurmaz."
     // Gerçekte 0.3 m'lik kutu (Float32 sınır kutusu ≈ 0.30000001) ve tam 0.3 sınırı oyuncuyu durdurur
     // (collision.js query: `c.yMax < yMin` katı karşılaştırma, epsilon yok).
-    knownBug('tam 0.3 m yüksekliğindeki engel (addFromObject) oyuncuyu durdurmamalı', () => {
+    it('tam 0.3 m yüksekliğindeki engel (addFromObject) oyuncuyu durdurmamalı', () => {
       const w = new CollisionWorld();
       const m = new THREE.Mesh(new THREE.BoxGeometry(1, 0.3, 4));
       m.position.set(1.5, 0.15, 0);

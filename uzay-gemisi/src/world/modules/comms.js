@@ -376,8 +376,8 @@ function buildAntennaPanel(mctx, M, C, root, cx) {
   label(g, 'YÖNELİM', { pos: [-0.38, 0.54, 0.03], height: 0.03, color: '#e8e2d0' });
 
   const st = { aligned: false, t: 0, moving: false, az: 41.2, el: 12.8 };
+  // Etkileşim görünmez vekil kutuya bağlanır → panelin ~200 parçası statik birleştirilebilir
   const proxy = addProxy(g, { size: [1.7, 1.5, 0.5], pos: [0, 0, 0.25] });
-  proxy.userData.dynamic = false;
   const TARGET = { az: 184.6, el: 27.3 };
   mctx.onUpdate((dt) => {
     if (!st.moving) return;
@@ -394,7 +394,7 @@ function buildAntennaPanel(mctx, M, C, root, cx) {
       mctx.ui?.toast?.('Anten Dünya yönüne kilitlendi — sinyal gücü %92.', 3600);
     }
   });
-  mctx.interactions.add(g, {
+  mctx.interactions.add(proxy, {
     id: 'comms-antenna',
     prompt: () => (st.aligned ? 'Anten paneli (kilitli)' : st.moving ? '' : 'Anteni Dünya yönüne hizala'),
     distance: 3.0,

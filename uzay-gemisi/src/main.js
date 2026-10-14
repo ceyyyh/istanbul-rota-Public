@@ -78,7 +78,7 @@ function boot() {
   ctx.audio = new AudioManager(ctx);
   ctx.player = new PlayerController({ camera: engine.camera, input, collision, bus });
   ctx.flashlight = new Flashlight({ camera: engine.camera, input, bus, audio: () => ctx.audio });
-  ctx.interactions = new InteractionSystem({ camera: engine.camera, input, bus, getUI: () => ctx.ui });
+  ctx.interactions = new InteractionSystem({ camera: engine.camera, input, bus, getUI: () => ctx.ui, collision });
   ctx.space = new SpaceEnvironment(ctx);
   /** createDoor() her kapıyı buraya ekler */
   ctx.doors = [];
@@ -100,6 +100,7 @@ function boot() {
 
   // Güç durumu → ışıklar
   lighting.setMode('emergency', 0);
+  engine.scene.environmentIntensity = lighting.envIntensity.emergency;
   state.when('power_restored', () => lighting.setMode('normal', 2.5));
 
   // Güncelleme sırası

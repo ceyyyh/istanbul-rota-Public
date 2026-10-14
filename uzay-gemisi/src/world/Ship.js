@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MODULES } from './modules/index.js';
-import { MODULE_IDS, MODULE_COUNT, applyModuleTransform, corridorInfo } from './ShipLayout.js';
+import { MODULE_IDS, MODULE_COUNT, MODULE_LENGTH, MODULE_WIDTH, MODULE_HEIGHT, applyModuleTransform, corridorInfo } from './ShipLayout.js';
 import { buildCorridor } from './structure/corridor.js';
 import { buildHub } from './exterior/hub.js';
 import { buildShell } from './structure/shell.js';
@@ -45,6 +45,7 @@ export class Ship {
         buildShell(mctx, {});
       }
       const colliders = extractColliders(ctx.collision, group);
+      markExterior(group);
       const stats = mergeStatic(group);
       this.modules.push({ index: i, id: def.id, name: def.name, def, group, mctx, colliders, stats, ms: performance.now() - t0 });
     }
@@ -63,6 +64,10 @@ export class Ship {
       this.corridors.push({ index: i, info, group: g });
     }
 
+    // Görünürlük: oyuncudan halka boyunca 1'den uzak modüllerin yalnızca dış gövdesi çizilir
+    ctx.bus.on('player:module', ({ index }) => this.updateVisibility(index));
+    this.updateVisibility(ctx.player?.location?.index ?? 0);
+
     try {
       const hub = buildHub(ctx);
       if (hub) {
@@ -73,6 +78,17 @@ export class Ship {
       console.error('[ship] göbek kurulamadı:', err);
     }
     return this;
+  }
+
+  /** Modül iç mekânlarını oyuncuya halka mesafesine göre göster/gizle (çizim çağrısı ↓). */
+  updateVisibility(playerIndex, range = 1) {
+    for (const m of this.modules) {
+      const d = Math.abs(m.index - playerIndex);
+      const near = Math.min(d, MODULE_COUNT - d) <= range;
+      if (m._near === near) continue;
+      m._near = near;
+      for (const c of m.group.children) c.visible = near || !!c.userData.exterior;
+    }
   }
 
   getModule(idOrIndex) {
@@ -112,6 +128,31 @@ export function createModuleContext(ctx, group, index, def) {
       return group.worldToLocal(tmp.clone());
     },
   };
+}
+
+/**
+ * Modülün iç hacminin tamamen dışında kalan statik meshleri `userData.exterior` ile işaretler
+ * (dış gövde, iticiler, antenler). Uzak modüllerde yalnızca bunlar çizilir.
+ */
+export function markExterior(group) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const m = new THREE.Matrix4();
+  const box = new THREE.Box3();
+  const hx = MODULE_LENGTH / 2 - 0.02;
+  const hz = MODULE_WIDTH / 2 - 0.02;
+  const visit = (o) => {
+    if (o !== group && (o.userData.dynamic || o.userData.noMerge)) return;
+    if (o.isMesh && o.geometry) {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      box.copy(o.geometry.boundingBox).applyMatrix4(m.multiplyMatrices(inv, o.matrixWorld));
+      const outside =
+        box.min.x >= hx || box.max.x <= -hx || box.min.z >= hz || box.max.z <= -hz || box.min.y >= MODULE_HEIGHT - 0.02 || box.max.y <= 0.02;
+      if (outside) o.userData.exterior = true;
+    }
+    for (const c of o.children) visit(c);
+  };
+  visit(group);
 }
 
 /** userData.collide işaretli nesnelerden çarpışma engeli üretir. */

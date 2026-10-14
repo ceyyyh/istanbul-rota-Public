@@ -43,7 +43,7 @@ const SUN_COLOR = 0xffd9ae;
 /** Dış gövdeyi (kamera dışarıdayken) patlatmayan şiddet; beyaz paneller ~0.6–0.7 HDR'de kalır. */
 const SUN_OUTSIDE = 2.6;
 /** Kamera geminin içindeyken (gölge açıkken) şiddet: zemindeki pencere lekeleri için biraz daha güçlü. */
-const SUN_INSIDE = 3.6;
+const SUN_INSIDE = 4.4;
 /** Gölgesiz kalitede, kamera geminin içindeyken güneşin şiddeti (duvarlardan sızmayı önler). */
 const SUN_INSIDE_NOSHADOW = 0.0;
 const HEMI_OUTSIDE = 0.4;

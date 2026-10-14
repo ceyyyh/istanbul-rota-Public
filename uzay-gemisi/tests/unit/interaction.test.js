@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as THREE from 'three';
+import { CollisionWorld } from '../../src/player/collision.js';
 import { InteractionSystem } from '../../src/interaction/InteractionSystem.js';
 import { EventBus } from '../../src/core/EventBus.js';
 import { FakeInput, knownBug, recordEvents } from './_helpers.js';
@@ -195,9 +196,13 @@ describe('InteractionSystem', () => {
 
   // InteractionSystem.update(): intersectObjects yalnızca kayıtlı nesnelere bakar; araya giren duvar/kapı
   // ışını kesmez → 2.6 m içindeki nesneyle duvarın/kapalı kapının arkasından etkileşilebilir.
-  knownBug('araya giren (kayıtsız) duvar arkasındaki nesneyi seçtirmemeli', () => {
+  it('araya giren (kayıtsız) duvar arkasındaki nesneyi seçtirmemeli', () => {
     const wall = box(t.scene, -1.0, { size: 0.6 }); // kayıtsız "duvar"
     wall.name = 'duvar';
+    // Görüş hattı çarpışma dünyasındaki engellerle denetlenir (duvarlar collide: true)
+    const cw = new CollisionWorld();
+    cw.addFromObject(wall);
+    t.sys.collision = cw;
     const m = box(t.scene, -2.0);
     t.sys.add(m, { prompt: 'Arkadaki' });
     tick(t);
@@ -303,7 +308,7 @@ describe('InteractionSystem', () => {
     // InteractionSystem.js setHighlight(false): vurgu sırasında modül kodu malzemeyi değiştirirse
     // (ör. LED: mesh.material = M.ledGreen), geri alırken YENİ (paylaşılan kütüphane) malzeme dispose
     // edilir ve değişiklik eski malzemeyle ezilir.
-    knownBug('vurgu sırasında değiştirilen malzeme geri almada korunmalı ve paylaşılan malzeme dispose edilmemeli', () => {
+    it('vurgu sırasında değiştirilen malzeme geri almada korunmalı ve paylaşılan malzeme dispose edilmemeli', () => {
       const orig = new THREE.MeshStandardMaterial({ name: 'ledRed' });
       const shared = new THREE.MeshStandardMaterial({ name: 'ledGreen' });
       const disposeShared = vi.spyOn(shared, 'dispose');

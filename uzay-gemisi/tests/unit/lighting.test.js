@@ -195,7 +195,7 @@ describe('LightingManager', () => {
 
   // Lighting.js: setMode(mode, 0) → _transition = 1 olduğu için update() emissive malzemeleri hiç güncellemez.
   // Anında mod değişimi (ör. güç kesintisi efekti) ekranları/lambaları eski modda bırakır.
-  knownBug('setMode(…, 0) anında geçişte emissive malzemeler de güncellenmeli', () => {
+  it('setMode(…, 0) anında geçişte emissive malzemeler de güncellenmeli', () => {
     const scene = new THREE.Scene();
     const lm = new LightingManager(scene, 4);
     const mat = new THREE.MeshStandardMaterial();
