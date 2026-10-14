@@ -5,6 +5,7 @@ import { GameState } from './core/GameState.js';
 import { Input } from './core/Input.js';
 import { CollisionWorld } from './player/collision.js';
 import { PlayerController } from './player/PlayerController.js';
+import { Flashlight } from './player/Flashlight.js';
 import { InteractionSystem } from './interaction/InteractionSystem.js';
 import { LightingManager } from './world/Lighting.js';
 import { getMaterials, registerPowerMaterials } from './world/materials.js';
@@ -76,6 +77,7 @@ function boot() {
   ctx.ui = new UI(ctx);
   ctx.audio = new AudioManager(ctx);
   ctx.player = new PlayerController({ camera: engine.camera, input, collision, bus });
+  ctx.flashlight = new Flashlight({ camera: engine.camera, input, bus, audio: () => ctx.audio });
   ctx.interactions = new InteractionSystem({ camera: engine.camera, input, bus, getUI: () => ctx.ui });
   ctx.space = new SpaceEnvironment(ctx);
   /** createDoor() her kapıyı buraya ekler */
@@ -103,6 +105,7 @@ function boot() {
   // Güncelleme sırası
   engine.onUpdate((dt) => ctx.player.update(dt), -100);
   engine.onUpdate(() => ctx.interactions.update(), -50);
+  engine.onUpdate((dt) => ctx.flashlight.update(dt), -40);
   engine.onUpdate((dt, t) => ctx.space.update(dt, t), 0);
   engine.onUpdate((dt, t) => ctx.tars.update(dt, t), 0);
   engine.onUpdate((dt, t) => ctx.missions.update(dt, t), 0);

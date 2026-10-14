@@ -99,6 +99,7 @@ Sayfada `window.__game` vardır: `ctx`, `ready` (Promise), `teleport(id, lx, lz,
 | `doors` | tüm kapılar (createDoor ekler) |
 | `doorOpeners` | otomatik kapıları açan konumlar (Vector3 dizisi; oyuncu + TARS) |
 | `ship` | `Ship` (kurulumdan sonra): `modules[]`, `getModule(id)` |
+| `flashlight` | `Flashlight`: `on`, `toggle(force?)` — F tuşu; olay `player:flashlight` (bool) |
 | `tars` / `missions` / `touch` | oynanış sistemleri |
 | `params`, `debug`, `isTouch` | URL parametreleri, hata ayıklama, dokunmatik cihaz |
 | `onUpdate(fn(dt, t), priority?)` | her kare çağrılır; `off` fonksiyonu döner |
