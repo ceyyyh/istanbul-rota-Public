@@ -4,3 +4,4 @@ dist-single/
 shots/
 test-results/
 playwright-report/
+dist-artifact/
