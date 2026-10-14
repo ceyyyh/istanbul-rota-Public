@@ -30,7 +30,7 @@ const NAMES = {
 };
 
 export const CHAIN = [
-  { flag: 'talked_tars', text: 'TARS ile konuş', target: null },
+  { flag: 'talked_tars', text: 'TARS ile konuş', target: 'cryo' },
   { flag: 'power_restored', text: 'Motor modülünde sigorta panelini sıfırla, enerjiyi geri getir', target: 'engine' },
   { flag: 'messages_read', text: 'İletişim modülünde Dünya’dan gelen mesajları dinle', target: 'comms' },
   { flag: 'ring_spinning', text: 'Kumanda modülünde halka dönüşünü başlat', target: 'command' },
@@ -108,25 +108,26 @@ export class Missions {
 
     const sys = (text, ms) => ui.subtitle?.('SİSTEM', text, ms);
     this._t = 0;
+    // Zamanlama (oyun zamanı, sn): toplam ~14,5 sn
     this._timeline = [
       [0.1, () => audio?.play?.('hiss', { volume: 0.6 })],
-      [0.7, () => sys('Hiper-uyku döngüsü tamamlandı…', 3200)],
-      [1.6, () => ui.fade?.(false, 3800)],
-      [4.2, () => sys('Yaşamsal belirtiler kararlı. Vücut ısısı 36,2 °C.', 2800)],
-      [7.2, () => {
-        sys('Uyarı: ana enerji devre dışı. Acil durum gücü etkin.', 3000);
+      [0.7, () => sys('Hiper-uyku döngüsü tamamlandı…', 3000)],
+      [1.6, () => ui.fade?.(false, 3600)],
+      [3.8, () => sys('Yaşamsal belirtiler kararlı. Vücut ısısı 36,2 °C.', 2600)],
+      [6.4, () => {
+        sys('Uyarı: ana enerji devre dışı. Acil durum gücü etkin.', 2800);
         audio?.play?.('alarm', { volume: 0.25 });
       }],
-      [9.6, () => {
+      [8.4, () => {
         if (!tars) return;
         const head = tars.headPosition(new THREE.Vector3());
         const eye = new THREE.Vector3(p.x, 1.65, p.z);
-        player.faceDirection(head.sub(eye), 2.4);
+        player.faceDirection(head.sub(eye), 2.2);
         tars.setExpression('happy', 4);
       }],
-      [11.2, () => tars?.gesture('wave')],
-      [11.6, () => tars?.say(INTRO_LINE, { force: true })],
-      [17.5, () => this._endIntro()],
+      [9.8, () => tars?.gesture('wave')],
+      [10.2, () => tars?.say(INTRO_LINE, { force: true })],
+      [14.5, () => this._endIntro()],
     ];
   }
 
@@ -190,8 +191,8 @@ export class Missions {
     const from = loc.index;
     const locked = this._lockedModules();
     const route = moduleRoute(from, to, n, (i) => locked.has(i));
-    if (!route) return { steps: -1, hint: 'yol kapalı', spoken: 'şu an oraya giden yol kapalı' };
-    if (route.steps === 0) return { steps: 0, hint: 'buradasın', spoken: 'zaten oradasın' };
+    if (!route) return { steps: -1, short: 'yol kapalı', hint: 'yol kapalı', spoken: 'şu an oraya giden yol kapalı' };
+    if (route.steps === 0) return { steps: 0, short: 'buradasın', hint: 'buradasın', spoken: 'zaten oradasın' };
     const viaName = NAMES[layout.MODULE_IDS[route.via]];
     // yön: oyuncunun bakışına göre ileri/geri (modül yerel +X = sonraki modül)
     const a = layout.moduleAngle(from);
@@ -204,11 +205,12 @@ export class Missions {
     else if (dot < -0.45) rel = 'arkanda';
     else rel = `${viaName} tarafında`;
     const hint = route.steps === 1 ? `bitişik modül, ${rel}` : `${route.steps} modül ${rel}`;
+    const short = route.steps === 1 ? 'bitişik modül' : `${route.steps} modül uzakta`;
     const spoken =
       route.steps === 1
         ? `hemen yandaki modül, ${viaName} tarafı`
         : `${viaName} yönünden ${route.steps} modül`;
-    return { steps: route.steps, hint, spoken, viaId: layout.MODULE_IDS[route.via], dir: route.dir };
+    return { steps: route.steps, short, hint, spoken, viaId: layout.MODULE_IDS[route.via], dir: route.dir };
   }
 
   getObjective() {
@@ -222,9 +224,11 @@ export class Missions {
     let flag = null;
     let base = null;
     let targetId = null;
-    let hint = '';
+    let hint = ''; // ayrıntılı ipucu (getObjective / olay yükü)
+    let short = ''; // ekranda görünen kısa ipucu: yalnızca anlamlı durumlarda değişir
     let spoken = '';
-    if (step) {
+    // Kapanış tamamlandıktan sonra kalan adımlar (bayraklar farklı sırayla geldiyse) isteğe bağlıdır
+    if (step && !state.is('mission_complete')) {
       flag = step.flag;
       base = step.text;
       targetId = step.target;
@@ -233,12 +237,14 @@ export class Missions {
         if (tars) {
           const p = this.ctx.player.position;
           const d = Math.hypot(tars.position.x - p.x, tars.position.z - p.z);
+          short = d < 6 ? 'TARS yanında' : 'TARS uzakta';
           hint = d < 6 ? 'TARS yanında' : `TARS ${Math.round(d)} m uzakta`;
         }
       } else {
         const g = this._guidance(targetId);
         if (g) {
           hint = g.hint;
+          short = g.short;
           spoken = g.spoken;
         }
       }
@@ -250,13 +256,17 @@ export class Missions {
         const g = this._guidance(targetId);
         if (g) {
           hint = g.hint;
+          short = g.short;
           spoken = g.spoken;
         }
       } else {
         base = 'Serbest dolaşım — gemi senin';
       }
+    } else {
+      // Enerji, halka ve gözlem tamam: kapanış bir-iki saniye sonra (açık modal varsa daha sonra) gelir
+      base = 'Son kontroller yapılıyor…';
     }
-    const text = base ? (hint ? `${base} · ${hint}` : base) : null;
+    const text = base ? (short ? `${base} · ${short}` : base) : null;
     this.current = { flag, text, baseText: base, targetId, hint, spokenHint: spoken };
     this.currentTargetId = targetId;
     if (force || text !== this._lastText || targetId !== this._lastTarget) {
