@@ -1,0 +1,26 @@
+{
+  "name": "uzay-gemisi-azim",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AZİM — Interstellar'dan esinlenen, içinde FPS tarzı dolaşılabilen 3B uzay gemisi",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:single": "vite build --mode single",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "shot": "node scripts/shot.mjs",
+    "build:artifact": "vite build --mode single && node scripts/build-artifact.mjs"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "vite": "6.4.4",
+    "vite-plugin-singlefile": "2.3.3",
+    "vitest": "3.2.7"
+  }
+}
