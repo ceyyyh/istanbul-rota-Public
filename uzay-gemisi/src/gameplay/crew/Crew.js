@@ -88,6 +88,10 @@ export class Crew {
   constructor(ctx) {
     this.ctx = ctx;
     this.members = new Map();
+    // Gezegende iniş ekibi EVA giysisi giyer, gemide uçuş tulumu
+    ctx.bus.on('world:change', ({ to }) => {
+      for (const npc of this.members.values()) npc.setSuit?.(to === 'planet' ? 'eva' : 'flight');
+    });
     for (const id of ['ela', 'doruk', 'rami']) {
       this.members.set(id, new Npc(ctx, DEFS[id]));
     }
