@@ -449,7 +449,8 @@ export class MillerSequence {
       await wait(600);
     } finally {
       if (tars) tars.scripted = false;
-      player.frozen = false;
+      // Dalga yakalama karartması sürüyorsa dondurmayı o kaldırır
+      if (!this._hitBusy) player.frozen = false;
       this.busy = false;
     }
     ctx.state.set('ela_rescued', true);
