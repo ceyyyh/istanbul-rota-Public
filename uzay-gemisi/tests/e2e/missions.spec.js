@@ -4,7 +4,11 @@ import { test, expect } from '@playwright/test';
 import { openGame, expectNoErrors, installQa } from './helpers.js';
 
 // docs/ARCHITECTURE.md §11 sırası (mission_complete hariç)
-const FLAGS = ['intro_done', 'talked_tars', 'power_restored', 'messages_read', 'ring_spinning', 'blackhole_observed'];
+const FLAGS = [
+  'intro_done', 'talked_tars', 'power_restored', 'messages_read', 'ring_spinning', 'blackhole_observed',
+  // Bölüm 2 — Miller gezegeni
+  'ranger_launched', 'miller_landed', 'beacon_found', 'ela_rescued', 'wave_escaped', 'returned_to_ship', 'rami_met', 'messages_23y_read',
+];
 
 /** Kaynak hâlâ taslak mı? (Ajan 5 yeniden yazana kadar görev testleri atlanır) */
 async function missionsIsDraft(page) {
@@ -86,13 +90,13 @@ test('görev akışı — mission_complete erken gelmemeli (son bayrak olmadan)'
   const log = await openGame(page, 'autostart=1&nointro=1&quality=low');
   await installQa(page);
   test.skip(await missionsIsDraft(page), 'Missions.js hâlâ taslak (Ajan 5)');
-  // blackhole_observed hariç hepsi
+  // son adım (messages_23y_read) hariç hepsi
   await applyFlags(page, FLAGS.slice(0, -1));
   const complete = await page.evaluate(() => {
     window.__game.simulate(5);
     return window.__game.ctx.state.is('mission_complete');
   });
-  expect(complete, 'blackhole_observed olmadan görev bitmemeli').toBe(false);
+  expect(complete, 'son adım olmadan görev bitmemeli').toBe(false);
   expectNoErrors(log);
 });
 

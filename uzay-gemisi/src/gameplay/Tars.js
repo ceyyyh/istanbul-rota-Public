@@ -301,10 +301,10 @@ export class Tars {
       }
       if (!this._pWalking) {
         if (d > PLANET_GAP + 1.4) this._pWalking = true;
-      } else if (d < PLANET_GAP - 0.3 && this._pSpeed < 0.6) this._pWalking = false;
+      } else if (d < PLANET_GAP + 0.1 && this._pSpeed < 0.6) this._pWalking = false;
 
       if (this._pWalking) {
-        speed = THREE.MathUtils.clamp((d - PLANET_GAP) * 1.6 + this._pSpeed * 0.95 + 0.4, 0, 6.2);
+        speed = THREE.MathUtils.clamp((d - PLANET_GAP) * 1.6 + this._pSpeed * 0.95 + (this._pSpeed > 0.3 ? 0.4 : 0), 0, 6.2);
         faceMode = 'motion';
       } else if (d < 1.3) {
         // kişisel alan: oyuncudan yavaşça uzaklaş

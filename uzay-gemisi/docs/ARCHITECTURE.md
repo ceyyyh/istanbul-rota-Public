@@ -384,3 +384,9 @@ Gezegende HUD'da zaman genişlemesi sayacı: gezegende geçen her saniye ≈ Dü
 | Ajan G — Gezegen | `src/planet/**` |
 | Ajan M — Mürettebat | `src/gameplay/crew/**` |
 | Ajan S — Hikâye | `src/gameplay/Missions.js`, `src/gameplay/story/**`, `src/gameplay/Tars.js` (gezegen takip kipi), `src/world/modules/airlock.js` (binme), `src/world/modules/comms.js` (23 yıllık mesajlar), `src/ui/**` (zaman sayacı vb. küçük eklemeler), `src/audio/**` (yeni ses adları) |
+
+### Bölüm 2 ile gelen ek API'ler
+- `ui.setInfo(text|null)` — sol üstte bilgi etiketi (gezegende zaman genişlemesi sayacı). Gezegende mini harita gizlenir.
+- Ses adları: `rumble` (iniş/kalkış sarsıntısı), `wave_roar` (dalga).
+- `tars.placeWorld(x, z, yaw)` — TARS'ı dünya koordinatına yerleştirir. `missions.story` → `MillerSequence`.
+- `planet.releaseDebris()` / `planet.resetDebris()` — Ela'yı sıkıştıran levha.
