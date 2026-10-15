@@ -22,7 +22,7 @@ export const HIP_Y = 0.932; // kalça ekleminin zeminden yüksekliği
 export const THIGH = 0.45;
 export const SHIN = 0.43;
 export const ANKLE_H = 0.052; // ayak bileğinin zeminden yüksekliği
-export const NOMINAL_H = 1.76;
+export const NOMINAL_H = 1.785;
 export const SPINE_Y = 0.1;
 export const SHOULDER_Y = 0.39;
 export const UPPER_ARM = 0.28;
@@ -235,10 +235,10 @@ function shared() {
     bubble: new THREE.MeshStandardMaterial({ color: 0xb7dcff, roughness: 0.04, metalness: 0.0, transparent: true, opacity: 0.17, depthWrite: false }),
     eyeWhite: std(0xe9e6df, 0.35),
     glasses: std(0x1b1c1f, 0.35, 0.7),
-    hairGrey: std(0xb6b6b2, 0.9),
-    hairWhite: std(0xd4d4d0, 0.9),
+    hairGrey: std(0xa9a9a5, 0.9),
+    hairWhite: std(0xc4c4c0, 0.9),
     stubble: new THREE.MeshStandardMaterial({ color: 0x2b211b, roughness: 1, transparent: true, opacity: 0.5, depthWrite: false }),
-    beardGrey: std(0xa8a8a4, 0.95),
+    beardGrey: std(0x8f8f8b, 0.95),
     patch: new THREE.MeshStandardMaterial({ map: patchTexture(), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }),
     flag: new THREE.MeshStandardMaterial({ map: flagTexture(), roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 }),
     nameTags: new Map(),
@@ -286,8 +286,7 @@ export function buildCrewModel(def) {
   root.add(hips);
   {
     const f = new Bake();
-    f.add(sph(14, 8), S.suit, [0, 0.02, 0], [0, 0, 0], [0.175 * b.hp, 0.115, 0.125]);
-    f.add(box(0.012, 0.3, 0.004), S.zip, [0, -0.05, 0.123], [0, 0, 0]); // fermuar (kasık)
+    f.add(sph(14, 8), S.suit, [0, 0.0, 0], [0, 0, 0], [0.158 * b.hp, 0.105, 0.112]);
     f.into(hips, flightG, 'flight');
     const e = new Bake();
     e.add(sph(14, 8), S.evaWhite, [0, 0.0, 0], [0, 0, 0], [0.21 * b.hp, 0.14, 0.16]);
@@ -369,12 +368,12 @@ export function buildCrewModel(def) {
   spine.add(neck);
   {
     const base = new Bake();
-    base.add(cyl(0.046, 0.052, 0.1, 10), skin, [0, 0.02, 0]);
+    base.add(cyl(0.046, 0.052, 0.14, 10), skin, [0, 0.04, 0]);
     base.into(neck, null, 'base');
   }
   const head = new THREE.Group();
   head.name = 'head';
-  head.position.y = 0.075;
+  head.position.y = 0.1;
   neck.add(head);
 
   const C = 0.06; // kafatası merkezinin head grubuna göre y'si
@@ -414,24 +413,24 @@ export function buildCrewModel(def) {
 
   // ---- saç
   const hairBake = new Bake();
-  const capRot = -0.45;
-  const addCap = (len, scl = 1, dy = 0.003) => {
+  const capRot = -0.5;
+  const addCap = (len, scl = 1.025, dy = 0.003) => {
     const g = new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, 0, len);
     hairBake.add(g, hairMat, [0, C + dy, -0.004], [capRot, 0, 0], [(RX + 0.007) * scl, (RY + 0.008) * scl, (RZ + 0.007) * scl]);
   };
   // kaş (saç rengiyle)
-  for (const sx of [-1, 1]) hairBake.add(box(0.03, 0.0065, 0.008), hairMat, [sx * 0.035, C + 0.037, 0.0905], [0, -sx * 0.1, sx * -0.14]);
+  for (const sx of [-1, 1]) hairBake.add(box(0.034, 0.0085, 0.009), hairMat, [sx * 0.035, C + 0.037, 0.0905], [0, -sx * 0.1, sx * -0.14]);
   if (def.hairStyle === 'bun') {
-    addCap(1.38);
+    addCap(1.5);
     hairBake.add(sph(10, 7), hairMat, [0, C + 0.085, -0.09], [0, 0, 0], [0.05, 0.043, 0.05]);
     hairBake.add(new THREE.TorusGeometry(0.047, 0.006, 5, 12), S.accent, [0, C + 0.065, -0.082], [0.9, 0, 0]);
     hairBake.add(sph(10, 7), hairMat, [0, C - 0.01, -0.045], [0, 0, 0], [0.083, 0.088, 0.06]); // ense saçı
   } else if (def.hairStyle === 'short') {
-    addCap(1.5, 1.012, 0.004);
+    addCap(1.56, 1.012, 0.004);
     for (const sx of [-1, 1]) hairBake.add(box(0.012, 0.045, 0.03), hairMat, [sx * (RX - 0.003), C - 0.012, 0.025], [0, 0, 0]); // favori
     hairBake.add(sph(10, 7), hairMat, [0, C - 0.012, -0.05], [0, 0, 0], [0.082, 0.08, 0.055]);
   } else if (def.hairStyle === 'curly') {
-    addCap(1.45, 1.0);
+    addCap(1.5, 1.0);
     const rnd = mulberry32(5);
     const n = 30;
     for (let i = 0; i < n; i++) {
@@ -509,7 +508,7 @@ export function buildCrewModel(def) {
     shoulders.push(sh);
     {
       const f = new Bake();
-      f.add(sph(10, 7), S.suit, [0, -0.005, 0], [0, 0, 0], [0.062, 0.062, 0.062]);
+      f.add(sph(10, 7), S.suit, [0, -0.005, 0], [0, 0, 0], [0.056, 0.056, 0.056]);
       f.add(limb(0.054, 0.046, UPPER_ARM, 9), S.suit, [0, 0, 0]);
       f.add(cyl(0.056, 0.056, 0.022, 9), S.accent, [0, -0.1, 0]); // turuncu şerit
       f.into(sh, flightG, 'flight');
