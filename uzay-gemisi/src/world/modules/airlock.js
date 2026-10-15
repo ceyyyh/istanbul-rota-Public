@@ -171,6 +171,26 @@ export default {
       addSphere(g, { radius: 0.065, widthSegments: 12, heightSegments: 6, pos: [bx, 2.42, 3.42], material: beaconMat });
     }
 
+    // ------------------------------------------------------------------
+    // RANGER'A BİNİŞ (Bölüm 2): Gargantua gözlemlendikten sonra iniş ekibi (Ela, Doruk) burada bekler.
+    // Ekip yerleşimini ve iniş sinematiğini story/MillerSequence.js yürütür; burası yalnızca etkileşimi sağlar.
+    // ------------------------------------------------------------------
+    {
+      const board = addHitBox(g, { size: [1.9, 2.3, 0.7], pos: [0, 1.2, 2.95], name: 'ranger-biniş' });
+      mctx.interactions.add(board, {
+        id: 'airlock.board',
+        prompt: "Ranger'a bin",
+        distance: 3.4,
+        highlight: false,
+        enabled: () => state.is('blackhole_observed') && !state.is('ranger_launched'),
+        onInteract: () => {
+          audio.play('airlock', { position: mctx.toWorld(0, HATCH_Y, 3.2), volume: 0.6 });
+          ui.toast("Ranger'a biniliyor — kemerler bağlanıyor…", 3000);
+          state.set('ranger_launched', true);
+        },
+      });
+    }
+
     // Kontrol paneli (kapağın solunda, +X)
     const CX = 1.62;
     addBox(g, { size: [0.6, 0.85, 0.12], pos: [CX, 1.3, 3.44], material: M.panelMid });

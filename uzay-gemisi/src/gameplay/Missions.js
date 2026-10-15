@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { moduleRoute } from './ringNav.js';
 import { INTRO_LINE, EVENTS } from './tarsLines.js';
+import { MillerSequence } from './story/MillerSequence.js';
+import { ENDING_TEXT as ENDING_TEXT_2 } from './story/texts.js';
 
 /**
  * Görev zinciri ve giriş sinematiği. Bayraklar ve akış: docs/ARCHITECTURE.md §11.
@@ -8,6 +10,8 @@ import { INTRO_LINE, EVENTS } from './tarsLines.js';
  *   missions.start({ skipIntro })
  *   missions.currentTargetId          hedef modül id'si veya null
  *   missions.getObjective()           { flag, text, baseText, targetId, hint, spokenHint }
+ *
+ * Bölüm 2 (Miller gezegeni): `missions.story` (MillerSequence) sekansları yürütür; adımlar CHAIN'in sonunda.
  *
  * Olay: bus 'mission:objective' { text, targetId, baseText, hint, flag } — metin veya hedef her değiştiğinde.
  * Bayraklar herhangi bir sırayla gelebilir; görev her zaman zincirdeki ilk eksik adımdır.
@@ -35,15 +39,18 @@ export const CHAIN = [
   { flag: 'messages_read', text: 'İletişim modülünde Dünya’dan gelen mesajları dinle', target: 'comms' },
   { flag: 'ring_spinning', text: 'Kumanda modülünde halka dönüşünü başlat', target: 'command' },
   { flag: 'blackhole_observed', text: 'Gözlem güvertesinden teleskopla Gargantua’yı incele', target: 'observation' },
+  // --- Bölüm 2 (docs/ARCHITECTURE.md §15): bu adımlar, sonraki bir adımın bayrağı geldiyse tamamlanmış sayılır
+  { flag: 'ranger_launched', text: 'Hava kilidinde iniş ekibine katıl, Ranger’a bin', target: 'airlock', part2: true },
+  { flag: 'miller_landed', text: 'Ranger Miller gezegenine iniyor…', target: null, part2: true },
+  { flag: 'beacon_found', text: 'Enkazdaki veri kaydedicisini bul', target: null, part2: true },
+  { flag: 'ela_rescued', text: 'Enkaza sıkışan Ela’ya yardım et', target: null, part2: true },
+  { flag: 'wave_escaped', text: 'Dalga gelmeden Ranger’a koş!', target: null, part2: true },
+  { flag: 'returned_to_ship', text: 'Ranger kalkıyor — AZİM’e dönülüyor…', target: null, part2: true },
+  { flag: 'rami_met', text: 'Yaşlanmış Rami ile konuş', target: 'airlock', part2: true },
+  { flag: 'messages_23y_read', text: 'İletişim modülünde 23 yıllık mesajları dinle', target: 'comms', part2: true },
 ];
 
-const ENDING_TEXT = [
-  'AZİM yeniden nefes alıyor.',
-  'Halka dönüyor; ayaklarının altında yine bir “aşağı” var. Dünya’dan gelen sesler geride kaldı ama kaybolmadı — onları yanında taşıyorsun.',
-  'Önünde haritası çizilmemiş bir karanlık, ufkunda ışığı bile bırakmayan bir dev var. Yine de buradasın.',
-  'Çünkü bazı yolculuklar, varılacak yer bulunduğunda değil; vazgeçildiğinde biter.',
-  'Ve sen vazgeçmedin.',
-].join('\n\n');
+// Bölüm 1 kapanışı artık gösterilmez; bitiş metni story/texts.js içinde (ENDING_TEXT_2).
 
 export class Missions {
   constructor(ctx) {
@@ -59,6 +66,8 @@ export class Missions {
     this._endingShown = false;
     this._timeline = [];
     this._t = 0;
+    /** Bölüm 2 anlatısı (Ranger, Miller, dalga, dönüş) */
+    this.story = new MillerSequence(ctx);
 
     const { bus } = ctx;
     bus.on('state:changed', () => {
@@ -74,6 +83,7 @@ export class Missions {
     if (this.started) return;
     this.started = true;
     const { state } = this.ctx;
+    this.story?.onStart();
     if (skipIntro || state.is('intro_done')) {
       state.set('intro_done', true);
       this._refresh(true);
@@ -161,8 +171,11 @@ export class Missions {
   /** Zincirdeki ilk eksik adım (talked_tars, enerji zaten geldiyse atlanır). */
   _currentStep() {
     const st = this.ctx.state;
+    const p2 = CHAIN.filter((c) => c.part2);
     for (const step of CHAIN) {
       if (st.is(step.flag)) continue;
+      // Bölüm 2: daha sonraki bir adımın bayrağı geldiyse bu adım da yapılmış sayılır
+      if (step.part2 && p2.slice(p2.indexOf(step) + 1).some((c) => st.is(c.flag))) continue;
       if (step.flag === 'talked_tars' && st.is('power_restored')) continue;
       if (step.flag === 'messages_read' && st.is('ring_spinning') && st.is('blackhole_observed')) continue;
       return step;
@@ -280,7 +293,7 @@ export class Missions {
   _checkCompletion(dt) {
     const { state, ui } = this.ctx;
     if (this._endingShown) return;
-    if (!(state.is('ring_spinning') && state.is('blackhole_observed'))) {
+    if (!(state.is('ring_spinning') && state.is('blackhole_observed') && state.is('messages_23y_read'))) {
       this._completeAt = null;
       return;
     }
@@ -295,7 +308,7 @@ export class Missions {
     this._endingShown = true;
     state.set('mission_complete', true);
     this.ctx.audio?.play?.('success', { volume: 0.5 });
-    ui.showEnding?.(ENDING_TEXT);
+    ui.showEnding?.(ENDING_TEXT_2);
     const tars = this.ctx.tars;
     if (tars) tars.say(tars.humor >= 30 ? EVENTS.mission_complete[0] : EVENTS.mission_complete[1], { delay: 1.5, priority: 4, expires: 600 });
     this._recheck = 0;
@@ -303,6 +316,7 @@ export class Missions {
 
   update(dt) {
     if (!this.started) return;
+    this.story?.update(dt);
     if (this.introRunning) {
       this._t += dt;
       while (this._timeline.length && this._timeline[0][0] <= this._t) {

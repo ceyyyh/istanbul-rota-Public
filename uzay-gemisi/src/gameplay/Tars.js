@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RingNav } from './ringNav.js';
 import { buildTarsModel, HINGE, SLAB_D } from './tarsModel.js';
 import * as LINES from './tarsLines.js';
+import { TARS_PLANET_IDLE } from './story/texts.js';
 
 /*
  * TARS — dört bloklu yardımcı robot.
@@ -16,6 +17,10 @@ import * as LINES from './tarsLines.js';
  *   tars.faceTowards(x, z) · tars.gesture('wave'|'cheer') · tars.setExpression(ad, sn?)
  *   tars.headPosition(out)     ekranın dünya konumu (kamera çevirmek için)
  *   tars.openDialog()          konuşma menüsü
+ *   tars.placeWorld(x, z, yaw) dünya koordinatında doğrudan yerleştir (gezegende; gemide halka yoluna oturtur)
+ *
+ * Gezegen kipi (Bölüm 2): `world:change` → 'planet' iken halka yolu (ringNav) yerine oyuncuyu düz çizgide takip eder
+ * (Ranger yanına ışınlanır); gemiye dönüşte halka kipine geri döner ve hava kilidine yerleşir.
  */
 
 const FOLLOW_DIST = 2.8; // oyuncunun bu kadar gerisinde durur (yol boyunca)
@@ -26,6 +31,8 @@ const MAX_SPEED = 4.6;
 const TELEPORT_DIST = 18; // ~1 modül
 const GAIT_A = 0.3; // adım açısı (radyan)
 const LEG = HINGE; // menteşe → taban
+const PLANET_GAP = 3.0; // gezegende oyuncuyla arası
+const PLANET_TELEPORT = 28;
 
 const _v = new THREE.Vector3();
 const _m = new THREE.Matrix4();
@@ -96,6 +103,12 @@ export class Tars {
     this._doorLockedSaid = -1e9;
 
     this._doors = null; // ilk güncellemede hesaplanır
+
+    // --- gezegen kipi ---
+    this._planet = false;
+    this._pPrev = null; // oyuncunun önceki konumu (hız tahmini)
+    this._pSpeed = 0;
+    this._pWalking = false;
 
     // Başlangıç: hiper-uyku bölmesinde, oyuncunun doğduğu yere dönük
     const spawn = ctx.layout.localToWorld(ctx.layout.moduleIndexById('cryo'), -2.5, 0);
@@ -199,6 +212,121 @@ export class Tars {
     bus.on('ui:modal', ({ open }) => {
       if (!open && this.talking && !this._navigating) this._dialogClosed();
     });
+    bus.on('world:change', ({ to }) => {
+      if (to === 'planet') this._enterPlanet();
+      else this._leavePlanet();
+    });
+  }
+
+  // ------------------------------------------------------------------ gezegen kipi
+
+  _enterPlanet() {
+    const sp = this.ctx.planet?.spawn;
+    this._planet = true;
+    this.walking = false;
+    this.vs = 0;
+    this._pPrev = null;
+    this._pWalking = false;
+    this._queue.length = 0;
+    this._idleT = 40 + Math.random() * 30;
+    if (sp) {
+      // Ranger yanı: oyuncunun başlangıç noktasının yanı
+      const fx = -Math.sin(sp.yaw);
+      const fz = -Math.cos(sp.yaw);
+      this.placeWorld(sp.x - fz * 2.8 - fx * 0.4, sp.z + fx * 2.8 - fz * 0.4, Math.atan2(fx, fz));
+    }
+  }
+
+  _leavePlanet() {
+    if (!this._planet) return;
+    this._planet = false;
+    this.scripted = false;
+    this.talking = false;
+    this._queue.length = 0;
+    // hava kilidine yerleş (oyuncu da orada doğar)
+    this.placeLocal('airlock', -1.7, 0.9, this.ctx.player.position);
+  }
+
+  /** Dünya koordinatında doğrudan yerleştirme. Gezegende serbest; gemide halka yoluna oturtulur. */
+  placeWorld(x, z, yaw = this.yaw) {
+    if (!this._planet) {
+      this.placeAt(x, z, yaw);
+      return;
+    }
+    this.group.position.set(x, 0, z);
+    this.yaw = yaw;
+    this.group.rotation.y = yaw;
+    this.vs = 0;
+    this._prev.copy(this.group.position);
+    this._pWalking = false;
+  }
+
+  /** Gezegende oyuncuyu düz çizgide takip et (engel/yol ağı yok). */
+  _updatePlanet(dt, t) {
+    const ctx = this.ctx;
+    const P = ctx.player.position;
+    const pos = this.group.position;
+    // oyuncu hızı
+    if (this._pPrev) {
+      const v = Math.hypot(P.x - this._pPrev.x, P.z - this._pPrev.z) / dt;
+      this._pSpeed = v > 30 ? 0 : THREE.MathUtils.damp(this._pSpeed, v, 8, dt);
+    } else this._pPrev = new THREE.Vector3();
+    this._pPrev.set(P.x, 0, P.z);
+
+    let dx = P.x - pos.x;
+    let dz = P.z - pos.z;
+    let d = Math.hypot(dx, dz);
+    let speed = 0;
+    let faceMode = 'player';
+
+    if (this.scripted || this.talking) {
+      this._pWalking = false;
+      if (this.scripted && this._faceYaw !== undefined) faceMode = 'script';
+      if (this.talking && !ctx.ui?.isModalOpen?.() && !this._navigating) {
+        this._noModalT = (this._noModalT || 0) + dt;
+        if (this._noModalT > 0.5) this._dialogClosed();
+      } else this._noModalT = 0;
+    } else {
+      if (d > PLANET_TELEPORT) {
+        // çok geride kaldı (ör. kontrol noktası): oyuncunun yakınına ışınla
+        const f = ctx.player.getForward(_v);
+        const L = Math.hypot(f.x, f.z) || 1;
+        pos.x = P.x - (f.x / L) * 3.4 + (f.z / L) * 1.2;
+        pos.z = P.z - (f.z / L) * 3.4 - (f.x / L) * 1.2;
+        this._prev.copy(pos);
+        dx = P.x - pos.x;
+        dz = P.z - pos.z;
+        d = Math.hypot(dx, dz);
+        this._pWalking = false;
+      }
+      if (!this._pWalking) {
+        if (d > PLANET_GAP + 1.4) this._pWalking = true;
+      } else if (d < PLANET_GAP - 0.3 && this._pSpeed < 0.6) this._pWalking = false;
+
+      if (this._pWalking) {
+        speed = THREE.MathUtils.clamp((d - PLANET_GAP) * 1.6 + this._pSpeed * 0.95 + 0.4, 0, 6.2);
+        faceMode = 'motion';
+      } else if (d < 1.3) {
+        // kişisel alan: oyuncudan yavaşça uzaklaş
+        speed = -0.9;
+        faceMode = 'player';
+      }
+    }
+
+    this.vs = THREE.MathUtils.damp(this.vs, speed, 4, dt);
+    if (Math.abs(this.vs) > 0.01 && d > 0.01) {
+      pos.x += (dx / d) * this.vs * dt;
+      pos.z += (dz / d) * this.vs * dt;
+    }
+
+    let yawT = this.yaw;
+    if (faceMode === 'script') yawT = this._faceYaw;
+    else if (faceMode === 'motion' && this.vs > 0.3) yawT = Math.atan2(dx, dz);
+    else if (d > 0.3 && d < 20) yawT = Math.atan2(dx, dz);
+    this.yaw = dampAngle(this.yaw, yawT, 5, dt, 2.8);
+    this.walking = this._pWalking;
+    this.mode = this._pWalking ? 'follow' : 'idle';
+    this._animate(dt, t, false);
   }
 
   /** [esprili, kuru] çiftinden mizah ayarına göre seç */
@@ -361,6 +489,12 @@ export class Tars {
   _statusReport() {
     const st = this.ctx.state;
     const hb = LINES.honestyBand(this.honesty);
+    if (this._planet) {
+      return hb === 'low'
+        ? 'Durum raporu: Miller harika bir tatil beldesi! Dalga mı? Sadece bir… kıyı hareketi.'
+        : 'Durum raporu: Miller yüzeyi, diz altı sığ su, yer çekimi 1,3 g. Burada geçen her saniye Dünya’da yaklaşık 0,7 gün. ' +
+            (st.is('beacon_found') ? 'Kaydedici elimizde; dalga yaklaşıyor.' : 'Kaydedici enkazda; acele et.');
+    }
     const power = st.is('power_restored');
     if (hb === 'low') {
       return (
@@ -501,6 +635,7 @@ export class Tars {
   update(dt, t) {
     if (!(dt > 0)) return;
     this._time += dt;
+    if (this._planet) return this._updatePlanet(dt, t);
     if (!this._doors) this._initDoors();
     if (this._tpCooldown > 0) this._tpCooldown -= dt;
 
@@ -770,7 +905,7 @@ export class Tars {
     const P = this.ctx.player.position;
     const near = Math.hypot(P.x - this.group.position.x, P.z - this.group.position.z) < 9;
     if (!near || this.ctx.ui?.isModalOpen?.()) return;
-    const line = LINES.pick(LINES.IDLE[band], this._lastIdle);
+    const line = LINES.pick(this._planet ? TARS_PLANET_IDLE : LINES.IDLE[band], this._lastIdle);
     this._lastIdle = line;
     this.say(line, { priority: 0, expires: 5 });
     if (band === 'high' || band === 'max') this.setExpression('wink', 2.5);

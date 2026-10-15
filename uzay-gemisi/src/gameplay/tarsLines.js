@@ -240,5 +240,15 @@ export const MISSION_TALK = {
     'Kumanda modülünde halka dönüşünü başlat ({hint}). Yer çekimi sadece konfor değil; mürettebatı güvenle uyandırmak için de gerekli.',
   blackhole_observed:
     'Gözlem güvertesindeki teleskopla Gargantua’yı incele ({hint}). Rotamızı onun etrafında çizeceğiz.',
+  ranger_launched:
+    'Hava kilidinde Ela ve Doruk seni bekliyor ({hint}). Ranger’a bin. Miller’a inmek: bir saat bile yedi yıl demek, bunu aklından çıkarma.',
+  miller_landed: 'İniş sürüyor. Kemerlerini bağla ve yüksek sesle sayma; sayılar sinirlerimi bozuyor.',
+  beacon_found:
+    'Gezegende enkazdaki veri kaydedicisini bul. Ela önden gitti. Su sığ ama ağır; koşarken dengeni koru.',
+  ela_rescued: 'Ela enkaza sıkıştı. Kirişi kaldırmak için yanına git, ben yardım ederim. Dalga yaklaşıyor.',
+  wave_escaped: 'Ranger’a koş. Dalga hâlâ geliyor; geriye bakma, ben hesabını tutuyorum.',
+  returned_to_ship: 'Kalkış sürüyor. Yirmi üç yıl geçmiş olması gerekiyor. Rami hâlâ buradaysa harika bir sabır örneği.',
+  rami_met: 'Rami hava kilidinde. Yaşlanmış olabilir ama sabrı hâlâ kalibre. Git, konuş.',
+  messages_23y_read: 'İletişim modülünde birikmiş mesajlar var. Yirmi üç yıllık. Bunlar benim bile içimi… neyim varsa, sızlatıyor.',
   done: 'Resmî görevler bitti. Resmî olmayanlar ise sonsuz: keşfet, oku, dinle. Ben buradayım.',
 };

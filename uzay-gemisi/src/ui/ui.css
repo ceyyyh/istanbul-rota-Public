@@ -1601,3 +1601,27 @@
     max-width: 52vw;
   }
 }
+
+
+/* Bölüm 2: gezegen — zaman genişlemesi sayacı (sol üst) ve halka haritasının gizlenmesi */
+.ui-info {
+  position: absolute;
+  top: calc(18px + var(--safe-t));
+  left: calc(20px + var(--safe-l, 0px));
+  padding: 7px 12px 7px 10px;
+  border-left: 2px solid rgba(255, 170, 90, 0.8);
+  background: linear-gradient(90deg, rgba(5, 7, 9, 0.55), rgba(5, 7, 9, 0));
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #ffc58a;
+  text-shadow: 0 0 8px rgba(255, 150, 60, 0.35);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.ui-info[hidden] {
+  display: none;
+}
+.azim-ui.planet .ui-mini {
+  display: none;
+}

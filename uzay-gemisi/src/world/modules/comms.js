@@ -35,6 +35,7 @@ import {
 } from './crew/kit.js';
 import { EARTH_MESSAGES, CLOCK, fmtDur } from './crew/texts.js';
 import { drawEarth } from './crew/pictures.js';
+import { MESSAGES_23Y, MESSAGES_23Y_HEADER, MESSAGES_23Y_DONE_SUB, MESSAGES_23Y_PARTIAL_SUB } from '../../gameplay/story/texts.js';
 
 /**
  * İletişim Modülü — Dünya'dan gelen mesajlar.
@@ -42,6 +43,8 @@ import { drawEarth } from './crew/pictures.js';
  * Etkileşimler:
  *   comms-console   Ana konsol (enerji gerekir; yoksa "ENERJİ YOK"): terminalde tarihli mesajlar sırayla
  *                   ("Mesaj 1 — 2 yıl 4 ay sonra" …). Altıncı mesaj gösterilince state 'messages_read'.
+ *                   Miller'dan dönüldükten sonra ('returned_to_ship') konsol 23 yıllık birikmiş mesajları açar
+ *                   (story/texts.js MESSAGES_23Y); sonuncusu gösterilince state 'messages_23y_read'.
  *   comms-radio     Telsiz (bataryalı): parazit sesi + kısa altyazılar
  *   comms-antenna   Anten paneli (enerji gerekir): anteni Dünya yönüne hizalar
  *
@@ -50,6 +53,7 @@ import { drawEarth } from './crew/pictures.js';
  */
 const PI = Math.PI;
 const TOTAL = EARTH_MESSAGES.length;
+const TOTAL23 = MESSAGES_23Y.length;
 
 const RADIO_LINES = [
   'Telsizde yalnızca parazit. Kar yağışına benzeyen düzgün bir hışırtı…',
@@ -230,11 +234,13 @@ export default {
     // Ana konsol etkileşimi: Dünya'dan gelen mesajlar
     // ------------------------------------------------------------------
     const inbox = { idx: 0, opened: false, term: null };
+    // Bölüm 2: Miller'dan dönünce 23 yıllık birikmiş mesajlar (messages_23y_read)
+    const inbox23 = { idx: 0, opened: false, term: null };
     const consoleProxy = addProxy(root, { size: [3.0, 1.6, 1.0], pos: [-1.8, 0.95, -2.95] });
 
-    const msgLines = (i) => {
-      const m = EARTH_MESSAGES[i];
-      return [`MESAJ ${i + 1}/${TOTAL} — ${m.when}`, `GÖNDEREN: ${m.from}`, '────────────────────────────────────────────', '', ...wrap(m.text, 58), ''];
+    const msgLines = (i, msgs = EARTH_MESSAGES, total = TOTAL) => {
+      const m = msgs[i];
+      return [`MESAJ ${i + 1}/${total} — ${m.when}`, `GÖNDEREN: ${m.from}`, '────────────────────────────────────────────', '', ...wrap(m.text, 58), ''];
     };
     const headerLines = () => [
       'DÜNYA — GELEN KUTUSU',
@@ -245,61 +251,93 @@ export default {
       '',
       inbox.idx === 0 ? 'Hiçbiri açılmadı.' : inbox.idx >= TOTAL ? 'Tüm mesajlar okundu.' : `${inbox.idx}/${TOTAL} mesaj okundu.`,
     ];
+    const headerLines23 = () => [
+      ...MESSAGES_23Y_HEADER,
+      inbox23.idx === 0 ? 'Hiçbiri açılmadı.' : inbox23.idx >= TOTAL23 ? 'Tüm mesajlar okundu.' : `${inbox23.idx}/${TOTAL23} mesaj okundu.`,
+    ];
 
-    const openInbox = () => {
+    /** Bir mesaj kümesini terminalde sırayla oynatır (bölüm 1: ilk set, bölüm 2: 23 yıllık set). */
+    const openSet = (cfg) => {
+      const { box, msgs, total, header, title, flag, doneSub, partialSub } = cfg;
       sfx(mctx, 'terminal');
-      const allRead = mctx.state.is('messages_read') && inbox.idx >= TOTAL;
-      if (allRead) inbox.idx = 0; // yeniden dinleme
+      if (mctx.state.is(flag) && box.idx >= total) box.idx = 0; // yeniden dinleme
       let shown = false;
       const opts = () =>
-        inbox.idx >= TOTAL
+        box.idx >= total
           ? [{ label: 'Kapat', action: () => {} }]
           : [
         {
-          label: shown ? `Sonraki mesaj (${inbox.idx + 1}/${TOTAL}) ▶` : inbox.idx === 0 ? 'İlk mesajı oynat ▶' : `Mesajı oynat (${inbox.idx + 1}/${TOTAL}) ▶`,
+          label: shown ? `Sonraki mesaj (${box.idx + 1}/${total}) ▶` : box.idx === 0 ? 'İlk mesajı oynat ▶' : `Mesajı oynat (${box.idx + 1}/${total}) ▶`,
           action: () => {
-            if (inbox.idx >= TOTAL) return undefined;
-            const i = inbox.idx++;
+            if (box.idx >= total) return undefined;
+            const i = box.idx++;
             shown = true;
             sfx(mctx, 'beep');
-            const lines = msgLines(i);
-            if (inbox.idx >= TOTAL) {
+            const lines = msgLines(i, msgs, total);
+            if (box.idx >= total) {
               lines.push('══ KAYIT SONU — kutuda başka mesaj yok ══');
-              mctx.state.set('messages_read', true);
+              mctx.state.set(flag, true);
             }
-            inbox.term?.setLines?.(lines);
-            inbox.term?.setOptions?.(opts());
+            box.term?.setLines?.(lines);
+            box.term?.setOptions?.(opts());
             return false;
           },
         },
         { label: 'Kapat', action: () => {} },
       ];
       const term = openTerminal(mctx, {
-        title: 'DÜNYA HATTI — MESAJLAR',
+        title,
         color: 'blue',
-        lines: headerLines(),
+        lines: header(),
         options: opts(),
         onClose: () => {
-          inbox.term = null;
-          if (inbox.idx >= TOTAL) {
-            mctx.ui?.subtitle?.('SEN', 'Emre baba olmuş. Deniz benim yaşıma gelmiş. Benim içinse yalnızca iki yıl geçti…', 6400);
-          } else if (inbox.idx > 0) {
-            mctx.ui?.subtitle?.('SEN', 'Daha dinleyecek mesajlar var. Yarım bırakmak istemiyorum.', 4200);
+          box.term = null;
+          if (box.idx >= total) {
+            mctx.ui?.subtitle?.('SEN', doneSub, 6400);
+          } else if (box.idx > 0) {
+            mctx.ui?.subtitle?.('SEN', partialSub, 4200);
           }
         },
       });
-      inbox.term = term;
-      inbox.opened = true;
+      box.term = term;
+      box.opened = true;
       if (!term) {
         // arayüz yoksa tüm mesajları okunmuş say
-        inbox.idx = TOTAL;
-        mctx.state.set('messages_read', true);
+        box.idx = total;
+        mctx.state.set(flag, true);
       }
     };
 
+    const openInbox = () =>
+      openSet({
+        box: inbox,
+        msgs: EARTH_MESSAGES,
+        total: TOTAL,
+        header: headerLines,
+        title: 'DÜNYA HATTI — MESAJLAR',
+        flag: 'messages_read',
+        doneSub: 'Emre baba olmuş. Deniz benim yaşıma gelmiş. Benim içinse yalnızca iki yıl geçti…',
+        partialSub: 'Daha dinleyecek mesajlar var. Yarım bırakmak istemiyorum.',
+      });
+    const openInbox23 = () =>
+      openSet({
+        box: inbox23,
+        msgs: MESSAGES_23Y,
+        total: TOTAL23,
+        header: headerLines23,
+        title: 'DÜNYA HATTI — 23 YILLIK MESAJLAR',
+        flag: 'messages_23y_read',
+        doneSub: MESSAGES_23Y_DONE_SUB,
+        partialSub: MESSAGES_23Y_PARTIAL_SUB,
+      });
+
     mctx.interactions.add(consoleProxy, {
       id: 'comms-console',
-      prompt: () => (mctx.state.is('power_restored') ? (mctx.state.is('messages_read') ? "Dünya'dan gelen mesajlar (arşiv)" : "Dünya'dan gelen mesajları dinle") : "Dünya'dan gelen mesajlar"),
+      prompt: () => {
+        if (!mctx.state.is('power_restored')) return "Dünya'dan gelen mesajlar";
+        if (mctx.state.is('returned_to_ship')) return mctx.state.is('messages_23y_read') ? '23 yıllık mesajlar (arşiv)' : "Dünya'dan gelen 23 yıllık mesajları dinle";
+        return mctx.state.is('messages_read') ? "Dünya'dan gelen mesajlar (arşiv)" : "Dünya'dan gelen mesajları dinle";
+      },
       distance: 3.4,
       onInteract: () => {
         if (!mctx.state.is('power_restored')) {
@@ -307,7 +345,9 @@ export default {
           mctx.ui?.toast?.('ENERJİ YOK — iletişim konsolu çalışmıyor.', 3000);
           return;
         }
-        openInbox();
+        // Miller'dan dönüldüyse 23 yıllık birikmiş mesajlar açılır
+        if (mctx.state.is('returned_to_ship')) openInbox23();
+        else openInbox();
       },
     });
 
@@ -324,7 +364,8 @@ export default {
           return;
         }
         for (const s of all) s.material.emissiveIntensity = 1.15;
-        drawMain(monMain.screen, t, inbox, mctx.state.is('messages_read'));
+        if (mctx.state.is('returned_to_ship')) drawMain(monMain.screen, t, inbox23, mctx.state.is('messages_23y_read'), MESSAGES_23Y);
+        else drawMain(monMain.screen, t, inbox, mctx.state.is('messages_read'));
         drawSpectrum(monL.screen, t, spec, ant.state.aligned);
         drawDelay(monR.screen, t, ant.state.aligned);
         drawSignalPath(wall, t, ant.state.aligned);
@@ -537,7 +578,8 @@ function createDialTexture() {
 // ---------------------------------------------------------------------------
 // Ekran çizimleri
 // ---------------------------------------------------------------------------
-function drawMain(scr, t, inbox, read) {
+function drawMain(scr, t, inbox, read, msgs = EARTH_MESSAGES) {
+  const total = msgs.length;
   const c = '#8ef5ff';
   scr.draw((g, w, h) => {
     const hh = draw2d.header(g, w, h, 'DÜNYA HATTI', c, read ? 'ARŞİV' : 'BEKLEYEN');
@@ -558,19 +600,19 @@ function drawMain(scr, t, inbox, read) {
     g.stroke();
     const x = 150;
     if (!read) {
-      draw2d.text(g, `${TOTAL} YENİ MESAJ`, x, hh + 18, 26, c);
+      draw2d.text(g, `${total} YENİ MESAJ`, x, hh + 18, 26, c);
       draw2d.text(g, 'Aile hattı · şifresiz', x, hh + 54, 16, c);
       draw2d.text(g, 'Dinlemek için konsola bak.', x, hh + 76, 16, c);
       if (Math.floor(t * 1.6) % 2 === 0) draw2d.text(g, '▶ [E] AÇ', x, hh + 120, 20, c);
     } else {
       draw2d.text(g, 'TÜM MESAJLAR OKUNDU', x, hh + 18, 22, c);
-      draw2d.text(g, `SON: ${EARTH_MESSAGES[TOTAL - 1].when}`, x, hh + 56, 16, c);
+      draw2d.text(g, `SON: ${msgs[total - 1].when}`, x, hh + 56, 16, c);
       draw2d.text(g, 'Yanıt gönderilemiyor:', x, hh + 84, 16, c);
       draw2d.text(g, 'hat tek yönlü.', x, hh + 104, 16, c);
     }
     // alt şerit: ilerleme
-    draw2d.bar(g, 10, h - 40, w - 20, 12, read ? 1 : inbox.idx / TOTAL, c);
-    draw2d.text(g, `${inbox.idx}/${TOTAL}`, w - 12, h - 24, 14, c, 'right');
+    draw2d.bar(g, 10, h - 40, w - 20, 12, read ? 1 : inbox.idx / total, c);
+    draw2d.text(g, `${inbox.idx}/${total}`, w - 12, h - 24, 14, c, 'right');
   });
 }
 

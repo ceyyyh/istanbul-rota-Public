@@ -17,6 +17,7 @@ import { loadSettings, saveSettings, BASE_SENSITIVITY } from './settings.js';
  *   ui.fade(toBlack, ms?) → Promise
  *   ui.isModalOpen()
  *   ui.showStart(onStart), ui.showEnding(text)
+ *   ui.setInfo(text|null)                      — sol üstte bilgi etiketi (gezegende zaman genişlemesi sayacı)
  *   ui.update(dt)
  *
  * Ek yardımcılar: ui.toggleMap(force?), ui.showPause(), ui.setHudVisible(bool), ui.isBlocked(),
@@ -130,6 +131,7 @@ export class UI {
           <div class="ui-mini"><div class="ui-mini-map"></div><div class="ui-mini-loc"></div><div class="ui-mini-hint">M · HARİTA</div></div>
         </div>
         <div class="ui-hint"></div>
+        <div class="ui-info" hidden></div>
       </div>
       <div class="ui-layer ui-map">
         <div class="ui-map-inner">
@@ -161,6 +163,7 @@ export class UI {
       objTgt: q('.ui-obj .tgt'),
       miniLoc: q('.ui-mini-loc'),
       hint: q('.ui-hint'),
+      info: q('.ui-info'),
       map: q('.ui-map'),
       mapCur: q('.ui-map-info .c b'),
       mapTgt: q('.ui-map-info .t b'),
@@ -224,6 +227,12 @@ export class UI {
       this._resolveTarget();
     });
     bus.on('state:power_restored', () => this._refreshLocks());
+    // Gezegende halka mini haritası ve büyük harita kapanır
+    bus.on('world:change', ({ to }) => {
+      this.el.classList.toggle('planet', to === 'planet');
+      if (to === 'planet') this.toggleMap(false);
+      if (to !== 'planet') this.setInfo(null);
+    });
     bus.on('engine:quality', ({ name }) => this._syncQualityButtons(name));
 
     window.addEventListener('keydown', (e) => this._onKey(e));
@@ -302,6 +311,15 @@ export class UI {
     this._freshT = setTimeout(() => o.classList.remove('fresh'), 5000);
     if (had) this._sfx('success', 0.45);
     this._resolveTarget();
+  }
+
+  /** Ek: sol üstte küçük bilgi etiketi (ör. "Dünya'da geçen: 3 yıl 2 ay"); null → gizle. */
+  setInfo(text) {
+    const t = text ? String(text) : '';
+    const el = this.$.info;
+    if (!el || el.textContent === t) return;
+    el.textContent = t;
+    el.hidden = !t;
   }
 
   /** Ek: görev hedefini doğrudan ayarla (modül kimliği, 'tars' ya da null). */
@@ -402,7 +420,7 @@ export class UI {
         <div class="s">BİR INTERSTELLAR ESİNTİSİ</div>
         <dl>
           <dt>Gemi</dt><dd>Endurance sınıfı halka, 12 modül</dd>
-          <dt>Mürettebat</dt><dd>Sen ve TARS</dd>
+          <dt>Mürettebat</dt><dd>Sen, TARS, Ela, Doruk ve Rami</dd>
           <dt>Ses ve müzik</dt><dd>Prosedürel WebAudio org tonları</dd>
           <dt>Yapım</dt><dd>Yedi ajanlık bir ekip</dd>
           <dt>Saygıyla</dt><dd>Interstellar (2014)</dd>
@@ -450,7 +468,7 @@ export class UI {
 
   toggleMap(force) {
     const show = typeof force === 'boolean' ? force : !this._mapVisible;
-    if (show && (!this._started || this.isBlocked())) return;
+    if (show && (!this._started || this.isBlocked() || this.ctx.world?.isPlanet?.())) return;
     if (show === this._mapVisible) return;
     this._mapVisible = show;
     this.$.map.classList.toggle('show', show);

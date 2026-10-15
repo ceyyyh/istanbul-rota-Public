@@ -6,6 +6,7 @@
  *                                            Öncesinde tüm çağrılar hatasız, sessizce yok sayılır.
  *   audio.play(name, { volume, position }) — name: beep click switch door door_locked hiss airlock footstep alarm
  *                                            power_up power_down error success tick spin_up terminal servo
+ *                                            rumble wave_roar (Bölüm 2)
  *                                            position (THREE.Vector3 | {x,y,z}) → PannerNode ile 3B konumlu.
  *                                            Bilinmeyen ad sessizce yok sayılır. Çalındıysa true döner.
  *   audio.setAmbient('emergency'|'normal'|null)
@@ -37,7 +38,7 @@ const VOICE_LIMIT = { footstep: 3, tick: 3, click: 4, servo: 3, switch: 3, beep:
 /** Efekt adı → iki çağrı arası en az süre (sn) */
 const MIN_GAP = { tick: 0.02, click: 0.02, footstep: 0.14, servo: 0.12 };
 /** Konumsuz çağrıları art arda çalınmasın (birden çok yerden tetiklenen uzun sesler) */
-const DEDUPE = { power_up: 4, spin_up: 4 };
+const DEDUPE = { power_up: 4, spin_up: 4, rumble: 2, wave_roar: 4 };
 const GLOBAL_LIMIT = 30;
 /** Düzey ayarları (çevrimdışı ölçüme göre: müzik ≈ -24 dBFS, uğultu ≈ -23 dBFS ham RMS) */
 const MUSIC_TRIM = 1.5;

@@ -294,6 +294,24 @@ export const SFX = {
     return dur + 0.1;
   },
 
+  /** Alçak, uzun gümbürtü: iniş / kalkış sarsıntısı (opts.duration) */
+  rumble(k, out, t, opts = {}) {
+    const dur = opts.duration ?? 4.5;
+    noise(k, out, { t, dur, gain: 0.55, a: dur * 0.35, type: 'lowpass', freq: 55, freqEnd: 150, brown: true, curve: 'lin', hold: dur * 0.2 });
+    tone(k, out, { t, type: 'sawtooth', freq: 34, freqEnd: 58, dur, gain: 0.07, a: dur * 0.4, curve: 'lin' });
+    for (let i = 0; i < 4; i++) thump(k, out, t + dur * (0.15 + i * 0.2), { freq: rnd(50, 70), end: 28, dur: 0.35, gain: 0.3 });
+    return dur + 0.3;
+  },
+
+  /** Dev dalganın uzaktan yaklaşan kükremesi */
+  wave_roar(k, out, t, opts = {}) {
+    const dur = opts.duration ?? 6;
+    noise(k, out, { t, dur, gain: 0.5, a: dur * 0.6, type: 'lowpass', freq: 90, freqEnd: 420, brown: true, curve: 'lin' });
+    noise(k, out, { t: t + dur * 0.3, dur: dur * 0.7, gain: 0.12, a: dur * 0.4, type: 'bandpass', freq: 500, freqEnd: 1400, Q: 0.6, curve: 'lin' });
+    tone(k, out, { t, type: 'sawtooth', freq: 24, freqEnd: 46, dur, gain: 0.08, a: dur * 0.6, curve: 'lin' });
+    return dur + 0.3;
+  },
+
   /** TARS konuşmadan önce kısa robot sinyali */
   blip(k, out, t) {
     tone(k, out, { t, type: 'square', freq: 1480, dur: 0.035, gain: 0.1, curve: 'lin' });
