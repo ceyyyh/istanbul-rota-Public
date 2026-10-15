@@ -44,6 +44,8 @@ export class PlayerController {
     this.crouch = 0; // 0..1
     this.frozen = false;
     this.noclip = false;
+    /** WorldManager tarafından ayarlanır */
+    this.onPlanet = false;
 
     this.walkSpeed = 2.7;
     this.sprintSpeed = 5.0;
@@ -219,6 +221,8 @@ export class PlayerController {
 
   _updateLocation(force) {
     this.location = locate(this.position.x, this.position.z);
+    // Gezegendeyken (WorldManager ayarlar) bölge 'planet' olur; index geçerli bir modül kalır
+    if (this.onPlanet) this.location.region = 'planet';
     if (force || this.location.index !== this._moduleIndex) {
       const prev = this._moduleIndex;
       this._moduleIndex = this.location.index;

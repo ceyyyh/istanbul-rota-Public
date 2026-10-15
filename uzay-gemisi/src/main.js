@@ -17,6 +17,9 @@ import { TouchControls } from './ui/TouchControls.js';
 import { AudioManager } from './audio/AudioManager.js';
 import { Tars } from './gameplay/Tars.js';
 import { Missions } from './gameplay/Missions.js';
+import { Crew } from './gameplay/crew/Crew.js';
+import { PlanetWorld } from './planet/PlanetWorld.js';
+import { WorldManager } from './core/WorldManager.js';
 
 /*
  * URL parametreleri (geliştirme / test):
@@ -90,7 +93,10 @@ function boot() {
   ctx.ship = new Ship(ctx).build();
   if (debug) console.info(`[boot] gemi ${(performance.now() - t0).toFixed(0)} ms'de kuruldu`, ctx.ship.modules.map((m) => `${m.id}:${m.ms.toFixed(0)}ms`));
 
+  ctx.world = new WorldManager(ctx);
+  ctx.planet = new PlanetWorld(ctx);
   ctx.tars = new Tars(ctx);
+  ctx.crew = new Crew(ctx);
   ctx.missions = new Missions(ctx);
   if (isTouch) ctx.touch = new TouchControls(ctx);
 
@@ -110,6 +116,10 @@ function boot() {
   engine.onUpdate((dt, t) => ctx.space.update(dt, t), 0);
   engine.onUpdate((dt, t) => ctx.tars.update(dt, t), 0);
   engine.onUpdate((dt, t) => ctx.missions.update(dt, t), 0);
+  engine.onUpdate((dt, t) => ctx.crew.update(dt, t), 0);
+  engine.onUpdate((dt, t) => {
+    if (ctx.world.isPlanet()) ctx.planet.update(dt, t);
+  }, 0);
   engine.onUpdate((dt, t) => ctx.audio.update(dt, t), 10);
   engine.onUpdate((dt, t) => ctx.ui.update(dt, t), 20);
   if (ctx.touch) engine.onUpdate((dt, t) => ctx.touch.update(dt, t), -110);
@@ -124,6 +134,11 @@ function boot() {
     const [lx = 0, lz = 0, lyaw = 0] = (params.get('pos') || '').split(',').map(Number);
     const s = ShipLayout.spawnPoint(tp, lx || 0, lz || 0, THREE.MathUtils.degToRad(lyaw || 0));
     ctx.player.teleport(s.x, s.z, s.yaw);
+  }
+  // ?world=planet → doğrudan gezegende başla (geliştirme)
+  if (params.get('world') === 'planet') {
+    ctx.world.apply('planet');
+    ctx.player.teleport(ctx.planet.spawn.x, ctx.planet.spawn.z, ctx.planet.spawn.yaw);
   }
   const cam = params.get('cam');
   if (cam) {

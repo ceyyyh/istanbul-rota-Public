@@ -80,6 +80,14 @@ export class Ship {
     return this;
   }
 
+  /** Tüm gemiyi göster/gizle (gezegendeyken). */
+  setVisible(v) {
+    this.hidden = !v;
+    for (const m of this.modules) m.group.visible = v;
+    for (const c of this.corridors) c.group.visible = v;
+    if (this.hub) this.hub.visible = v;
+  }
+
   /** Modül iç mekânlarını oyuncuya halka mesafesine göre göster/gizle (çizim çağrısı ↓). */
   updateVisibility(playerIndex, range = 1) {
     for (const m of this.modules) {

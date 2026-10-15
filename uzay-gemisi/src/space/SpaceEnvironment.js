@@ -205,6 +205,11 @@ export class SpaceEnvironment {
     const inK = this._insideK;
     this.sunLight.intensity = THREE.MathUtils.lerp(SUN_OUTSIDE, this._shadows ? SUN_INSIDE : SUN_INSIDE_NOSHADOW, inK);
     this.hemiLight.intensity = THREE.MathUtils.lerp(HEMI_OUTSIDE, HEMI_INSIDE, this._insideK);
+    // Gezegendeyken uzay ışıkları kapalı (gezegenin kendi ışıkları var)
+    if (this.ctx.world?.isPlanet()) {
+      this.sunLight.intensity = 0;
+      this.hemiLight.intensity = 0;
+    }
 
     // Shader zamanı + yıldızların ekran boyutu (cihaz pikselinde; gölgelendiriciler yıldızları görüntü
     // düzleminde çizer, bkz. glsl.js). Piksel oranı düşükken bile yıldız ≥ ~0.7 px kalır (titreme olmasın).

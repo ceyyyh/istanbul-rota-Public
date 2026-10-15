@@ -333,3 +333,54 @@ Bayraklar herhangi bir sırada gelebilir; Missions buna dayanıklı olmalı.
 | Ajan 7 — Test & QA | `tests/**`, `playwright.config.js`, `scripts/walk-check.mjs`, `scripts/qa-*.mjs` |
 
 Geliştirme sunucusu portları: Ajan 1 → 5181, Ajan 2 → 5182, … Ajan 7 → 5187.
+
+---
+
+## 15. Bölüm 2: Miller gezegeni ve mürettebat
+
+### Dünyalar (`src/core/WorldManager.js`, koordinatör)
+- `ctx.world.current` → `'ship' | 'planet'`, `ctx.world.isPlanet()`, `await ctx.world.go(name, { spawn:{x,z,yaw}, onDark, holdMs })`
+  (karartır, gizler/gösterir, ışınlar, açar). Olay: `world:change { from, to }`.
+- Gezegen aynı sahnede, `PLANET_ORIGIN = { x: 4000, z: 0 }`'da kurulur. Zemin yine y = 0 (diz altı sığ su).
+  Gezegendeyken gemi gizlenir, uzay geçişi kapanır (gökyüzü kubbesi onun yerini alır), uzay güneşi sönük olur,
+  `player.location.region === 'planet'`.
+- `?world=planet` → doğrudan gezegende başla (geliştirme).
+
+### Gezegen (`src/planet/**`, Ajan G) — `ctx.planet`
+`root`, `setActive(bool)`, `envIntensity`, `spawn` (dünya), `points { ranger, wreck, beacon }` (dünya),
+`toWorld(x,z)`, `objects { beacon, debris, ramp }` (etkileşim için THREE nesneleri; etkileşimi Hikâye ajanı ekler),
+`wave { active, distance, height, start({ fromDistance, speed }), stop(), reset() }`, `update(dt,t)`.
+Olaylar: `planet:wave_warning`, `planet:wave_hit`, `planet:wave_passed`.
+
+### Mürettebat (`src/gameplay/crew/**`, Ajan M) — `ctx.crew`
+Kadro: `ela` (Dr. Ela Yıldız, biyolog, iniş ekibi), `doruk` (Doruk Aral, görev uzmanı, iniş ekibi),
+`rami` (Prof. Rami Kaya, fizikçi, gemide kalır; dönüşte 23 yıl yaşlanmış).
+`crew.get(id)` → `npc`: `group`, `placeAt(x,z,yaw)`, `setPose('idle'|'walk'|'sit'|'type'|'run'|'wave')`,
+`walkTo(x,z,{speed,run}) → Promise`, `follow(vec3|null,{distance})`, `lookAt(x,z)`, `say(text,ms)`,
+`setAged(bool)`, `setVisible(bool)`, `talk = { prompt, onTalk }` (görev akışı değiştirebilir). Olay: `crew:talk { id }`.
+
+### Görev akışı (devam) — Ajan S (Hikâye)
+Bölüm 1 (`blackhole_observed`'a kadar) aynı kalır; artık orada **bitmez**.
+
+| # | Görev | Bayrak |
+|---|---|---|
+| 6 | Hava kilidinde iniş ekibine katıl, Ranger'a bin | `ranger_launched` |
+| 7 | (iniş sinematiği) Miller gezegeni | `miller_landed` |
+| 8 | Enkazdaki veri kaydedicisini bul | `beacon_found` |
+| 9 | Enkaza sıkışan Ela'ya yardım et | `ela_rescued` |
+| 10 | Dalga gelmeden Ranger'a koş | `wave_escaped` (dalga yakalarsa son kontrol noktasından tekrar) |
+| 11 | (kalkış sinematiği) gemiye dönüş — 23 yıl geçmiştir | `returned_to_ship` |
+| 12 | Yaşlanmış Rami ile konuş | `rami_met` |
+| 13 | İletişimde 23 yıllık mesajları dinle | `messages_23y_read` |
+| 14 | (son) | `mission_complete` |
+
+Gezegende HUD'da zaman genişlemesi sayacı: gezegende geçen her saniye ≈ Dünya'da 0,7 gün (1 saat = 7 yıl).
+Ölüm yok: dalga yakalarsa karartma + kontrol noktasından tekrar.
+
+### Sahiplik (Bölüm 2)
+| Sahip | Dosyalar |
+|---|---|
+| Koordinatör | `src/core/WorldManager.js`, `src/main.js`, `Ship.setVisible` |
+| Ajan G — Gezegen | `src/planet/**` |
+| Ajan M — Mürettebat | `src/gameplay/crew/**` |
+| Ajan S — Hikâye | `src/gameplay/Missions.js`, `src/gameplay/story/**`, `src/gameplay/Tars.js` (gezegen takip kipi), `src/world/modules/airlock.js` (binme), `src/world/modules/comms.js` (23 yıllık mesajlar), `src/ui/**` (zaman sayacı vb. küçük eklemeler), `src/audio/**` (yeni ses adları) |
