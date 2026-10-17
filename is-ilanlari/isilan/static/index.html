@@ -25,7 +25,7 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
 a{color:var(--accent-text)}
-button,input,select{font:inherit;color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -114,6 +114,25 @@ h1{font-size:19px;margin:0;line-height:1.25;letter-spacing:-.01em}
 .fbtn{display:none}
 .badge{background:var(--accent);color:var(--accent-fg);border-radius:999px;font-size:11px;font-weight:700;padding:1px 6px;min-width:18px}
 #active{margin-bottom:12px}
+.qv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.qbtn{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:13.5px;font-weight:500;cursor:pointer;line-height:1.25;white-space:nowrap}
+.qbtn:hover{background:var(--surface2)}
+.qbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.qv .link{margin-left:4px}
+.fl{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+.fl:first-child{margin-top:0}
+textarea.inp{resize:vertical;min-height:60px;line-height:1.4}
+.prof{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.phead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.phead h3{margin:0;font-size:16px}
+.hint{background:var(--accent-soft);color:var(--accent-text);border-radius:9px;padding:8px 12px;font-size:13.5px;margin:0 0 6px}
+.prow{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:14px}
+.prow .chk{margin:0}
+.pkm{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pkm .inp{width:auto}
+.pfoot{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.psum{font-size:13px;margin:0 0 8px;overflow-wrap:anywhere}
+.pbtns{display:flex;gap:6px;flex-wrap:wrap}
 .list{display:grid;gap:10px;transition:opacity .15s}
 .list[aria-busy="true"]{opacity:.55}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);min-width:0}
@@ -131,6 +150,11 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 .b.dist{background:var(--accent-soft);color:var(--accent-text);font-weight:600}
 .b.dist .sd{width:7px;height:7px;border-radius:50%}
 .b.nodist{color:var(--muted);font-weight:400}
+.b.km{background:transparent;box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent-text);font-weight:600;font-variant-numeric:tabular-nums}
+.b.cl{color:var(--muted)}
+.mt{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:8px;font-size:12px}
+.mt .sc{color:var(--muted);font-weight:600;margin-right:2px}
+.mt mark{background:var(--agen-bg);color:var(--agen-fg);border-radius:6px;padding:1px 7px;font-weight:600;overflow-wrap:anywhere}
 .b.platform{background:var(--plat-bg);color:var(--plat-fg)}
 .b.company{background:var(--comp-bg);color:var(--comp-fg)}
 .b.agency{background:var(--agen-bg);color:var(--agen-fg)}
@@ -263,6 +287,24 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
           <div class="srch"><svg class="i"><use href="#i-search"/></svg><input class="inp" id="q" type="search" placeholder="Pozisyon, şirket, anahtar kelime…" autocomplete="off"></div>
         </div>
         <fieldset class="fsec">
+          <legend class="ft">İş tipi</legend>
+          <div id="ctList"></div>
+        </fieldset>
+        <fieldset class="fsec">
+          <legend class="ft"><span>Yakınlık</span><button class="link" type="button" id="clrNear" hidden>Temizle</button></legend>
+          <label class="fl" for="origin">Başlangıç noktası</label>
+          <select class="inp" id="origin" data-f="origin"></select>
+          <label class="fl" for="maxKm">En fazla uzaklık</label>
+          <select class="inp" id="maxKm" data-f="max_km"><option value="">Tümü</option><option value="3">3 km</option><option value="5">5 km</option><option value="10">10 km</option><option value="15">15 km</option><option value="25">25 km</option></select>
+          <label class="chk" style="margin-top:8px"><input type="checkbox" data-f="nearsort"><span class="nm">En yakın önce sırala</span></label>
+          <p class="note">Uzaklıklar kuş uçuşu ve yaklaşıktır (mahalle ya da ilçe merkezine göre). Uzaklık sınırı seçildiğinde konumu bilinmeyen ilanlar gizlenir.</p>
+        </fieldset>
+        <div class="fsec">
+          <div class="ft">Bana uygun</div>
+          <p class="psum" id="profSum"></p>
+          <div class="pbtns"><button class="btn sm" type="button" data-prof="edit">Profili düzenle</button><button class="btn sm primary" type="button" data-qv="fit" id="profApply2">Profili uygula</button></div>
+        </div>
+        <fieldset class="fsec">
           <legend class="ft"><span>İlçe</span><button class="link" type="button" id="clrDist" hidden>Temizle</button></legend>
           <div class="seg" role="radiogroup" aria-label="Yaka">
             <label><input type="radio" name="yaka" value="" data-f="yaka">Tümü</label>
@@ -300,6 +342,13 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
     </aside>
 
     <div class="results">
+      <div class="qv" role="group" aria-label="Hızlı görünümler">
+        <button type="button" class="qbtn" data-qv="all" aria-pressed="false">Tümü</button>
+        <button type="button" class="qbtn" data-qv="beyaz" aria-pressed="false">Beyaz yaka</button>
+        <button type="button" class="qbtn" data-qv="ptt" aria-pressed="false" title="PTT Evleri (Sarıyer) çevresinde 10 km, en yakın önce">PTT Evleri'ne yakın</button>
+        <button type="button" class="qbtn" data-qv="fit" aria-pressed="false">Bana uygun</button>
+        <button type="button" class="link" data-prof="edit">Profili düzenle</button>
+      </div>
       <div class="rhead">
         <h2 id="resCount" aria-live="polite">İlanlar</h2>
         <button class="btn fbtn" type="button" id="openF" aria-controls="filters" aria-expanded="false"><svg class="i"><use href="#i-filter"/></svg>Filtreler <span class="badge" id="fCount" hidden></span></button>
@@ -308,8 +357,24 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
           <option value="new">En yeni</option>
           <option value="old">En eski</option>
           <option value="company">Şirket (A-Z)</option>
+          <option value="near">Yakınlık</option>
+          <option value="fit">Bana uygunluk</option>
         </select>
       </div>
+      <section class="prof" id="prof" hidden aria-labelledby="profT">
+        <div class="phead"><h3 id="profT">Bana uygun profilim</h3><button class="btn sm" type="button" id="profClose">Kapat</button></div>
+        <p class="hint" id="profHint" hidden>Henüz bir profil kaydetmediniz. Aradığınız pozisyonları yazıp “Kaydet ve uygula”ya basın; profil bu tarayıcıda saklanır.</p>
+        <label class="fl" for="pKw">Aradığım pozisyonlar / anahtar kelimeler</label>
+        <textarea class="inp" id="pKw" rows="2" placeholder="ör. muhasebe, finans, veri analisti"></textarea>
+        <p class="note">Virgülle ayırın. Bu kelimelerden en az birini içeren ilanlar listelenir; daha çok eşleşen üstte.</p>
+        <label class="fl" for="pEx">İstemediğim kelimeler</label>
+        <input class="inp" id="pEx" type="text" placeholder="ör. stajyer, gece vardiyası" autocomplete="off">
+        <div class="prow">
+          <label class="chk"><input type="checkbox" id="pWhite"><span class="nm">Yalnızca beyaz yaka</span></label>
+          <span class="pkm"><label for="pKm">En fazla</label><select class="inp" id="pKm"><option value="">sınırsız</option><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="25">25</option></select><span>km (PTT Evleri'nden)</span></span>
+        </div>
+        <div class="pfoot"><button class="btn primary" type="button" id="profSave">Kaydet ve uygula</button><button class="btn" type="button" id="profDel">Profili sil</button></div>
+      </section>
       <div id="active" class="chips" aria-label="Etkin filtreler"></div>
       <div id="jobsErr"></div>
       <div id="list" class="list"></div>

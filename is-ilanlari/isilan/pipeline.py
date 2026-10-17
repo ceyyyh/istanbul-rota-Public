@@ -11,7 +11,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 
 from .db import DB, dedupe_key, now_iso
-from .geo import detect_district, is_istanbul, side_of
+from .classify import collar
+from .geo import detect_district, is_istanbul, locate, side_of
 from .http import Http, HttpError
 from .models import Job
 from .sources import FetchContext, Source, all_sources
@@ -172,6 +173,9 @@ def enrich(job: Job) -> dict | None:
         return None
     row = job.to_dict()
     row["side"] = side_of(district) or side_hint(loc)
+    row["collar"] = collar(job.title, job.category, job.source, job.source_type)
+    c = locate(f"{loc} {job.title}", district)
+    row["lat"], row["lon"] = (c if c else (None, None))
     row["dedupe_key"] = dedupe_key(job.title, job.company, district)
     return row
 
@@ -246,6 +250,8 @@ def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, s
 def _set_district(r: dict, d: str):
     r["district"] = d
     r["side"] = side_of(d)
+    c = locate(f"{r.get('location') or ''} {r.get('title') or ''}", d)
+    r["lat"], r["lon"] = (c if c else (None, None))
     r["dedupe_key"] = dedupe_key(r["title"], r["company"], d)
     r.setdefault("extra", {})["district_from"] = "detail"
 

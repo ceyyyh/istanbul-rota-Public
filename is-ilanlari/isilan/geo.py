@@ -586,3 +586,83 @@ def side_of(district: str | None) -> str | None:
         canon = _FOLD_TO_DISTRICT.get(fold(district))
         side = DISTRICT_SIDE.get(canon) if canon else None
     return side
+
+
+# ---------------------------------------------------------------------------
+# Yaklaşık konum ve uzaklık (yakınlık sıralaması için; kuş uçuşu)
+# ---------------------------------------------------------------------------
+import math as _math
+
+# İlçe merkezleri (yaklaşık; ilçenin yerleşik/iş yoğunluğu merkezi)
+DISTRICT_COORDS: dict[str, tuple[float, float]] = {
+    "Adalar": (40.876, 29.091), "Arnavutköy": (41.184, 28.740), "Ataşehir": (40.984, 29.127),
+    "Avcılar": (40.980, 28.721), "Bağcılar": (41.039, 28.856), "Bahçelievler": (41.000, 28.860),
+    "Bakırköy": (40.978, 28.872), "Başakşehir": (41.093, 28.802), "Bayrampaşa": (41.047, 28.912),
+    "Beşiktaş": (41.043, 29.007), "Beykoz": (41.134, 29.092), "Beylikdüzü": (40.982, 28.640),
+    "Beyoğlu": (41.037, 28.977), "Büyükçekmece": (41.020, 28.585), "Çatalca": (41.143, 28.461),
+    "Çekmeköy": (41.033, 29.183), "Esenler": (41.043, 28.876), "Esenyurt": (41.029, 28.673),
+    "Eyüpsultan": (41.048, 28.934), "Fatih": (41.019, 28.949), "Gaziosmanpaşa": (41.057, 28.915),
+    "Güngören": (41.022, 28.872), "Kadıköy": (40.990, 29.029), "Kağıthane": (41.081, 28.972),
+    "Kartal": (40.890, 29.190), "Küçükçekmece": (41.000, 28.780), "Maltepe": (40.935, 29.131),
+    "Pendik": (40.877, 29.235), "Sancaktepe": (40.990, 29.230), "Sarıyer": (41.135, 29.045),
+    "Silivri": (41.073, 28.246), "Sultanbeyli": (40.968, 29.262), "Sultangazi": (41.106, 28.867),
+    "Şile": (41.176, 29.613), "Şişli": (41.060, 28.987), "Tuzla": (40.816, 29.301),
+    "Ümraniye": (41.016, 29.124), "Üsküdar": (41.023, 29.015), "Zeytinburnu": (40.994, 28.904),
+}
+
+# Mahalle / semt / iş merkezi noktaları (ilçe merkezinden daha hassas yakınlık için)
+PLACE_COORDS: dict[str, tuple[str, float, float]] = {
+    # Sarıyer ve çevresi
+    "ptt evleri": ("Sarıyer", 41.142, 29.036), "hacıosman": ("Sarıyer", 41.140, 29.033),
+    "kozdere": ("Sarıyer", 41.145, 29.040), "kocataş": ("Sarıyer", 41.146, 29.042),
+    "darüşşafaka": ("Sarıyer", 41.130, 29.041), "ferahevler": ("Sarıyer", 41.126, 29.046),
+    "pınar mahallesi": ("Sarıyer", 41.136, 29.034), "tarabya": ("Sarıyer", 41.138, 29.056),
+    "kireçburnu": ("Sarıyer", 41.145, 29.053), "yeniköy": ("Sarıyer", 41.121, 29.067),
+    "istinye": ("Sarıyer", 41.113, 29.057), "emirgan": ("Sarıyer", 41.105, 29.056),
+    "reşitpaşa": ("Sarıyer", 41.103, 29.045), "baltalimanı": ("Sarıyer", 41.095, 29.056),
+    "rumelihisarı": ("Sarıyer", 41.085, 29.056), "maslak": ("Sarıyer", 41.110, 29.020),
+    "ayazağa": ("Sarıyer", 41.107, 29.012), "huzur": ("Sarıyer", 41.112, 29.027),
+    "vadi istanbul": ("Sarıyer", 41.105, 28.990), "bahçeköy": ("Sarıyer", 41.175, 28.990),
+    "zekeriyaköy": ("Sarıyer", 41.200, 29.030), "kumköy": ("Sarıyer", 41.250, 29.030),
+    "rumelifeneri": ("Sarıyer", 41.233, 29.110), "büyükdere": ("Sarıyer", 41.160, 29.050),
+    "çayırbaşı": ("Sarıyer", 41.157, 29.045), "sarıyer merkez": ("Sarıyer", 41.167, 29.057),
+    # Beşiktaş / Şişli / Kağıthane iş merkezleri
+    "levent": ("Beşiktaş", 41.080, 29.011), "4 levent": ("Beşiktaş", 41.085, 29.008),
+    "etiler": ("Beşiktaş", 41.081, 29.033), "gayrettepe": ("Beşiktaş", 41.068, 29.008),
+    "zincirlikuyu": ("Şişli", 41.069, 29.010), "ortaköy": ("Beşiktaş", 41.048, 29.027),
+    "bebek": ("Beşiktaş", 41.077, 29.043), "mecidiyeköy": ("Şişli", 41.067, 28.995),
+    "esentepe": ("Şişli", 41.075, 29.005), "nişantaşı": ("Şişli", 41.050, 28.993),
+    "seyrantepe": ("Kağıthane", 41.100, 28.990), "çağlayan": ("Kağıthane", 41.068, 28.980),
+    # Anadolu yakası iş merkezleri
+    "kavacık": ("Beykoz", 41.090, 29.090), "kozyatağı": ("Kadıköy", 40.975, 29.098),
+    "altunizade": ("Üsküdar", 41.022, 29.044), "dudullu": ("Ümraniye", 41.005, 29.155),
+    "kurtköy": ("Pendik", 40.910, 29.300), "içerenköy": ("Ataşehir", 40.972, 29.110),
+    # Avrupa yakası diğer merkezler
+    "ikitelli": ("Başakşehir", 41.065, 28.795), "halkalı": ("Küçükçekmece", 41.035, 28.780),
+    "merter": ("Güngören", 41.008, 28.890), "yenibosna": ("Bahçelievler", 40.997, 28.833),
+    "güneşli": ("Bağcılar", 41.040, 28.820), "hadımköy": ("Arnavutköy", 41.130, 28.630),
+    "istanbul havalimanı": ("Arnavutköy", 41.262, 28.742), "ataköy": ("Bakırköy", 40.980, 28.850),
+}
+
+_PLACE_IDX = sorted(((fold(k), v) for k, v in PLACE_COORDS.items()), key=lambda kv: -len(kv[0]))
+
+ORIGINS: list[dict] = [{"name": "PTT Evleri (Sarıyer)", "lat": 41.142, "lon": 29.036}] + [
+    {"name": d, "lat": c[0], "lon": c[1]} for d, c in DISTRICT_COORDS.items()]
+
+
+def locate(text: str, district: str | None) -> tuple[float, float] | None:
+    """Konum metninden yaklaşık koordinat: tanınan mahalle/semt (ilçeyle uyumluysa), yoksa ilçe merkezi."""
+    t = " " + fold(text or "") + " "
+    for key, (pd, lat, lon) in _PLACE_IDX:
+        if f" {key} " in t and (district is None or district == pd):
+            return lat, lon
+    if district and district in DISTRICT_COORDS:
+        return DISTRICT_COORDS[district]
+    return None
+
+
+def distance_km(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """İki nokta arası kuş uçuşu uzaklık (haversine, km)."""
+    la1, lo1, la2, lo2 = map(_math.radians, (a[0], a[1], b[0], b[1]))
+    h = _math.sin((la2 - la1) / 2) ** 2 + _math.cos(la1) * _math.cos(la2) * _math.sin((lo2 - lo1) / 2) ** 2
+    return 6371.0 * 2 * _math.asin(_math.sqrt(h))

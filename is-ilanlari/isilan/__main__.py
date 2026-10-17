@@ -151,7 +151,9 @@ def cmd_build_site(a):
         it["extra"] = {"agency": agency} if agency else {}
         it.pop("external_id", None)
         jobs.append(it)
-    data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db)}
+    from .geo import ORIGINS
+
+    data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db), "origins": ORIGINS}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str).replace("</", "<\\/")
     tpl = (Path(__file__).resolve().parent / "static" / "index.html").read_text(encoding="utf-8")
     marker = "<script>/*__ISILAN_DATA__*/</script>"

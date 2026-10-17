@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .db import DB
-from .geo import DISTRICT_SIDE, DISTRICTS
+from .geo import DISTRICT_SIDE, DISTRICTS, ORIGINS
 from .models import AGENCY, COMPANY, PLATFORM
 from .pipeline import CrawlOptions, CrawlStatus, crawl
 from .sources import all_sources
@@ -63,7 +63,27 @@ def parse_filters(qs: dict[str, list[str]]) -> dict:
         "work_models": lst("work_model"),
         "days": int(days) if days and days.isdigit() else None,
         "sort": one("sort", "new"),
+        "collars": lst("is_tipi"),
+        "near": _point(one("near")),
+        "max_km": _num(one("max_km")),
+        "kw": lst("kw"),
+        "exclude": lst("haric"),
     }
+
+
+def _num(v):
+    try:
+        return float(v) if v not in (None, "") else None
+    except ValueError:
+        return None
+
+
+def _point(v):
+    """"41.14,29.03" → (41.14, 29.03); geçersizse None."""
+    if not v or "," not in v:
+        return None
+    a, b = (_num(x) for x in v.split(",", 1))
+    return (a, b) if a is not None and b is not None and -90 <= a <= 90 and -180 <= b <= 180 else None
 
 
 def _int(v, default: int) -> int:
@@ -88,6 +108,9 @@ def facets(db: DB, f: dict) -> dict:
     s_counts: dict[str, int] = {}
     for it in items(("source",)):
         s_counts[it["source"]] = s_counts.get(it["source"], 0) + 1
+    c_counts: dict[str | None, int] = {}
+    for it in items(("collar",)):
+        c_counts[it.get("collar")] = c_counts.get(it.get("collar"), 0) + 1
     meta = source_meta()
     srcs = [{"name": n, "label": label_of(n), "source_type": meta.get(n, {}).get("source_type", ""), "count": c}
             for n, c in sorted(s_counts.items(), key=lambda kv: -kv[1])]
@@ -98,6 +121,10 @@ def facets(db: DB, f: dict) -> dict:
         "unknown_district": d_counts.get(None, 0),
         "source_types": [{"name": t, "label": TYPE_LABELS[t], "count": st_counts.get(t, 0)} for t in (PLATFORM, COMPANY, AGENCY)],
         "sources": srcs,
+        "collars": [{"name": "beyaz", "label": "Beyaz yaka", "count": c_counts.get("beyaz", 0)},
+                    {"name": "mavi", "label": "Mavi yaka", "count": c_counts.get("mavi", 0)},
+                    {"name": "belirsiz", "label": "Belirsiz", "count": c_counts.get(None, 0)}],
+        "origins": ORIGINS,
     }
 
 
