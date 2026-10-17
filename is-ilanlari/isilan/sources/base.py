@@ -23,6 +23,14 @@ class FetchContext:
     deadline: float = 0          # time.monotonic() cinsinden; 0 = sınırsız
     fetch_details: bool = False  # detay sayfalarını da çek (yavaş ama zengin)
     log: logging.Logger = field(default_factory=lambda: logging.getLogger("isilan.source"))
+    # Kaynak, tarama yarıda kesildiği hâlde hata fırlatmadan döndüyse (ör. 2. sayfada 429, kaynağa özgü
+    # sonuç sınırı) True yapar. Pipeline bu durumda görünmeyen ilanları hemen pasife almaz.
+    partial: bool = False
+
+    def mark_partial(self, reason: str = "") -> None:
+        self.partial = True
+        if reason:
+            self.log.info("eksik tarama: %s", reason)
 
     def time_left(self) -> bool:
         return not self.deadline or time.monotonic() < self.deadline

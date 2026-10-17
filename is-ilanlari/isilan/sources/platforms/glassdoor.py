@@ -267,6 +267,8 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             yield j
     except (HttpError, RuntimeError, ValueError, KeyError, TypeError, IndexError) as e:
         ctx.log.warning("glassdoor: GraphQL başarısız (%s); HTML yedeğine geçiliyor", e)
+        if got:
+            ctx.mark_partial("glassdoor GraphQL yarıda kesildi")
     if not got:
         yield from _fetch_html(src, ctx, loc[0])
 

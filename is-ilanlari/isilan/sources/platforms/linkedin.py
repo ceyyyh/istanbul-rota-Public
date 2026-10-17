@@ -146,6 +146,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
                 raise
             # 429 / 999: LinkedIn kısıtlaması — elde edilenlerle yetin
             ctx.log.warning("linkedin: start=%s alınamadı (%s); tarama burada kesildi", start, e.status)
+            ctx.mark_partial(f"linkedin start={start}")
             return
         page += 1
         cards = parse_cards(html)
@@ -166,6 +167,8 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             yield j
         # LinkedIn sayfa başına ~10 kart döner; ham kart sayısı kadar ilerle
         start += max(len(cards), len(_URN_RAW.findall(html)))
+    if start >= max_results:  # LinkedIn'in misafir sonuç sınırı: daha fazla ilan olabilir
+        ctx.mark_partial("linkedin max_results")
 
 
 def sources() -> list[Source]:

@@ -269,6 +269,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     except (HttpError, RuntimeError, ValueError, KeyError, TypeError) as e:
         ctx.log.warning("indeed: GraphQL API başarısız (%s); HTML yedeğine geçiliyor", e)
         if got:
+            ctx.mark_partial("indeed GraphQL yarıda kesildi")
             return
     else:
         if got:

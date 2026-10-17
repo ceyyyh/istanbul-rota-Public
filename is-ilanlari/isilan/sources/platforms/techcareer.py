@@ -104,6 +104,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
         except (HttpError, ValueError) as e:
             if page > 1:
                 ctx.log.info("techcareer: sayfa %d alınamadı (%s)", page, e)
+                ctx.mark_partial(f"techcareer sayfa {page}")
                 break
             ctx.log.info("techcareer API alınamadı (%s); __NEXT_DATA__ deneniyor", e)
             yield from _fallback(src, ctx)

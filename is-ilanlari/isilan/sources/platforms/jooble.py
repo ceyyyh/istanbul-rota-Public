@@ -90,6 +90,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
                 yield j
         if not new or (isinstance(total, int) and len(seen) >= total):
             return
+    ctx.mark_partial("jooble sayfa sınırı")
 
 
 def sources() -> list[Source]:

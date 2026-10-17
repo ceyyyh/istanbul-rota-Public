@@ -93,6 +93,8 @@ class DB:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(SCHEMA)
+        self._writes = 0          # her yazmada artar (sorgu önbelleği anahtarı)
+        self._cache: dict = {}
 
     def close(self):
         self.conn.close()
@@ -102,6 +104,7 @@ class DB:
         """Döner: (yeni, güncellenen)."""
         new = upd = 0
         with self._lock, self.conn:
+            self._writes += 1
             for r in rows:
                 cur = self.conn.execute("SELECT first_seen FROM jobs WHERE uid=?", (r["uid"],)).fetchone()
                 r = dict(r)
@@ -125,6 +128,7 @@ class DB:
     def deactivate_missing(self, source: str, before: str) -> int:
         """Bu taramada görülmeyen ilanları pasife çeker (ilan kaldırılmış demektir)."""
         with self._lock, self.conn:
+            self._writes += 1
             cur = self.conn.execute("UPDATE jobs SET active=0 WHERE source=? AND active=1 AND last_seen<?", (source, before))
             return cur.rowcount
 
@@ -133,10 +137,11 @@ class DB:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         today = datetime.now(timezone.utc).date().isoformat()
         with self._lock, self.conn:
+            self._writes += 1
             n = self.conn.execute("UPDATE jobs SET active=0 WHERE active=1 AND last_seen<?", (cutoff,)).rowcount
             n += self.conn.execute(
                 "UPDATE jobs SET active=0 WHERE active=1 AND json_extract(extra,'$.validThrough') IS NOT NULL "
-                "AND json_extract(extra,'$.validThrough')!='' AND substr(json_extract(extra,'$.validThrough'),1,10)<?",
+                "AND json_extract(extra,'$.validThrough') GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*' AND substr(json_extract(extra,'$.validThrough'),1,10)<?",
                 (today,),
             ).rowcount
             return n
@@ -152,17 +157,23 @@ class DB:
 
     # ---- okuma ----
     def last_runs(self) -> dict[str, sqlite3.Row]:
-        rows = self.conn.execute(
-            "SELECT r.* FROM runs r JOIN (SELECT source, MAX(id) mid FROM runs WHERE finished_at IS NOT NULL GROUP BY source) m "
-            "ON r.id=m.mid").fetchall()
+        with self._lock:  # bağlantı tarama iş parçacıklarıyla paylaşılıyor
+            rows = self._last_runs()
         return {r["source"]: r for r in rows}
 
+    def _last_runs(self):
+        return self.conn.execute(
+            "SELECT r.* FROM runs r JOIN (SELECT source, MAX(id) mid FROM runs WHERE finished_at IS NOT NULL GROUP BY source) m "
+            "ON r.id=m.mid").fetchall()
+
     def last_crawl(self) -> str | None:
-        r = self.conn.execute("SELECT MAX(finished_at) FROM runs").fetchone()
+        with self._lock:
+            r = self.conn.execute("SELECT MAX(finished_at) FROM runs").fetchone()
         return r[0] if r else None
 
     def active_counts_by_source(self) -> dict[str, int]:
-        return {r[0]: r[1] for r in self.conn.execute("SELECT source, COUNT(*) FROM jobs WHERE active=1 GROUP BY source")}
+        with self._lock:
+            return {r[0]: r[1] for r in self.conn.execute("SELECT source, COUNT(*) FROM jobs WHERE active=1 GROUP BY source")}
 
     def query(self, *, q: str = "", districts: list[str] | None = None, include_unknown: bool = False,
               side: str | None = None, source_types: list[str] | None = None, sources: list[str] | None = None,
@@ -206,26 +217,86 @@ class DB:
             "company": "company COLLATE NOCASE ASC, title ASC",
         }.get(sort, "COALESCE(NULLIF(posted_at,''), first_seen) DESC")
         sql_where = " AND ".join(where)
-        rows = self.conn.execute(f"SELECT * FROM jobs WHERE {sql_where} ORDER BY {order}", args).fetchall()
-        items: list[dict] = []
-        if dedupe:
-            groups: dict[str, list[sqlite3.Row]] = {}
-            for r in rows:
-                groups.setdefault(r["dedupe_key"] or r["uid"], []).append(r)
-            for r in rows:
-                g = groups.get(r["dedupe_key"] or r["uid"])
-                if not g:
-                    continue
-                groups.pop(r["dedupe_key"] or r["uid"])
-                g.sort(key=lambda x: TYPE_PRIORITY.get(x["source_type"], 9))
-                d = row_to_dict(g[0])
-                d["duplicates"] = [{"source": x["source"], "source_type": x["source_type"], "url": x["url"]} for x in g[1:]]
-                items.append(d)
-        else:
-            items = [row_to_dict(r) | {"duplicates": []} for r in rows]
-        total = len(items)
+        reps = self._deduped(sql_where, tuple(args), order, dedupe)
+        total = len(reps)
         start = max(0, (page - 1) * per_page)
-        return {"total": total, "page": page, "per_page": per_page, "items": items[start:start + per_page], "_all": items}
+        return {"total": total, "page": page, "per_page": per_page,
+                "items": self._full_items(reps[start:start + per_page]), "_all": _LazyItems(self, reps)}
+
+    # Hafif sütunlar: tekilleştirme ve faset sayımı için tüm satırları (açıklama vb. olmadan) okur
+    _LIGHT = "uid, dedupe_key, source, source_type, district, url"
+
+    def _version(self):
+        """Veri değiştiğinde değişen anahtar: bu bağlantının yazmaları + başka bağlantıların
+        (ör. ayrı süreçte çalışan `crawl`) commit'leri (PRAGMA data_version)."""
+        return self._writes, self.conn.execute("PRAGMA data_version").fetchone()[0]
+
+    def _deduped(self, sql_where: str, args: tuple, order: str, dedupe: bool) -> list[tuple]:
+        """Döner: [(temsilci_satır, [yinelenen_satırlar])] — satırlar hafif tuple'lardır."""
+        with self._lock:
+            key = (sql_where, args, order, dedupe)
+            ver = self._version()
+            hit = self._cache.get(key)
+            if hit and hit[0] == ver:
+                return hit[1]
+            rows = self.conn.execute(f"SELECT {self._LIGHT} FROM jobs WHERE {sql_where} ORDER BY {order}", args).fetchall()
+        if dedupe:
+            groups: dict[str, list] = {}
+            order_keys: list[str] = []
+            for r in rows:
+                k = r[1] or r[0]
+                g = groups.get(k)
+                if g is None:
+                    groups[k] = [r]
+                    order_keys.append(k)
+                else:
+                    g.append(r)
+            reps = []
+            for k in order_keys:
+                g = groups[k]
+                if len(g) > 1:
+                    g.sort(key=lambda x: TYPE_PRIORITY.get(x[3], 9))
+                reps.append((g[0], g[1:]))
+        else:
+            reps = [(r, []) for r in rows]
+        with self._lock:
+            if len(self._cache) >= 64:
+                self._cache.pop(next(iter(self._cache)))
+            self._cache[key] = (ver, reps)
+        return reps
+
+    def _full_items(self, reps: list[tuple]) -> list[dict]:
+        uids = [r[0] for r, _ in reps]
+        full: dict[str, sqlite3.Row] = {}
+        with self._lock:
+            for i in range(0, len(uids), 900):
+                chunk = uids[i:i + 900]
+                for row in self.conn.execute(f"SELECT * FROM jobs WHERE uid IN ({','.join('?' * len(chunk))})", chunk):
+                    full[row["uid"]] = row
+        out = []
+        for r, dups in reps:
+            row = full.get(r[0])
+            if row is None:  # okuma arasında silinmiş (olağan değil)
+                continue
+            d = row_to_dict(row)
+            d["duplicates"] = [{"source": x[2], "source_type": x[3], "url": x[5]} for x in dups]
+            out.append(d)
+        return out
+
+
+class _LazyItems(list):
+    """query()["_all"]: tekilleştirilmiş tüm ilanlar. Faset sayımı yalnızca district / source /
+    source_type alanlarını okuduğundan bunlar hafif satırlardan verilir; tam satırlar (açıklama,
+    extra ...) yalnızca gerektiğinde (`full()`) okunur."""
+
+    def __init__(self, db: "DB", reps: list[tuple]):
+        super().__init__({"uid": r[0], "dedupe_key": r[1], "source": r[2], "source_type": r[3], "district": r[4],
+                          "url": r[5], "duplicates": [{"source": x[2], "source_type": x[3], "url": x[5]} for x in d]}
+                         for r, d in reps)
+        self._db, self._reps = db, reps
+
+    def full(self) -> list[dict]:
+        return self._db._full_items(self._reps)
 
 
 def row_to_dict(r: sqlite3.Row) -> dict:

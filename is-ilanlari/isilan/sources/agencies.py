@@ -168,6 +168,8 @@ def fetch_listing_jsonld(src: Source, ctx: FetchContext) -> Iterator[Job]:
     for list_url, list_loc in lists:
         for n in range(1, max_pages + 1):
             if not ctx.time_left() or visited >= max_jobs:
+                if visited >= max_jobs:
+                    ctx.mark_partial(f"{src.name}: max_jobs={max_jobs}")
                 return
             url = _page_url(list_url, n, p)
             if url is None:
@@ -178,6 +180,7 @@ def fetch_listing_jsonld(src: Source, ctx: FetchContext) -> Iterator[Job]:
                 if n == 1 and list_url == lists[0][0]:
                     raise
                 ctx.log.info("%s: liste sayfası alınamadı %s (%s)", src.name, url, e)
+                ctx.mark_partial(f"{src.name}: liste sayfası {n}")
                 break
 
             # Liste sayfasının kendisi JobPosting JSON-LD taşıyorsa doğrudan kullan.
@@ -200,6 +203,8 @@ def fetch_listing_jsonld(src: Source, ctx: FetchContext) -> Iterator[Job]:
                     continue
                 seen.add(k)
                 if visited >= max_jobs or not ctx.time_left():
+                    if visited >= max_jobs:
+                        ctx.mark_partial(f"{src.name}: max_jobs={max_jobs}")
                     return
                 visited += 1
                 try:
@@ -220,6 +225,8 @@ def fetch_listing_jsonld(src: Source, ctx: FetchContext) -> Iterator[Job]:
                         yield job
             if not p.get("page_style"):
                 break
+        else:  # liste sayfa sınırına ulaşıldı (daha fazla sayfa olabilir)
+            ctx.mark_partial(f"{src.name}: max_pages={max_pages}")
 
 
 # --------------------------------------------------------------------------- #

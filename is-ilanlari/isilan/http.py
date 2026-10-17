@@ -85,7 +85,8 @@ class Http:
                 continue
             if r.status_code in (429, 500, 502, 503, 504) and attempt < self.retries - 1:
                 retry_after = r.headers.get("Retry-After", "")
-                time.sleep(float(retry_after) if retry_after.isdigit() else 2.0 * (attempt + 1))
+                # Retry-After saatlerce olabilir; kaynak süre sınırını aşmamak için üst sınır koy
+                time.sleep(min(float(retry_after), 60.0) if retry_after.isdigit() else 2.0 * (attempt + 1))
                 continue
             if r.status_code >= 400:
                 raise HttpError(url, r.status_code)
@@ -99,7 +100,13 @@ class Http:
             return cp.read_text(encoding="utf-8")
         r = self.request(method, url, **kw)
         if not r.encoding or r.encoding.lower() == "iso-8859-1":
-            r.encoding = r.apparent_encoding or "utf-8"
+            # Başlıkta charset yok: Türk sitelerinin neredeyse tamamı UTF-8; önce onu dene
+            # (apparent_encoding büyük sayfalarda yavaş ve kısa metinlerde yanılabiliyor).
+            try:
+                r.content.decode("utf-8")
+                r.encoding = "utf-8"
+            except UnicodeDecodeError:
+                r.encoding = r.apparent_encoding or "utf-8"
         txt = r.text
         if cp:
             cp.parent.mkdir(parents=True, exist_ok=True)

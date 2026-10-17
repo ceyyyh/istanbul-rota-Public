@@ -3,11 +3,12 @@ veritabanına yazar ve kaynak sağlığını kaydeder."""
 from __future__ import annotations
 
 import logging
+import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from .db import DB, dedupe_key, now_iso
 from .geo import detect_district, is_istanbul, side_of
@@ -73,16 +74,91 @@ class CrawlStatus:
                 "log": self.log[-50:], "results": self.results}
 
 
+def _as_text(v) -> str:
+    """Kaynaklardan gelebilecek None / sayı / liste / sözlük değerlerini düz metne çevirir."""
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v.strip()
+    if isinstance(v, dict):
+        v = v.get("name") or v.get("label") or v.get("text") or " ".join(str(x) for x in v.values() if isinstance(x, str))
+        return _as_text(v)
+    if isinstance(v, (list, tuple, set)):
+        return ", ".join(t for t in (_as_text(x) for x in v) if t)
+    return str(v).strip()
+
+
+def norm_date(v) -> str | None:
+    """posted_at'i sözlük sırasıyla karşılaştırılabilir ISO metnine çevirir ("YYYY-MM-DD" ya da
+    "YYYY-MM-DDTHH:MM:SS[+hh:mm]"); tanınmayan biçimde None. Sıralama ve `days` süzgeci
+    substr(posted_at,1,10) ile çalıştığından "15.10.2026" gibi değerler veritabanına girmemeli."""
+    if v is None or v == "":
+        return None
+    if isinstance(v, datetime):
+        return v.isoformat(timespec="seconds")
+    if isinstance(v, date):
+        return v.isoformat()
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        if v <= 0:
+            return None
+        try:
+            return datetime.fromtimestamp(v / 1000 if v > 1e11 else v, timezone.utc).isoformat(timespec="seconds")
+        except (OverflowError, OSError, ValueError):
+            return None
+    s = str(v).strip()
+    if _ISO_DATE.match(s):
+        try:
+            date.fromisoformat(s[:10])
+        except ValueError:
+            return None
+        return s[:10] if len(s) == 10 else s[:32]
+    from .sources.platforms._util import parse_any_date
+    return parse_any_date(s)
+
+
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:$|[T ])")
+
+
+def _sanitize(job: Job) -> None:
+    for f in ("title", "company", "url", "location", "employment_type", "work_model", "description",
+              "salary", "category", "external_id"):
+        v = getattr(job, f)
+        if not isinstance(v, str):
+            setattr(job, f, _as_text(v))
+    if job.district is not None and not isinstance(job.district, str):
+        job.district = None
+    job.posted_at = norm_date(job.posted_at)
+    if not isinstance(job.extra, dict):
+        job.extra = {}
+    vt = job.extra.get("validThrough")
+    if vt:  # db.expire_old bu alanı ISO tarih olarak karşılaştırır
+        job.extra["validThrough"] = (norm_date(vt) or "")[:10]
+
+
+def side_hint(loc: str) -> str | None:
+    """İlçe bulunamadığında yaka bilgisi: "İstanbul(Avr.)" (Kariyer.net, SecretCV), "İstanbul (Asya)",
+    "Avrupa Yakası", "Asian Side" ... İki yaka birden geçiyorsa None."""
+    f = f" {fold(loc)} "
+    avr = any(w in f for w in (" avr ", " avrupa ", " european side "))
+    ana = any(w in f for w in (" asya ", " anadolu ", " asian side "))
+    if avr == ana:
+        return None
+    return "avrupa" if avr else "anadolu"
+
+
 def enrich(job: Job) -> dict | None:
     """İstanbul dışı ilanlar için None; aksi halde veritabanı satırı."""
+    _sanitize(job)
     loc = job.location or ""
     in_ist = is_istanbul(loc) or is_istanbul(job.title)
     if not in_ist:
         # Konumu yalnızca "Türkiye (Remote)" gibi olan uzaktan ilanlar İstanbul'dan da yapılabilir
         words = set(fold(loc).split())
-        if words and words <= _REMOTE_TR and words & {"remote", "uzaktan"}:
+        turkey_wide = not words or words <= _REMOTE_TR
+        if words and turkey_wide and words & {"remote", "uzaktan"}:
             job.work_model = "remote"
-        if job.work_model != "remote":
+        # Başka bir şehre bağlı uzaktan ilan (ör. "Ankara") İstanbul ilanı sayılmaz
+        if job.work_model != "remote" or not turkey_wide:
             return None
     district = job.district or detect_district(loc) or detect_district(job.title)
     if not district and job.description:
@@ -93,7 +169,7 @@ def enrich(job: Job) -> dict | None:
     if not job.title or not job.url:
         return None
     row = job.to_dict()
-    row["side"] = side_of(district)
+    row["side"] = side_of(district) or side_hint(loc)
     row["dedupe_key"] = dedupe_key(job.title, job.company, district)
     return row
 
@@ -111,8 +187,12 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     try:
         for job in src.fetch(ctx):
             count += 1
-            job.source = src.name  # sağlık takibi ve pasife alma kaynak adına göre yapılır
-            row = enrich(job)
+            try:
+                job.source = src.name  # sağlık takibi ve pasife alma kaynak adına göre yapılır
+                row = enrich(job)
+            except Exception as e:  # noqa: BLE001 — tek bozuk ilan kaynağın tamamını düşürmesin
+                log.debug("%s: ilan atlandı (%r)", src.name, e)
+                continue
             if row:
                 rows[row["uid"]] = row
             if count % 200 == 0 and status:
@@ -123,7 +203,7 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     new, upd = db.upsert_jobs(list(rows.values()), started)
     removed = 0
     if error is None and rows:
-        truncated = counted.n >= opts.max_pages or not ctx.time_left()
+        truncated = counted.n >= opts.max_pages or not ctx.time_left() or ctx.partial
         if not truncated:
             # Kaynak baştan sona tarandı: bu taramada görünmeyen ilanlar yayından kalkmıştır
             removed = db.deactivate_missing(src.name, started)
@@ -164,6 +244,12 @@ def crawl(db: DB, sources: list[Source] | None = None, opts: CrawlOptions | None
             status.current.append(s.label)
         try:
             return s, run_source(s, db, http, opts, status)
+        except Exception as e:  # noqa: BLE001 — ör. veritabanı hatası: diğer kaynaklar ve expire_old sürsün
+            log.exception("%s: beklenmeyen hata", s.name)
+            res = {"status": "error", "fetched": 0, "kept": 0, "new": 0, "removed": 0,
+                   "error": f"{type(e).__name__}: {e}"}
+            status.results[s.name] = res
+            return s, res
         finally:
             with lock:
                 status.current.remove(s.label)

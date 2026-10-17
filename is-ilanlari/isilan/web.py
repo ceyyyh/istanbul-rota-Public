@@ -66,6 +66,13 @@ def parse_filters(qs: dict[str, list[str]]) -> dict:
     }
 
 
+def _int(v, default: int) -> int:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return default
+
+
 def facets(db: DB, f: dict) -> dict:
     def items(ignore):
         return db.query(**f, page=1, per_page=1, ignore=ignore)["_all"]
@@ -161,8 +168,8 @@ def make_handler(app: App):
                     self._send(200, (STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
                 elif u.path == "/api/jobs":
                     f = parse_filters(qs)
-                    page = max(1, int(qs.get("page", ["1"])[0] or 1))
-                    per_page = min(500, max(1, int(qs.get("per_page", ["50"])[0] or 50)))
+                    page = max(1, _int(qs.get("page", ["1"])[0], 1))
+                    per_page = min(500, max(1, _int(qs.get("per_page", ["50"])[0], 50)))
                     res = app.db.query(**f, page=page, per_page=per_page)
                     res.pop("_all")
                     res["items"] = [decorate(i) for i in res["items"]]
@@ -189,7 +196,10 @@ def make_handler(app: App):
                     body = json.loads(self.rfile.read(n) or b"{}")
                 except json.JSONDecodeError:
                     body = {}
-            started = app.start_crawl(body.get("sources") or None)
+            names = body.get("sources") if isinstance(body, dict) else None
+            if isinstance(names, str):  # {"sources": "linkedin"} → alt dize eşleşmesi olmasın
+                names = [names]
+            started = app.start_crawl(names or None)
             self._json({"started": started, "running": app.status.running})
 
     return Handler

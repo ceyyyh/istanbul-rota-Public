@@ -233,6 +233,7 @@ def paginate(ctx: FetchContext, fetch_page: Callable[[int], list[Job]], *, sourc
             if page == start:
                 raise
             ctx.log.info("%s: sayfa %d alınamadı (%s); durduruluyor", source, page, e)
+            ctx.mark_partial(f"{source} sayfa {page}")
             break
         fresh = [j for j in jobs if j.external_id not in seen]
         if not fresh:

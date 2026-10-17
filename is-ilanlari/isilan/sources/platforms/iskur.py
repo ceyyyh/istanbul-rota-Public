@@ -139,6 +139,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
                              headers={"Referer": SEARCH})
         except Exception as e:  # noqa: BLE001 — toplanan ilanları kaybetme
             ctx.log.info("iskur: sayfa %d alınamadı (%r)", n + 1, e)
+            ctx.mark_partial(f"iskur sayfa {n + 1}")
             break
 
 

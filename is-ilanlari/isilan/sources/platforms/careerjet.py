@@ -140,6 +140,7 @@ def _fetch_api(src: Source, ctx: FetchContext, key: str) -> Iterator[Job]:
         pages = data.get("pages")
         if not new or (isinstance(pages, int) and page >= pages):
             return
+    ctx.mark_partial("careerjet API sayfa sınırı")
 
 
 # ------------------------------------------------------------------ HTML yolu

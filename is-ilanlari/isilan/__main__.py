@@ -101,7 +101,7 @@ def cmd_list(a):
     for it in res["items"]:
         d = it["district"] or "?"
         date = (it["posted_at"] or it["first_seen"] or "")[:10]
-        print(f"{date}  [{d:<13}] {it['title'][:70]:<70}  {it['company'][:30]:<30}  {it['source']}")
+        print(f"{date}  [{d:<13}] {(it['title'] or '')[:70]:<70}  {(it['company'] or '')[:30]:<30}  {it['source']}")
         if a.url:
             print(f"            {it['url']}")
     print(f"\n{res['total']} ilan (ilk {min(a.limit, res['total'])} gösterildi)")

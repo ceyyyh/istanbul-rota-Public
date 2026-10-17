@@ -92,6 +92,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             if page == 1:
                 raise
             ctx.log.info("secretcv: sayfa %d alınamadı (%s)", page, e)
+            ctx.mark_partial(f"secretcv sayfa {page}")
             paging_ok = False
             break
         fresh = take(parse_list(html, src.name))
@@ -105,6 +106,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     # 2) sayfalama çalışmadıysa ilçe listelerinin ilk sayfaları
     if paging_ok:
         return
+    ctx.mark_partial("secretcv: yalnızca ilçe listelerinin ilk sayfaları")
     for slug in src.params.get("district_slugs", DISTRICT_SLUGS):
         if used >= budget or not ctx.time_left():
             break

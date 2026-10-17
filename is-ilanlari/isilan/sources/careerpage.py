@@ -140,6 +140,8 @@ def fetch_careerpage(src: Source, ctx: FetchContext) -> Iterator[Job]:
 
     detail_links: list[str] = []
     seen_ids: set[str] = set()
+    delegate_err: Exception | None = None
+    yielded = 0
     for page in range(1, max_list_pages + 1):
         url = _with_page(list_url, p["page_param"], page) if p.get("page_param") and page > 1 else list_url
         html = ctx.http.get(url)
@@ -147,19 +149,35 @@ def fetch_careerpage(src: Source, ctx: FetchContext) -> Iterator[Job]:
             embedded = detect_ats(html)
             if embedded:
                 ctx.log.info("%s: gömülü ATS bulundu %s", src.name, embedded)
+                ok = 0
                 for ats, slug in embedded[:3]:
-                    yield from _delegate_to_ats(ats, slug, src, ctx)
-                return
+                    # Tespit edilen slug yanlış olabilir (ör. altbilgideki başka bir panoya bağlantı):
+                    # bir ATS'nin hatası diğerlerini ve sayfanın kendi taramasını engellemesin.
+                    try:
+                        for job in _delegate_to_ats(ats, slug, src, ctx):
+                            yielded += 1
+                            yield job
+                        ok += 1
+                    except Exception as e:  # noqa: BLE001
+                        delegate_err = e
+                        ctx.mark_partial(f"{src.name}: {ats}/{slug} başarısız ({e})")
+                if ok:
+                    return
+                ctx.log.info("%s: gömülü ATS'ler okunamadı; sayfa taranıyor", src.name)
         # Liste sayfasının kendisi JobPosting içeriyorsa
         for d in extract_jobpostings(html):
             job = jobposting_to_job(d, source=src.name, source_type=src.source_type, url=url, company=company)
             if job.external_id not in seen_ids:
                 seen_ids.add(job.external_id)
+                yielded += 1
                 yield job
         new = [u for u in collect_job_links(html, url, p.get("link_pattern")) if u not in detail_links]
         detail_links.extend(new)
         if not new or not ctx.time_left():
             break
+    else:
+        if max_list_pages > 1:
+            ctx.mark_partial(f"{src.name}: max_list_pages={max_list_pages}")
 
     if p.get("sitemap"):
         try:
@@ -169,6 +187,8 @@ def fetch_careerpage(src: Source, ctx: FetchContext) -> Iterator[Job]:
         except Exception as e:  # noqa: BLE001
             ctx.log.warning("%s: sitemap okunamadı: %s", src.name, e)
 
+    if len(detail_links) > max_jobs:
+        ctx.mark_partial(f"{src.name}: max_jobs={max_jobs}")
     for link in detail_links[:max_jobs]:
         if not ctx.time_left():
             break
@@ -184,12 +204,16 @@ def fetch_careerpage(src: Source, ctx: FetchContext) -> Iterator[Job]:
                 job.url = job.url if job.url.startswith("http") else link
                 if job.external_id not in seen_ids:
                     seen_ids.add(job.external_id)
+                    yielded += 1
                     yield job
         else:
             job = _heuristic_job(html, link, src)
             if job and job.external_id not in seen_ids:
                 seen_ids.add(job.external_id)
+                yielded += 1
                 yield job
+    if delegate_err is not None and not yielded:
+        raise delegate_err  # ne ATS ne sayfa ilan verdi: kaynak "hatalı" görünsün
 
 
 def make_source(entry: dict, source_type: str = COMPANY) -> Source:
