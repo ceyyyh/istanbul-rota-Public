@@ -1,0 +1,21 @@
+{
+  "total": 812,
+  "jobPostings": [
+    {"title": "Sales Representative", "externalPath": "/job/Ankara/Sales-Representative_R0100001", "locationsText": "Ankara, Turkey", "postedOn": "Posted Today", "bulletFields": ["R0100001"]}
+  ],
+  "facets": [
+    {"facetParameter": "jobFamilyGroup", "descriptor": "Job Category", "values": [{"descriptor": "Engineering", "id": "a1", "count": 120}]},
+    {"facetParameter": "locationMainGroup", "values": [
+      {"facetParameter": "locationCountry", "descriptor": "Locations", "values": [
+        {"descriptor": "Turkey", "id": "c1b2", "count": 40},
+        {"descriptor": "Germany", "id": "c9d8", "count": 300}
+      ]},
+      {"facetParameter": "locations", "descriptor": "Location", "values": [
+        {"descriptor": "Istanbul, Turkey", "id": "loc-ist-1", "count": 25},
+        {"descriptor": "Istanbul - Atasehir Office", "id": "loc-ist-2", "count": 5},
+        {"descriptor": "Ankara, Turkey", "id": "loc-ank", "count": 10}
+      ]}
+    ]}
+  ],
+  "userAuthenticated": false
+}

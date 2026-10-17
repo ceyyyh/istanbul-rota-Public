@@ -1,0 +1,21 @@
+[
+  {"id": "5d1f2e3a4b5c", "friendly_id": "5d1f2e3a4b5c-ios-developer", "name": "iOS Developer",
+   "url": "https://codeway.breezy.hr/p/5d1f2e3a4b5c-ios-developer", "published_date": "2024-06-20T10:11:12.000Z",
+   "type": {"id": "fullTime", "name": "Full-Time"},
+   "location": {"country": {"name": "Turkey", "id": "TR"}, "state": {"id": "34", "name": "Istanbul"}, "city": "Istanbul",
+                "primary": true, "is_remote": false, "name": "Istanbul, TR"},
+   "locations": [{"country": {"name": "Turkey", "id": "TR"}, "state": {"id": "34", "name": "Istanbul"}, "city": "Istanbul", "primary": true, "is_remote": false, "name": "Istanbul, TR"}],
+   "department": "Engineering", "salary": "",
+   "company": {"name": "Codeway", "logo_url": "https://example.invalid/logo.png", "friendly_name": "codeway"}},
+  {"id": "6e6e6e6e6e6e", "friendly_id": "6e6e6e6e6e6e-community-manager", "name": "Community Manager",
+   "url": "https://codeway.breezy.hr/p/6e6e6e6e6e6e-community-manager", "published_date": "2024-06-21T10:11:12.000Z",
+   "type": {"id": "partTime", "name": "Part-Time"},
+   "location": {"country": {"name": "Turkey", "id": "TR"}, "city": "", "is_remote": true, "name": "Remote"},
+   "locations": [], "department": "Marketing", "salary": "",
+   "company": {"name": "Codeway", "friendly_name": "codeway"}},
+  {"id": "7f7f7f7f7f7f", "friendly_id": "7f7f7f7f7f7f-designer", "name": "Designer",
+   "url": "https://codeway.breezy.hr/p/7f7f7f7f7f7f-designer", "published_date": "2024-06-22T10:11:12.000Z",
+   "type": {"id": "fullTime", "name": "Full-Time"},
+   "location": {"country": {"name": "Portugal", "id": "PT"}, "city": "Lisbon", "is_remote": false, "name": "Lisbon, PT"},
+   "locations": [], "department": "Design", "company": {"name": "Codeway"}}
+]

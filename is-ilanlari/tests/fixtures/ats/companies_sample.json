@@ -1,0 +1,9 @@
+[
+  {"company": "Peak", "ats": "greenhouse", "slug": "peakgames", "careers_url": "https://peak.com/careers", "enabled": true},
+  {"company": "Getir", "ats": "lever", "slug": "getir", "region": "eu", "enabled": true},
+  {"company": "Getir", "ats": "lever", "slug": "getir", "region": "eu", "enabled": true},
+  {"company": "Kariyer Danışmanlık", "ats": "workable", "slug": "kariyerdanismanlik", "source_type": "agency"},
+  {"company": "Bigcorp", "ats": "workday", "host": "bigcorp.wd3.myworkdayjobs.com", "tenant": "bigcorp", "site": "External"},
+  {"company": "Some Site", "ats": "careerpage", "careers_url": "https://example.com/kariyer"},
+  {"company": "Mystery", "ats": "jobvite", "slug": "mystery"}
+]

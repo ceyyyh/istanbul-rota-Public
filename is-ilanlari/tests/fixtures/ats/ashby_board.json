@@ -1,0 +1,23 @@
+{
+  "apiVersion": "1",
+  "jobs": [
+    {"id": "4c8e2b1a-1111-2222-3333-444455556666", "title": "Software Engineer, Payments",
+     "location": "Istanbul", "secondaryLocations": [{"location": "Remote (Türkiye)", "address": {"postalAddress": {"addressCountry": "Türkiye"}}}],
+     "department": "Engineering", "team": "Payments", "isListed": true, "isRemote": false, "workplaceType": "Hybrid",
+     "descriptionHtml": "<p>Join our payments team in <b>Maslak</b>.</p>", "descriptionPlain": "Join our payments team in Maslak.",
+     "publishedAt": "2024-07-01T12:30:00.000+00:00", "employmentType": "FullTime",
+     "address": {"postalAddress": {"addressRegion": "İstanbul", "addressCountry": "Türkiye", "addressLocality": "Istanbul"}},
+     "jobUrl": "https://jobs.ashbyhq.com/papara/4c8e2b1a-1111-2222-3333-444455556666",
+     "applyUrl": "https://jobs.ashbyhq.com/papara/4c8e2b1a-1111-2222-3333-444455556666/application",
+     "compensation": {"compensationTierSummary": "₺100K – ₺150K", "scrapeableCompensationSalarySummary": "₺100K - ₺150K",
+                      "compensationTiers": [], "summaryComponents": []}},
+    {"id": "aaaa0000-1111-2222-3333-444455556666", "title": "Unlisted Role", "location": "Istanbul",
+     "isListed": false, "isRemote": false, "workplaceType": "OnSite", "publishedAt": "2024-07-01T12:30:00.000+00:00",
+     "employmentType": "FullTime", "jobUrl": "https://jobs.ashbyhq.com/papara/aaaa0000"},
+    {"id": "bbbb0000-1111-2222-3333-444455556666", "title": "Account Manager", "location": "Amsterdam",
+     "secondaryLocations": [], "isListed": true, "isRemote": false, "workplaceType": "OnSite",
+     "publishedAt": "2024-07-02T12:30:00.000+00:00", "employmentType": "FullTime",
+     "address": {"postalAddress": {"addressCountry": "Netherlands", "addressLocality": "Amsterdam"}},
+     "jobUrl": "https://jobs.ashbyhq.com/papara/bbbb0000"}
+  ]
+}

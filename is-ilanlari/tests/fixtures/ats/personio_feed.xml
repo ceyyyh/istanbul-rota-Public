@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workzag-jobs>
+  <position>
+    <id>1234567</id>
+    <subcompany>Getir Perakende Lojistik A.Ş.</subcompany>
+    <office>Istanbul</office>
+    <additionalOffices>
+      <office>Ankara</office>
+    </additionalOffices>
+    <department>Finance</department>
+    <recruitingCategory>Finance &amp; Accounting</recruitingCategory>
+    <name>Financial Analyst</name>
+    <jobDescriptions>
+      <jobDescription>
+        <name>Your mission</name>
+        <value><![CDATA[<p>Own monthly reporting for our <b>Beşiktaş</b> office.</p>]]></value>
+      </jobDescription>
+      <jobDescription>
+        <name>Your profile</name>
+        <value><![CDATA[<ul><li>3+ years experience</li></ul>]]></value>
+      </jobDescription>
+    </jobDescriptions>
+    <employmentType>permanent</employmentType>
+    <seniority>experienced</seniority>
+    <schedule>full-time</schedule>
+    <yearsOfExperience>3-5</yearsOfExperience>
+    <keywords>finance,excel</keywords>
+    <occupation>financial_analysis</occupation>
+    <occupationCategory>finance</occupationCategory>
+    <createdAt>2024-06-14T08:12:01+00:00</createdAt>
+  </position>
+  <position>
+    <id>1234999</id>
+    <subcompany>Getir GmbH</subcompany>
+    <office>Berlin</office>
+    <department>Marketing</department>
+    <recruitingCategory>Marketing</recruitingCategory>
+    <name>Growth Marketer</name>
+    <jobDescriptions>
+      <jobDescription>
+        <name>About</name>
+        <value><![CDATA[<p>Berlin.</p>]]></value>
+      </jobDescription>
+    </jobDescriptions>
+    <employmentType>permanent</employmentType>
+    <schedule>full-time</schedule>
+    <createdAt>2024-06-15T08:12:01+00:00</createdAt>
+  </position>
+</workzag-jobs>

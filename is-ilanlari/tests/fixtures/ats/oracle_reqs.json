@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "SearchId": 1, "Keyword": null, "TotalJobsCount": 2, "Offset": 0, "Limit": 100,
+      "requisitionList": [
+        {"Id": "25001234", "Title": "Treasury Specialist", "PostedDate": "2024-06-25", "PostingEndDate": null,
+         "Language": "US", "PrimaryLocationCountry": "TR", "GeographyId": 300000001, "HotJobFlag": false,
+         "WorkplaceTypeCode": "ORA_HYBRID", "WorkplaceType": "Hybrid", "JobFamily": "Finance", "JobFunction": "Treasury",
+         "ShortDescriptionStr": "<p>Treasury operations in Şişli.</p>", "PrimaryLocation": "Istanbul, Istanbul, Turkey",
+         "secondaryLocations": []},
+        {"Id": "25001299", "Title": "Plant Manager", "PostedDate": "2024-06-26",
+         "PrimaryLocationCountry": "TR", "WorkplaceTypeCode": "ORA_ON_SITE", "WorkplaceType": "On-site",
+         "JobFamily": "Manufacturing", "ShortDescriptionStr": "Manisa plant.", "PrimaryLocation": "Manisa, Turkey",
+         "secondaryLocations": [{"Name": "Izmir, Turkey", "CountryCode": "TR"}]}
+      ]
+    }
+  ],
+  "count": 1, "hasMore": false, "limit": 25, "offset": 0
+}

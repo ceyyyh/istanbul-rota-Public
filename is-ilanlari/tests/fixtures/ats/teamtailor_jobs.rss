@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:tt="https://teamtailor.com/locations">
+  <channel>
+    <title>Jobs at Trendyol</title>
+    <description>Career site</description>
+    <link>https://trendyol.teamtailor.com/jobs</link>
+    <item>
+      <title>Backend Developer (Go)</title>
+      <description><![CDATA[<p>Join us in <strong>Maslak</strong>, Sarıyer.</p>]]></description>
+      <pubDate>Tue, 11 Jun 2024 09:30:00 +0300</pubDate>
+      <remoteStatus>hybrid</remoteStatus>
+      <guid isPermaLink="false">6f1d2c3b-aaaa-bbbb-cccc-1234567890ab</guid>
+      <link>https://trendyol.teamtailor.com/jobs/4412233-backend-developer-go</link>
+      <tt:department>Engineering</tt:department>
+      <tt:role>Backend</tt:role>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Istanbul Maslak Office</tt:name>
+          <tt:address>Maslak Mah.</tt:address>
+          <tt:zip>34485</tt:zip>
+          <tt:city>Istanbul</tt:city>
+          <tt:country>Turkey</tt:country>
+        </tt:location>
+      </tt:locations>
+    </item>
+    <item>
+      <title>Logistics Planner</title>
+      <description><![CDATA[<p>Kocaeli hub.</p>]]></description>
+      <pubDate>Wed, 12 Jun 2024 09:30:00 +0300</pubDate>
+      <remoteStatus>none</remoteStatus>
+      <guid isPermaLink="false">7a7a7a7a-aaaa-bbbb-cccc-1234567890ab</guid>
+      <link>https://trendyol.teamtailor.com/jobs/4412299-logistics-planner</link>
+      <tt:department>Operations</tt:department>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Gebze Hub</tt:name>
+          <tt:city>Kocaeli</tt:city>
+          <tt:country>Turkey</tt:country>
+        </tt:location>
+      </tt:locations>
+    </item>
+    <item>
+      <title>Customer Support Agent</title>
+      <description><![CDATA[<p>Work from anywhere in Türkiye.</p>]]></description>
+      <pubDate>Thu, 13 Jun 2024 09:30:00 +0300</pubDate>
+      <remoteStatus>fully</remoteStatus>
+      <guid isPermaLink="false">8b8b8b8b-aaaa-bbbb-cccc-1234567890ab</guid>
+      <link>https://trendyol.teamtailor.com/jobs/4412300-customer-support-agent</link>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Türkiye</tt:name>
+          <tt:country>Türkiye</tt:country>
+        </tt:location>
+      </tt:locations>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,44 @@
+[
+  {
+    "additionalPlain": "Equal opportunity employer.",
+    "additional": "<div>Equal opportunity employer.</div>",
+    "categories": {"commitment": "Full-time", "department": "Technology", "location": "İstanbul", "team": "Mobile", "allLocations": ["İstanbul"]},
+    "createdAt": 1714039200000,
+    "descriptionPlain": "Build our mobile apps from Kadıköy.",
+    "description": "<div>Build our mobile apps from Kadıköy.</div>",
+    "id": "8d2f6c1e-3b4a-4c55-9e1a-0a1b2c3d4e5f",
+    "lists": [{"text": "Requirements", "content": "<li>Kotlin</li>"}],
+    "text": "Android Developer",
+    "country": "TR",
+    "workplaceType": "on-site",
+    "hostedUrl": "https://jobs.lever.co/getir/8d2f6c1e-3b4a-4c55-9e1a-0a1b2c3d4e5f",
+    "applyUrl": "https://jobs.lever.co/getir/8d2f6c1e-3b4a-4c55-9e1a-0a1b2c3d4e5f/apply",
+    "salaryRange": {"currency": "TRY", "interval": "per-month-salary", "min": 90000, "max": 120000}
+  },
+  {
+    "categories": {"commitment": "Full-time", "department": "Ops", "location": "Ankara", "team": "Ops", "allLocations": ["Ankara"]},
+    "createdAt": 1714039200000,
+    "descriptionPlain": "Ankara ops.",
+    "description": "<div>Ankara ops.</div>",
+    "id": "11111111-2222-3333-4444-555555555555",
+    "lists": [],
+    "text": "Operations Specialist",
+    "country": "TR",
+    "workplaceType": "on-site",
+    "hostedUrl": "https://jobs.lever.co/getir/11111111-2222-3333-4444-555555555555",
+    "applyUrl": "https://jobs.lever.co/getir/11111111-2222-3333-4444-555555555555/apply"
+  },
+  {
+    "categories": {"commitment": "Contract", "department": "Technology", "location": "Remote", "team": "Data", "allLocations": ["Remote"]},
+    "createdAt": 1714125600000,
+    "descriptionPlain": "Remote data role open in Turkey.",
+    "description": "<div>Remote data role open in Turkey.</div>",
+    "id": "99999999-8888-7777-6666-555555555555",
+    "lists": [],
+    "text": "Data Engineer",
+    "country": "TR",
+    "workplaceType": "remote",
+    "hostedUrl": "https://jobs.lever.co/getir/99999999-8888-7777-6666-555555555555",
+    "applyUrl": "https://jobs.lever.co/getir/99999999-8888-7777-6666-555555555555/apply"
+  }
+]

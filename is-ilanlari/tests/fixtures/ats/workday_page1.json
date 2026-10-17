@@ -1,0 +1,8 @@
+{
+  "total": 21,
+  "jobPostings": [
+    {"title": "Software Engineer", "externalPath": "/job/Istanbul/Software-Engineer_R0123456", "locationsText": "Istanbul, Turkey", "postedOn": "Posted 3 Days Ago", "bulletFields": ["R0123456"]},
+    {"title": "Supply Chain Analyst", "externalPath": "/job/Istanbul/Supply-Chain-Analyst_R0123457", "locationsText": "2 Locations", "postedOn": "Posted Yesterday", "bulletFields": ["R0123457"]}
+  ],
+  "facets": []
+}

@@ -1,0 +1,16 @@
+{
+  "total": 3,
+  "results": [
+    {"id": 3400111, "shortcode": "A1B2C3D4E5", "title": "Product Designer", "remote": false,
+     "location": {"country": "Turkey", "countryCode": "TR", "city": "Istanbul", "region": "İstanbul"},
+     "locations": [{"country": "Turkey", "countryCode": "TR", "city": "Istanbul", "region": "İstanbul", "hidden": false}],
+     "state": "published", "isInternal": false, "code": "PD-1", "published": "2024-06-01T00:00:00.000Z",
+     "type": "full", "language": "en", "department": ["Design"], "accountUid": "abc", "approvalStatus": "approved",
+     "workplace": "hybrid"},
+    {"id": 3400112, "shortcode": "Z9Y8X7W6V5", "title": "Sales Executive", "remote": false,
+     "location": {"country": "Germany", "countryCode": "DE", "city": "Berlin", "region": "Berlin"},
+     "locations": [], "state": "published", "isInternal": false, "published": "2024-06-02T00:00:00.000Z",
+     "type": "full", "department": ["Sales"], "workplace": "on_site"}
+  ],
+  "nextPage": "eyJvZmZzZXQiOjJ9"
+}

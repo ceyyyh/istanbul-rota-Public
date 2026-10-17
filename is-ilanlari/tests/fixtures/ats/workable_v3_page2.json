@@ -1,0 +1,9 @@
+{
+  "total": 3,
+  "results": [
+    {"id": 3400113, "shortcode": "Q1W2E3R4T5", "title": "QA Engineer", "remote": true,
+     "location": {"country": "Türkiye", "countryCode": "TR", "city": "", "region": ""},
+     "locations": [], "state": "published", "isInternal": false, "published": "2024-06-03T00:00:00.000Z",
+     "type": "contract", "department": ["Engineering"], "workplace": "remote"}
+  ]
+}

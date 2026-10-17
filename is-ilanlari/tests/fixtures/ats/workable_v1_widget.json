@@ -1,0 +1,15 @@
+{
+  "name": "Insider",
+  "description": null,
+  "jobs": [
+    {"title": "Customer Success Manager", "shortcode": "C5D6E7F8G9", "code": "", "employment_type": "Full-time",
+     "telecommuting": false, "department": "Customer Success", "url": "https://apply.workable.com/j/C5D6E7F8G9",
+     "shortlink": "https://apply.workable.com/j/C5D6E7F8G9", "application_url": "https://apply.workable.com/j/C5D6E7F8G9/apply",
+     "published_on": "2024-06-05", "created_at": "2024-06-04", "country": "Turkey", "city": "Istanbul", "state": "Istanbul",
+     "education": "", "experience": "", "function": "", "industry": "",
+     "locations": [{"country": "Turkey", "countryCode": "TR", "city": "Istanbul", "region": "Istanbul", "hidden": false}]},
+    {"title": "Account Executive", "shortcode": "H1H2H3H4H5", "employment_type": "Full-time", "telecommuting": false,
+     "department": "Sales", "url": "https://apply.workable.com/j/H1H2H3H4H5", "published_on": "2024-06-05",
+     "country": "Singapore", "city": "Singapore", "state": "", "locations": []}
+  ]
+}
