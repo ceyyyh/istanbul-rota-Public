@@ -7,6 +7,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 
 from .db import DB, dedupe_key, now_iso
 from .geo import detect_district, is_istanbul, side_of
@@ -20,10 +21,30 @@ log = logging.getLogger("isilan.pipeline")
 _REMOTE_TR = {"turkiye", "turkey", "tr", "remote", "uzaktan", "fully", "full", "work", "from", "home", "evden", "calisma"}
 
 
+class CountingHttp:
+    """Bir kaynağın yaptığı istekleri sayar; sayfa sınırına takılıp takılmadığını anlamak için."""
+
+    def __init__(self, http: Http):
+        self._http = http
+        self.n = 0
+
+    def __getattr__(self, name):
+        attr = getattr(self._http, name)
+        if name in ("get", "get_json", "post_json", "text", "request", "browser_get"):
+            def counted(*a, **kw):
+                self.n += 1
+                return attr(*a, **kw)
+            return counted
+        return attr
+
+
+STALE_DAYS = 7  # eksik (sayfa/süre sınırına takılan) taramalarda: bu kadar gündür görünmeyen ilan pasife alınır
+
+
 @dataclass
 class CrawlOptions:
-    max_pages: int = 40
-    per_source_timeout: float = 600   # saniye
+    max_pages: int = 150
+    per_source_timeout: float = 1200  # saniye
     workers: int = 6
     fetch_details: bool = False
     use_browser: bool = False          # needs_browser kaynaklarını da çalıştır (Playwright gerekir)
@@ -80,7 +101,8 @@ def enrich(job: Job) -> dict | None:
 def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: CrawlStatus | None = None) -> dict:
     run_id = db.start_run(src.name)
     started = now_iso()
-    ctx = FetchContext(http=http, max_pages=opts.max_pages, fetch_details=opts.fetch_details,
+    counted = CountingHttp(http)
+    ctx = FetchContext(http=counted, max_pages=opts.max_pages, fetch_details=opts.fetch_details,
                        deadline=time.monotonic() + opts.per_source_timeout,
                        log=logging.getLogger(f"isilan.source.{src.name}"))
     rows: dict[str, dict] = {}
@@ -89,6 +111,7 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     try:
         for job in src.fetch(ctx):
             count += 1
+            job.source = src.name  # sağlık takibi ve pasife alma kaynak adına göre yapılır
             row = enrich(job)
             if row:
                 rows[row["uid"]] = row
@@ -99,9 +122,15 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
         log.warning("%s hata: %s", src.name, error)
     new, upd = db.upsert_jobs(list(rows.values()), started)
     removed = 0
-    if error is None and rows and ctx.time_left():
-        # Kaynak eksiksiz tarandıysa görünmeyen ilanlar yayından kalkmıştır
-        removed = db.deactivate_missing(src.name, started)
+    if error is None and rows:
+        truncated = counted.n >= opts.max_pages or not ctx.time_left()
+        if not truncated:
+            # Kaynak baştan sona tarandı: bu taramada görünmeyen ilanlar yayından kalkmıştır
+            removed = db.deactivate_missing(src.name, started)
+        else:
+            # Sayfa/süre sınırına takıldı: eski sayfalardaki ilanları hemen silme, yalnızca uzun süredir görünmeyenleri
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=STALE_DAYS)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+            removed = db.deactivate_missing(src.name, cutoff)
     st = "error" if error and not rows else ("partial" if error else ("ok" if rows else "empty"))
     db.finish_run(run_id, st, count, len(rows), error)
     res = {"status": st, "fetched": count, "kept": len(rows), "new": new, "removed": removed, "error": error}

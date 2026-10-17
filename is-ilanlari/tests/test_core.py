@@ -114,3 +114,28 @@ def test_failing_source_does_not_deactivate(tmp_path):
 
 def test_dedupe_key_normalizes_company():
     assert dedupe_key("Yazılım Uzmanı", "ÖRNEK Teknoloji A.Ş.", "Şişli") == dedupe_key("yazilim uzmani", "Örnek", "Şişli")
+
+
+def test_truncated_run_keeps_unseen_jobs(tmp_path):
+    db = DB(tmp_path / "t.db")
+    jobs = [_job(i, source="p") for i in range(5)]
+
+    def paged(s, ctx):  # her sayfa için bir istek yapan kaynak taklidi
+        for j in jobs:
+            ctx.http.get("https://x.test/page")
+            yield j
+
+    class Dummy:
+        request_count = 0
+
+        def get(self, url, **kw):
+            return ""
+
+    from isilan.pipeline import run_source
+    src = Source(name="p", source_type=PLATFORM, label="P", fetcher=paged)
+    run_source(src, db, Dummy(), CrawlOptions(max_pages=100))
+    jobs[:] = jobs[:2]
+    res = run_source(src, db, Dummy(), CrawlOptions(max_pages=2))   # sınıra takıldı → silme yok
+    assert res["removed"] == 0 and db.query()["total"] == 5
+    res = run_source(src, db, Dummy(), CrawlOptions(max_pages=100))  # eksiksiz → 3 ilan kalktı
+    assert res["removed"] == 3 and db.query()["total"] == 2
