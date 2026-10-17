@@ -1,6 +1,6 @@
 # İstanbul iş ilanlarını 6 saatte bir tarar ve sonucu GitHub Pages'te yayınlar:
-#   https://<kullanıcı>.github.io/<depo>/            → arayüz (ilçe filtresi, telefonda çalışır)
-#   https://<kullanıcı>.github.io/<depo>/ilanlar.json → tüm aktif ilanlar (JSON)
+#   https://<kullanıcı>.github.io/<depo>/is-ilanlari/            → arayüz (ilçe filtresi, telefonda çalışır)
+#   https://<kullanıcı>.github.io/<depo>/is-ilanlari/ilanlar.json → tüm aktif ilanlar (JSON)
 # Veritabanı taramalar arasında `veri` dalında saklanır (ilk görülme tarihi, kaldırılan ilanlar, bulunan ilçeler).
 name: ilan-tarama
 
@@ -72,8 +72,20 @@ jobs:
           git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit -qm "veri $(date -u +%FT%TZ)"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" veri
 
-      - name: Yayınla (gh-pages dalı)
+      - name: Yayınla (gh-pages dalının is-ilanlari/ klasörüne; daldaki diğer içerik korunur)
         run: |
-          cd site && git init -q -b gh-pages && git add -A
-          git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit -qm "site $(date -u +%FT%TZ)"
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" gh-pages
+          site="$PWD/site"
+          tmp=$(mktemp -d)
+          if git fetch -q origin gh-pages 2>/dev/null; then
+            git worktree add -q "$tmp" origin/gh-pages
+            cd "$tmp" && git checkout -q -B gh-pages
+          else
+            cd "$tmp" && git init -q -b gh-pages && touch .nojekyll
+          fi
+          rm -rf is-ilanlari && mkdir -p is-ilanlari && cp -a "$site"/. is-ilanlari/
+          git add -A
+          # Daldaki tüm dosyalar (ör. kökteki başka site) aynen korunur; yalnızca geçmiş tek commit'e indirilir,
+          # böylece her taramada eklenen birkaç MB'lık sayfa depoyu şişirmez
+          tree=$(git write-tree)
+          commit=$(git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit-tree "$tree" -m "is-ilanlari $(date -u +%FT%TZ)")
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "$commit:refs/heads/gh-pages"

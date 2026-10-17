@@ -14,6 +14,15 @@ eşlemesi: Maslak→Sarıyer, Kozyatağı→Kadıköy, İkitelli→Başakşehir,
 çok sitede yayınlandıysa tek kartta birleştirilir ("+2 kaynakta daha"). Yayından kalkan ilanlar bir sonraki
 taramada otomatik olarak pasife alınır, böylece yalnızca **aktif** ilanlar görünür.
 
+## Telefondan açma (otomatik güncellenen sürüm)
+
+**https://ceyyyh.github.io/istanbul-rota-Public/is-ilanlari/** — kurulum gerekmez, telefonda da çalışır.
+GitHub Actions (`.github/workflows/ilan-tarama.yml`) 6 saatte bir tarar ve bu sayfayı yeniler.
+Tüm ilanlar JSON olarak: `.../is-ilanlari/ilanlar.json`. Elle tarama: GitHub → Actions → ilan-tarama → *Run workflow*.
+Jooble/Careerjet anahtarları varsa depo ayarlarında *Secrets → Actions* altına `JOOBLE_API_KEY`, `CAREERJET_API_KEY` olarak ekleyin.
+Not: GitHub sunucularının IP'leri bazı siteler (Kariyer.net, Indeed) tarafından engellenebilir; bu sitelerden
+eksik gelen ilanlar için programı kendi bilgisayarınızda da çalıştırabilirsiniz.
+
 ## Kurulum ve çalıştırma
 
 Gereken tek şey Python 3.11+ (internet bağlantısı olan kendi bilgisayarınızda çalıştırın).
