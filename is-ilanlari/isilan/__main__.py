@@ -159,7 +159,11 @@ def cmd_build_site(a):
     marker = "<script>/*__ISILAN_DATA__*/</script>"
     if marker not in tpl:
         sys.exit("index.html içinde veri yer tutucusu bulunamadı")
-    html = tpl.replace(marker, f"<script>window.__ISILAN_DATA__={blob};</script>")
+    extra = ""
+    if a.profil:  # "Bana uygun" için hazır profil (kişisel; herkese açık yayınlara koymayın)
+        prof = json.loads(Path(a.profil).read_text(encoding="utf-8"))
+        extra = "window.__ISILAN_PROFIL__=" + json.dumps(prof, ensure_ascii=False).replace("</", "<\\/") + ";"
+    html = tpl.replace(marker, f"<script>window.__ISILAN_DATA__={blob};{extra}</script>")
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
@@ -298,6 +302,7 @@ def main(argv=None):
     p = sub.add_parser("build-site", help="Tek dosyalık statik site üret")
     p.add_argument("--out", default="site/index.html")
     p.add_argument("--desc-len", type=int, default=240)
+    p.add_argument("--profil", help="Gömülecek 'Bana uygun' profili (JSON: kw, haric, beyaz, km)")
     p.set_defaults(fn=cmd_build_site)
 
     p = sub.add_parser("ilceler", help="İlçe bazında ilan sayıları")

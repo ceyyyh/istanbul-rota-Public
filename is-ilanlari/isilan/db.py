@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     active INTEGER NOT NULL DEFAULT 1,
     collar TEXT,
     lat REAL,
-    lon REAL
+    lon REAL,
+    title_search TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_jobs_active ON jobs(active, district);
 CREATE INDEX IF NOT EXISTS ix_jobs_source ON jobs(source, active);
@@ -59,10 +60,10 @@ CREATE INDEX IF NOT EXISTS ix_runs_source ON runs(source, id);
 
 COLUMNS = ["uid", "source", "source_type", "external_id", "title", "company", "url", "location", "district",
            "side", "posted_at", "employment_type", "work_model", "description", "salary", "category", "extra",
-           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon"]
+           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search"]
 
 # Sonradan eklenen sütunlar: eski veritabanlarına ALTER TABLE ile eklenir ve doldurulur
-_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL"}
+_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT"}
 
 # Aynı ilan birden çok kaynakta varsa hangisi "asıl" gösterilsin: önce şirketin kendi sayfası
 TYPE_PRIORITY = {"company": 0, "agency": 1, "platform": 2}
@@ -127,9 +128,9 @@ class DB:
         for r in rows:
             c = locate(f"{r['location'] or ''} {r['title'] or ''}", r["district"])
             upd.append((collar(r["title"] or "", r["category"] or "", r["source"], r["source_type"]),
-                        c[0] if c else None, c[1] if c else None, r["uid"]))
+                        c[0] if c else None, c[1] if c else None, fold(r["title"] or ""), r["uid"]))
         with self._lock, self.conn:
-            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=? WHERE uid=?", upd)
+            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=? WHERE uid=?", upd)
         return len(upd)
 
     # ---- yazma ----
@@ -143,6 +144,7 @@ class DB:
                 r = dict(r)
                 r["extra"] = json.dumps(r.get("extra") or {}, ensure_ascii=False)
                 r["search"] = fold(" ".join(str(r.get(k) or "") for k in ("title", "company", "location", "district", "category", "description")))[:2000]
+                r["title_search"] = fold(r.get("title") or "")
                 r["last_seen"] = seen_at
                 r["active"] = 1
                 if cur:
@@ -279,7 +281,8 @@ class DB:
         kw_terms = _terms(kw)
         score_sql = None
         if kw_terms and "kw" not in ignore:
-            score_sql = "(" + "+".join(f"(search LIKE '%{t}%')" for t in kw_terms) + ")"
+            # Başlıkta geçen terim 4 puan (başlık + metin), yalnızca metinde geçen 1 puan
+            score_sql = "(" + "+".join(f"(search LIKE '%{t}%')+3*(title_search LIKE '%{t}%')" for t in kw_terms) + ")"
             where.append(f"{score_sql} > 0")
         for t in _terms(exclude):
             if "exclude" not in ignore:
@@ -400,7 +403,8 @@ def _annotate(d: dict, near, kw_terms: list[str]):
     if kw_terms:
         text = fold(" ".join(str(d.get(k) or "") for k in ("title", "company", "location", "district", "category", "description")))
         hits = [t for t in kw_terms if t in text]
-        d["match"] = {"score": len(hits), "terms": hits}
+        title = fold(d.get("title") or "")
+        d["match"] = {"score": len(hits), "terms": hits, "title_terms": [t for t in hits if t in title]}
 
 
 def row_to_dict(r: sqlite3.Row) -> dict:

@@ -505,7 +505,9 @@ function ctx(p) {
   var near = parseNear(p.near), mk = +p.max_km;
   return {near: near, max: near && mk > 0 ? mk : 0, kw: terms(p.kw), ex: terms(p.haric)};
 }
-function score(j, X) { var h = hay(j), n = 0; X.kw.forEach(function (t) { if (h.indexOf(t) >= 0) n++; }); return n; }
+/* Sunucuyla aynı ağırlık: başlıkta geçen terim 4 (başlık + metin), yalnızca metinde geçen 1 puan */
+function ttl(j) { return j.__t != null ? j.__t : (j.__t = fold(j.title)); }
+function score(j, X) { var h = hay(j), t = ttl(j), n = 0; X.kw.forEach(function (k) { if (h.indexOf(k) >= 0) n += t.indexOf(k) >= 0 ? 4 : 1; }); return n; }
 /* Sunucudaki DB.query ile aynı anlam: ilçe filtresi yalnızca ilçe seçiliyse; ilce_bilinmiyor=1 o durumda
    ilçesi belirsizleri ekler; yaka her zaman side=… (belirsizler hariç); days tarih (YYYY-MM-DD) karşılaştırması;
    is_tipi (belirsiz = collar yok); max_km near ister, konumsuzlar elenir; kw en az bir terim; haric hiçbiri. */
@@ -544,7 +546,7 @@ function sJobs(p) {
   return {total: out.length, page: page, per_page: per, items: out.slice((page - 1) * per, page * per).map(function (o) {
     var j = Object.assign({}, o.j);
     if (X.near) j.distance_km = j.lat != null && j.lon != null ? Math.round(hav(X.near, [j.lat, j.lon]) * 10) / 10 : null;
-    if (X.kw.length) { var h = fold([j.title, j.company, j.location, j.district, j.category, j.description].map(function (x) { return x == null ? '' : x; }).join(' ')); var t = X.kw.filter(function (k) { return h.indexOf(k) >= 0; }); j.match = {score: t.length, terms: t}; }
+    if (X.kw.length) { var h = fold([j.title, j.company, j.location, j.district, j.category, j.description].map(function (x) { return x == null ? '' : x; }).join(' ')); var t = X.kw.filter(function (k) { return h.indexOf(k) >= 0; }), tt = ttl(o.j); j.match = {score: t.length, terms: t, title_terms: t.filter(function (k) { return tt.indexOf(k) >= 0; })}; }
     return j;
   })};
 }
@@ -821,8 +823,12 @@ function clearAll() {
 function loadProf() {
   try {
     var p = JSON.parse(localStorage.getItem(PROF_KEY) || 'null');
+    if (!p && window.__ISILAN_PROFIL__) p = window.__ISILAN_PROFIL__;  /* build-site --profil ile gömülen hazır profil */
     if (p && typeof p === 'object') return {kw: uniq(L(p.kw)), haric: uniq(L(p.haric)), beyaz: !!p.beyaz, km: KMS.indexOf(String(p.km || '')) >= 0 ? String(p.km) : ''};
-  } catch (e) { /* depolama yok */ }
+  } catch (e) {
+    var q = window.__ISILAN_PROFIL__;
+    if (q && typeof q === 'object') return {kw: uniq(L(q.kw)), haric: uniq(L(q.haric)), beyaz: !!q.beyaz, km: KMS.indexOf(String(q.km || '')) >= 0 ? String(q.km) : ''};
+  }
   return null;
 }
 var PROF = loadProf();

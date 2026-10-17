@@ -61,7 +61,7 @@ def test_fit_keywords_and_exclusions(tmp_path):
     db = _seed(tmp_path / "f.db")
     r = db.query(kw=["python", "django"], sort="fit")
     assert [i["title"] for i in r["items"]] == ["Yazılım Geliştirici (Python)", "Python Stajyer"]
-    assert r["items"][0]["match"] == {"score": 2, "terms": ["python", "django"]}
+    assert r["items"][0]["match"] == {"score": 2, "terms": ["python", "django"], "title_terms": ["python"]}
     r = db.query(kw=["Python"], exclude=["stajyer"])
     assert [i["title"] for i in r["items"]] == ["Yazılım Geliştirici (Python)"]
 
@@ -86,3 +86,14 @@ def test_old_database_is_migrated(tmp_path):
 def test_headquarters_is_not_a_manager_title():
     assert collar("Silahlı Güvenlik Görevlisi-Banka Genel Müdürlük") == "mavi"
     assert collar("Genel Müdürlük Muhasebe Uzmanı") == "beyaz"
+
+
+def test_title_matches_rank_above_description_matches(tmp_path):
+    jobs = [Job(source="p", source_type=PLATFORM, external_id="a", title="Ön Muhasebe Uzmanı", company="X",
+                url="https://x/a", location="Şişli, İstanbul", description="stok, sevkiyat ve lojistik süreçleri"),
+            Job(source="p", source_type=PLATFORM, external_id="b", title="Lojistik Uzmanı", company="Y",
+                url="https://x/b", location="Şişli, İstanbul")]
+    db = DB(tmp_path / "w.db")
+    crawl(db, [Source(name="p", source_type=PLATFORM, label="P", fetcher=lambda s, c: iter(jobs))])
+    r = db.query(kw=["lojistik", "stok", "sevkiyat"], sort="fit")
+    assert [i["title"] for i in r["items"]] == ["Lojistik Uzmanı", "Ön Muhasebe Uzmanı"]  # 4 puan > 3 puan
