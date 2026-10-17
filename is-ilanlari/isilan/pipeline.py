@@ -12,10 +12,10 @@ from datetime import date, datetime, timedelta, timezone
 
 from .db import DB, dedupe_key, now_iso
 from .geo import detect_district, is_istanbul, side_of
-from .http import Http
+from .http import Http, HttpError
 from .models import Job
 from .sources import FetchContext, Source, all_sources
-from .text import fold
+from .text import fold, strip_html
 
 log = logging.getLogger("isilan.pipeline")
 
@@ -52,6 +52,7 @@ class CrawlOptions:
     headless: bool = True              # False: tarayıcı penceresi görünür açılır (bot korumasını daha iyi geçer)
     profile_dir: str | None = None     # kalıcı tarayıcı profili (çerezler taramalar arasında saklanır)
     min_interval: float = 1.0          # aynı alan adına iki istek arası en az bekleme
+    district_details: int = 200        # kaynak başına, ilçesi belirsiz yeni ilanlardan kaçının detay sayfasına bakılsın
 
 
 @dataclass
@@ -175,6 +176,80 @@ def enrich(job: Job) -> dict | None:
     return row
 
 
+_LABELLED_LOC = re.compile(
+    r"(?:Lokasyon|Konum|Adres|Çalışma Yeri|İş Yeri Adresi|Çalışma Lokasyonu|Şehir\s*/\s*İlçe|İlçe|Location)"
+    r"\s*[:：]?\s*(?:</[^>]+>\s*)*(?:<[^>]+>\s*)*([^<]{2,140})", re.I)
+
+
+def district_from_detail(html: str) -> str | None:
+    """İlan detay sayfasından ilçe: önce JSON-LD konumu, sonra JSON-LD açıklaması, sonra etiketli
+    konum alanları. Sayfanın tamamı taranmaz (menü/altbilgideki ilçe bağlantıları yanıltır)."""
+    from .jsonld import extract_jobpostings, jobposting_to_job
+
+    postings = extract_jobpostings(html)
+    for d in postings:
+        j = jobposting_to_job(d, source="", source_type="")
+        hit = detect_district(j.location) or detect_district(j.title)
+        if hit:
+            return hit
+    for d in postings:
+        hit = detect_district(strip_html(d.get("description", ""), 3000))
+        if hit:
+            return hit
+    for m in _LABELLED_LOC.finditer(html):
+        hit = detect_district(m.group(1))
+        if hit:
+            return hit
+    return None
+
+
+def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, seconds: float = 300) -> int:
+    """İlçesi belirsiz satırları önce veritabanındaki eski bilgiyle, sonra (yalnızca daha önce
+    bakılmamış yeni ilanlar için, `budget` kadar) detay sayfasıyla doldurur. Döner: bulunan sayısı."""
+    unknown = [r for r in rows.values() if not r.get("district")]
+    if not unknown:
+        return 0
+    known = db.known_districts([r["uid"] for r in unknown])
+    todo = []
+    for r in unknown:
+        k = known.get(r["uid"])
+        if k and k["district"]:
+            _set_district(r, k["district"])
+        elif k and k["extra"].get("detail_checked"):
+            r["extra"]["detail_checked"] = 1
+        else:
+            todo.append(r)
+    found = fails = 0
+    deadline = time.monotonic() + seconds
+    for r in todo[:max(0, budget)]:
+        if fails >= 3 or time.monotonic() > deadline:  # site detayları engelliyorsa vakit kaybetme
+            break
+        try:
+            html = http.get(r["url"], retries=1)
+        except HttpError as e:
+            fails = 3 if e.status is None else fails + 1  # bağlantı hiç kurulamıyorsa hemen bırak
+            log_.debug("detay alınamadı %s (%s)", r["url"], e)
+            continue
+        except Exception as e:  # noqa: BLE001
+            fails += 1
+            log_.debug("detay alınamadı %s (%s)", r["url"], e)
+            continue
+        fails = 0
+        r["extra"]["detail_checked"] = 1
+        d = district_from_detail(html)
+        if d:
+            _set_district(r, d)
+            found += 1
+    return found
+
+
+def _set_district(r: dict, d: str):
+    r["district"] = d
+    r["side"] = side_of(d)
+    r["dedupe_key"] = dedupe_key(r["title"], r["company"], d)
+    r.setdefault("extra", {})["district_from"] = "detail"
+
+
 def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: CrawlStatus | None = None) -> dict:
     run_id = db.start_run(src.name)
     started = now_iso()
@@ -201,6 +276,13 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     except Exception as e:  # noqa: BLE001
         error = f"{type(e).__name__}: {e}"
         log.warning("%s hata: %s", src.name, error)
+    if rows and opts.district_details >= 0:
+        try:
+            found = fill_districts(rows, db, http, opts.district_details if not src.needs_browser else 0)
+            if found and status:
+                status.add_log(f"{src.label}: {found} ilanın ilçesi detay sayfasından bulundu")
+        except Exception as e:  # noqa: BLE001
+            log.warning("%s ilçe tamamlama hatası: %s", src.name, e)
     new, upd = db.upsert_jobs(list(rows.values()), started)
     removed = 0
     if error is None and rows:

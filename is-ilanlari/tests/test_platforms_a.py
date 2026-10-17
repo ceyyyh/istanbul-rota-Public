@@ -335,6 +335,7 @@ def test_careerjet_api_ambiguous_location(monkeypatch):
 
 
 def test_careerjet_html(monkeypatch):
+    monkeypatch.setenv("CAREERJET_HTML", "1")
     monkeypatch.delenv("CAREERJET_API_KEY", raising=False)
     monkeypatch.delenv("CAREERJET_AFFID", raising=False)
     http = ScriptedHttp([
@@ -356,6 +357,7 @@ def test_careerjet_html(monkeypatch):
 
 
 def test_careerjet_html_tries_alternative_paths(monkeypatch):
+    monkeypatch.setenv("CAREERJET_HTML", "1")
     monkeypatch.delenv("CAREERJET_API_KEY", raising=False)
     monkeypatch.delenv("CAREERJET_AFFID", raising=False)
     http = ScriptedHttp([
@@ -407,3 +409,11 @@ def test_linkedin_splits_by_district_when_capped(monkeypatch):
     assert set(ids) >= {"4447264118", "4450000001", "4451111111"}
     district_calls = [c["url"] for c in http.calls if "geoId" not in c["url"]]
     assert len(district_calls) >= 39                          # her ilçe için en az bir arama
+
+
+def test_careerjet_skipped_without_key(monkeypatch):
+    for k in ("CAREERJET_API_KEY", "CAREERJET_AFFID", "CAREERJET_HTML"):
+        monkeypatch.delenv(k, raising=False)
+    http = ScriptedHttp([])
+    assert list(careerjet.fetch(src_of(careerjet), ctx_for(http))) == []
+    assert http.calls == []

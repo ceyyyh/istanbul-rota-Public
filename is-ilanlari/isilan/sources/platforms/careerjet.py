@@ -233,9 +233,13 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     key = api_key()
     if key:
         yield from _fetch_api(src, ctx, key)
-    else:
+    elif env("CAREERJET_HTML"):
         ctx.log.info("careerjet: CAREERJET_API_KEY yok; HTML arama sayfası taranıyor")
         yield from _fetch_html(src, ctx)
+    else:
+        # Gerçek taramada HTML arama yolları 404 verdi; anahtarsız denemek yalnızca hata üretiyor
+        ctx.log.warning("careerjet: CAREERJET_API_KEY tanımlı değil, atlandı "
+                        "(HTML denemesi için CAREERJET_HTML=1)")
 
 
 def sources() -> list[Source]:

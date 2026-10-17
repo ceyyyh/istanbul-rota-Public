@@ -419,7 +419,8 @@
   "source_type": "company",
   "evidence": "https://jobs.lever.co/agavegames/962ece8f-2a79-467f-8bd2-8aba1842ed32",
   "confidence": "high",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "Vertigo Games (Istanbul)",
@@ -790,7 +791,8 @@
   "source_type": "company",
   "evidence": "https://www.iscihaber.net/garanti-bbva-bircok-kadroya-alim-yapacak",
   "confidence": "low",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "Migros",
@@ -819,7 +821,8 @@
   "source_type": "company",
   "evidence": "https://apply.workable.com/sanction-scanner/j/B78BB7AA7A/apply/",
   "confidence": "high",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "Plan-S Satellite and Space Technologies",
@@ -911,7 +914,8 @@
   "source_type": "company",
   "evidence": "https://arteria.breezy.hr/",
   "confidence": "medium",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "IHATA Holding (NMQ Digital)",
@@ -1063,8 +1067,8 @@
   "source_type": "company",
   "evidence": "https://jobs.lever.co/useinsider/005b0939-962d-4d91-b74b-72931f100c28",
   "confidence": "medium",
-  "enabled": true,
-  "note": "older Insider board; current board is insiderone"
+  "enabled": false,
+  "note": "older Insider board; current board is insiderone 2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "Token Metrics",
@@ -1074,7 +1078,8 @@
   "source_type": "company",
   "evidence": "https://jobs.lever.co/tokenmetrics/73334715-18be-4ea8-b0d5-1250f2e00a1a",
   "confidence": "low",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
  },
  {
   "company": "Welo Global",
@@ -1405,7 +1410,8 @@
   "source_type": "company",
   "evidence": "https://www.mondelezinternational.com/careers/jobs/job?jobid=R-81244&jobtitle=Senior+Legal+Counsel%2C+Turkey",
   "confidence": "medium",
-  "enabled": true
+  "enabled": false,
+  "note": "2026-10-17 gerçek taramada 400 verdi; kapatıldı."
  },
  {
   "company": "DSV",

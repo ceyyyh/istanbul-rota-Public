@@ -125,6 +125,20 @@ class DB:
                 )
         return new, upd
 
+    def known_districts(self, uids: list[str]) -> dict[str, dict]:
+        """Önceki taramalarda (ör. detay sayfasından) bulunmuş ilçe bilgisi; üzerine None yazılmasın diye."""
+        out: dict[str, dict] = {}
+        with self._lock:
+            for i in range(0, len(uids), 500):
+                chunk = uids[i:i + 500]
+                for r in self.conn.execute(f"SELECT uid, district, side, extra FROM jobs WHERE uid IN ({','.join('?' * len(chunk))})", chunk):
+                    try:
+                        extra = json.loads(r["extra"] or "{}")
+                    except json.JSONDecodeError:
+                        extra = {}
+                    out[r["uid"]] = {"district": r["district"], "side": r["side"], "extra": extra}
+        return out
+
     def deactivate_missing(self, source: str, before: str) -> int:
         """Bu taramada görülmeyen ilanları pasife çeker (ilan kaldırılmış demektir)."""
         with self._lock, self.conn:

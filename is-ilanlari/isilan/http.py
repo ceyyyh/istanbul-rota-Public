@@ -73,17 +73,19 @@ class Http:
 
     def request(self, method: str, url: str, **kw) -> requests.Response:
         kw.setdefault("timeout", self.timeout)
+        retries = max(1, int(kw.pop("retries", self.retries)))
         last_exc: Exception | None = None
-        for attempt in range(self.retries):
+        for attempt in range(retries):
             self._throttle(url)
             try:
                 self.request_count += 1
                 r = self.session.request(method, url, **kw)
             except requests.RequestException as e:
                 last_exc = e
-                time.sleep(1.5 * (attempt + 1))
+                if attempt < retries - 1:
+                    time.sleep(1.5 * (attempt + 1))
                 continue
-            if r.status_code in (429, 500, 502, 503, 504) and attempt < self.retries - 1:
+            if r.status_code in (429, 500, 502, 503, 504) and attempt < retries - 1:
                 retry_after = r.headers.get("Retry-After", "")
                 # Retry-After saatlerce olabilir; kaynak süre sınırını aşmamak için üst sınır koy
                 time.sleep(min(float(retry_after), 60.0) if retry_after.isdigit() else 2.0 * (attempt + 1))

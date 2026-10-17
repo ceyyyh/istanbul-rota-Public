@@ -207,18 +207,28 @@ def _parse_xml(txt: str) -> ET.Element:
 # Greenhouse — https://developers.greenhouse.io/job-board.html
 # ---------------------------------------------------------------------------
 
+def _greenhouse_board_page(src: Source, ctx: FetchContext, slug: str) -> Iterator[Job]:
+    from .careerpage import fetch_careerpage
+
+    host = "job-boards.eu.greenhouse.io" if src.params.get("region") == "eu" else "job-boards.greenhouse.io"
+    params = {"company": src.params.get("company") or src.label, "careers_url": f"https://{host}/{slug}",
+              "link_pattern": rf"/{re.escape(slug)}/jobs/\d+", "no_ats_detect": True, "max_jobs": 150}
+    sub = Source(name=src.name, source_type=src.source_type, label=src.label, fetcher=fetch_careerpage,
+                 homepage=params["careers_url"], params=params)
+    yield from fetch_careerpage(sub, ctx)
+
+
 def fetch_greenhouse(src: Source, ctx: FetchContext) -> Iterator[Job]:
     slug = src.params["slug"]
-    # AB'de barındırılan panolar (job-boards.eu.greenhouse.io) ayrı API alan adındadır
-    hosts = ["boards-api.greenhouse.io", "boards-api.eu.greenhouse.io"]
-    if src.params.get("region") == "eu":
-        hosts.reverse()
+    # AB panoları (job-boards.eu.greenhouse.io): boards-api.eu.greenhouse.io gerçek taramada çözümlenmedi;
+    # genel API başarısız olursa pano sayfası genel kariyer sayfası tarayıcısıyla okunur
     try:
-        data = ctx.http.get_json(f"https://{hosts[0]}/v1/boards/{slug}/jobs?content=true")
+        data = ctx.http.get_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true")
     except HttpError as e:
-        if e.status != 404:
+        if src.params.get("region") != "eu" and e.status != 404:
             raise
-        data = ctx.http.get_json(f"https://{hosts[1]}/v1/boards/{slug}/jobs?content=true")
+        yield from _greenhouse_board_page(src, ctx, slug)
+        return
     for j in data.get("jobs", []):
         locs = [_name(j.get("location"))]
         for o in j.get("offices") or []:
@@ -589,9 +599,36 @@ def fetch_workday(src: Source, ctx: FetchContext) -> Iterator[Job]:
     headers = {"Accept-Language": "en-US,en;q=0.9"}
     limit = 20  # Workday sayfa boyutunu 20 ile sınırlar
 
+    warmed = False
+
+    def warm_up():
+        """Tarayıcı gibi önce kariyer sayfasını açıp oturum çerezlerini ve CSRF anahtarını al.
+        Workday bu çerezler olmadan API'ye JSON yerine HTML/boş yanıt dönebiliyor."""
+        nonlocal warmed
+        warmed = True
+        site_url = p.get("job_url_base") or f"https://{host}/{site}"
+        try:
+            ctx.http.get(site_url, headers={"Accept": "text/html"})
+        except HttpError as e:
+            ctx.log.debug("workday karşılama sayfası alınamadı: %s", e)
+        sess = getattr(ctx.http, "session", None)
+        token = sess.cookies.get("CALYPSO_CSRF_TOKEN") if sess is not None else None
+        headers.update({"Origin": f"https://{host}", "Referer": site_url, "Content-Type": "application/json"})
+        if token:
+            headers["X-CALYPSO-CSRF-TOKEN"] = token
+
     def page(offset: int, facets: dict, search: str) -> dict:
-        return ctx.http.post_json(f"{api}/jobs", {"appliedFacets": facets, "limit": limit,
-                                                  "offset": offset, "searchText": search}, headers=headers)
+        body = {"appliedFacets": facets, "limit": limit, "offset": offset, "searchText": search}
+        try:
+            data = ctx.http.post_json(f"{api}/jobs", body, headers=headers)
+        except (ValueError, HttpError) as e:
+            if warmed or (isinstance(e, HttpError) and e.status not in (400, 401, 403, 422)):
+                raise
+            warm_up()
+            data = ctx.http.post_json(f"{api}/jobs", body, headers=headers)
+        if not isinstance(data, dict):
+            raise ValueError(f"workday beklenmeyen yanıt: {str(data)[:120]}")
+        return data
 
     first = page(0, {}, "")
     fac = _workday_istanbul_facet(first.get("facets"))
