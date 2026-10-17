@@ -12,6 +12,7 @@ import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from .http import Http, HttpError, USER_AGENTS
 
@@ -29,9 +30,11 @@ class BrowserHttp(Http):
     """Http + Playwright yedeği. Playwright senkron API'si iş parçacığına bağlı olduğundan
     tüm tarayıcı işleri tek bir özel iş parçacığında yürütülür."""
 
-    def __init__(self, *a, headless: bool = True, **kw):
+    def __init__(self, *a, headless: bool = True, profile_dir: str | None = None, **kw):
         super().__init__(*a, **kw)
         self.headless = headless
+        # Kalıcı profil: çerezler saklanır; görünür modda bir kez elle geçilen doğrulama sonraki taramalarda da geçerli olur
+        self.profile_dir = profile_dir
         self._exec = ThreadPoolExecutor(max_workers=1, thread_name_prefix="browser")
         self._pw = self._browser = self._ctx = None
         self.browser_count = 0
@@ -44,18 +47,27 @@ class BrowserHttp(Http):
                 raise RuntimeError("Playwright kurulu değil: pip install playwright && "
                                    "python -m playwright install chromium") from e
             self._pw = sync_playwright().start()
-            self._browser = self._pw.chromium.launch(headless=self.headless)
-            self._ctx = self._browser.new_context(locale="tr-TR", user_agent=USER_AGENTS[0])
+            if self.profile_dir:
+                Path(self.profile_dir).mkdir(parents=True, exist_ok=True)
+                self._ctx = self._pw.chromium.launch_persistent_context(
+                    self.profile_dir, headless=self.headless, locale="tr-TR")
+            else:
+                self._browser = self._pw.chromium.launch(headless=self.headless)
+                self._ctx = self._browser.new_context(locale="tr-TR", user_agent=USER_AGENTS[0])
 
     def _render(self, url: str, want_json: bool) -> str:
         self._ensure()
         page = self._ctx.new_page()
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=45000)
-            for _ in range(10):  # Cloudflare/benzeri ara sayfaların geçmesini bekle
+            # Ara doğrulama sayfasının geçmesini bekle; görünür modda kullanıcıya elle tamamlaması için süre tanı
+            waits = 10 if self.headless else 60
+            for i in range(waits):
                 html = page.content()
                 if not looks_blocked(html):
                     break
+                if i == 3 and not self.headless:
+                    log.warning("Doğrulama sayfası: lütfen açılan tarayıcı penceresinde doğrulamayı tamamlayın (%s)", url)
                 time.sleep(1.5)
             try:
                 page.wait_for_load_state("networkidle", timeout=8000)

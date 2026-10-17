@@ -6,3 +6,5 @@ site/
 *.csv
 .venv/
 .pytest_cache/
+data/tarayici-profili/
+data/teshis/

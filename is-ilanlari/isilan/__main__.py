@@ -16,6 +16,7 @@ import csv
 import json
 import logging
 import sys
+from collections import Counter
 from pathlib import Path
 
 from .db import DB, DEFAULT_DB, now_iso
@@ -79,6 +80,7 @@ def cmd_crawl(a):
             sys.exit("Eşleşen kaynak yok. `python -m isilan sources` ile listeye bakın.")
     opts = CrawlOptions(max_pages=a.max_pages, per_source_timeout=a.timeout, workers=a.workers,
                         fetch_details=a.details, use_browser=a.browser or a.gorunur, headless=not a.gorunur,
+                        profile_dir=a.profil or (str(DEFAULT_DB.parent / "tarayici-profili") if a.gorunur else None),
                         min_interval=a.interval)
     db = DB(a.db)
     st = crawl(db, srcs, opts)
@@ -177,6 +179,39 @@ def cmd_ilceler(a):
     print(f"\n  {'(belirsiz)':<15} {counts.get(None, 0):>6}")
 
 
+def cmd_teshis(a):
+    from .pipeline import CrawlOptions  # noqa: F401
+    from .sources import all_sources
+    from .teshis import diagnose
+
+    srcs = all_sources(include_disabled=True)
+    if a.source:
+        wanted = set(a.source)
+        srcs = [s for s in srcs if s.name in wanted or s.source_type in wanted]
+        if not srcs:
+            sys.exit("Eşleşen kaynak yok. `python -m isilan sources` ile listeye bakın.")
+    if a.browser or a.gorunur:
+        from .browser import BrowserHttp
+        http = BrowserHttp(min_interval=1.0, headless=not a.gorunur,
+                           profile_dir=a.profil or (str(DEFAULT_DB.parent / "tarayici-profili") if a.gorunur else None))
+    else:
+        from .http import Http
+        http = Http(min_interval=1.0)
+    out = Path(a.out)
+    try:
+        for s in srcs:
+            r = diagnose(s, out, http, max_pages=a.max_pages, timeout=a.timeout)
+            st = Counter(str(q.get("status")) for q in r["requests"])
+            print(f"{s.name:<32} okunan={r['fetched']:<5} istanbul={r['kept']:<5} istek={dict(st)}  → {r['verdict']}")
+            if r["error"] and a.verbose:
+                print(f"    hata: {r['error'][:200]}")
+    finally:
+        if hasattr(http, "close"):
+            http.close()
+    print(f"\nAyrıntılar ve kaydedilen sayfalar: {out}/<kaynak>/ (rapor.json + ham yanıtlar)")
+    print("Az ilan gelen kaynakların klasörünü zip'leyip gönderirseniz ayrıştırıcı gerçek sayfaya göre düzeltilebilir.")
+
+
 def cmd_add_company(a):
     from .discover import probe_company
 
@@ -221,6 +256,7 @@ def main(argv=None):
     p.add_argument("--details", action="store_true", help="Detay sayfalarını da çek (yavaş, daha zengin veri)")
     p.add_argument("--browser", action="store_true", help="Playwright gerektiren kaynakları da çalıştır")
     p.add_argument("--gorunur", action="store_true", help="Tarayıcıyı görünür pencerede aç (Kariyer.net gibi korumalı siteler için)")
+    p.add_argument("--profil", default=None, help="Kalıcı tarayıcı profili klasörü (varsayılan --gorunur ile data/tarayici-profili)")
     p.set_defaults(fn=cmd_crawl)
 
     p = sub.add_parser("serve", help="Web arayüzü")
@@ -256,6 +292,16 @@ def main(argv=None):
 
     p = sub.add_parser("ilceler", help="İlçe bazında ilan sayıları")
     p.set_defaults(fn=cmd_ilceler)
+
+    p = sub.add_parser("teshis", help="Az/hiç ilan getiren kaynakları teşhis et, ham sayfaları kaydet")
+    p.add_argument("source", nargs="*", help="Kaynak adları ya da tür (platform/company/agency); boşsa hepsi")
+    p.add_argument("--max-pages", type=int, default=2)
+    p.add_argument("--timeout", type=float, default=180)
+    p.add_argument("--out", default=str(DEFAULT_DB.parent / "teshis"))
+    p.add_argument("--browser", action="store_true")
+    p.add_argument("--gorunur", action="store_true")
+    p.add_argument("--profil", default=None, help="Kalıcı tarayıcı profili klasörü")
+    p.set_defaults(fn=cmd_teshis)
 
     p = sub.add_parser("add-company", help="Şirketi ATS'lerde arayıp ekle")
     p.add_argument("company", help="Şirket adı (ör. 'Peak Games')")

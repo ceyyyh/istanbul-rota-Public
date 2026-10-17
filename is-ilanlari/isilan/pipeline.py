@@ -50,6 +50,7 @@ class CrawlOptions:
     fetch_details: bool = False
     use_browser: bool = False          # needs_browser kaynaklarını da çalıştır (Playwright gerekir)
     headless: bool = True              # False: tarayıcı penceresi görünür açılır (bot korumasını daha iyi geçer)
+    profile_dir: str | None = None     # kalıcı tarayıcı profili (çerezler taramalar arasında saklanır)
     min_interval: float = 1.0          # aynı alan adına iki istek arası en az bekleme
 
 
@@ -179,7 +180,7 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     started = now_iso()
     counted = CountingHttp(http)
     ctx = FetchContext(http=counted, max_pages=opts.max_pages, fetch_details=opts.fetch_details,
-                       deadline=time.monotonic() + opts.per_source_timeout,
+                       deadline=time.monotonic() + max(opts.per_source_timeout, float(src.params.get("timeout", 0) or 0)),
                        log=logging.getLogger(f"isilan.source.{src.name}"))
     rows: dict[str, dict] = {}
     count = 0
@@ -228,7 +229,7 @@ def crawl(db: DB, sources: list[Source] | None = None, opts: CrawlOptions | None
     srcs = [s for s in srcs if s not in skipped]
     if opts.use_browser:
         from .browser import BrowserHttp
-        http: Http = BrowserHttp(min_interval=opts.min_interval, headless=opts.headless)
+        http: Http = BrowserHttp(min_interval=opts.min_interval, headless=opts.headless, profile_dir=opts.profile_dir)
     else:
         http = Http(min_interval=opts.min_interval)
     lock = threading.Lock()

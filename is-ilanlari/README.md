@@ -84,6 +84,20 @@ python -m isilan add-url "Şirket" https://sirket.com/kariyer   # kendi kariyer 
 | Veritabanı yeri | `--db yol/isilan.db` ya da `ISILAN_DB` ortam değişkeni |
 | Daha nazik tarama | `crawl --interval 2` (aynı siteye iki istek arası saniye) |
 
+## Bir siteden az ilan geliyorsa
+
+1. **Teşhis edin:** `python -m isilan teshis kariyernet linkedin` (ya da tüm platformlar için `teshis platform`).
+   Her kaynak için kısa bir tarama yapar ve nedenini söyler: *engelliyor*, *sayfa geldi ama ayrıştırılamadı*,
+   *İstanbul olarak tanınmadı*, *bağlanılamadı*. Ham sayfalar `data/teshis/<kaynak>/` klasörüne kaydedilir.
+   Bu klasörü zip'leyip paylaşırsanız ayrıştırıcı gerçek sayfaya göre düzeltilebilir.
+2. **Bot koruması varsa** (Kariyer.net, Indeed, Glassdoor): `python -m isilan crawl kariyernet --gorunur`.
+   Tarayıcı görünür açılır; doğrulama sayfası çıkarsa **siz** pencerede tamamlarsınız. Çerezler
+   `data/tarayici-profili/` içinde saklandığı için sonraki taramalarda genellikle tekrar gerekmez.
+3. **Sayfa sınırı:** büyük sitelerde varsayılan 150 sayfa yetmeyebilir: `crawl kariyernet --max-pages 600 --timeout 3600`.
+4. **LinkedIn** tek aramada en fazla ~1000 ilan döndürür; program bu sınıra ulaşınca otomatik olarak
+   39 ilçeyi ayrı ayrı arar (son 30 günün ilanları).
+5. **Resmî API'si olanlar** için anahtar alın (Jooble, Careerjet) — en sağlam yol budur.
+
 ## Önemli notlar (lütfen okuyun)
 
 - **Canlı sitelerde henüz denenmedi.** Program, internete kısıtlı erişimi olan bir bulut ortamında

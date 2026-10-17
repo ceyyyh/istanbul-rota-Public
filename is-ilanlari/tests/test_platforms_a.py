@@ -159,7 +159,7 @@ def test_linkedin_fetch_paginates_until_empty(monkeypatch):
     assert jobs[2].posted_at is not None  # "1 hafta önce" → tarih
     q = parse_qs(urlparse(http.calls[0]["url"]).query)
     assert q["geoId"] == ["90010422"]
-    assert q["f_TPR"] == ["r604800"]
+    assert q["f_TPR"] == ["r2592000"]
     assert q["start"] == ["0"]
     assert len(http.calls) == 3
 
@@ -392,3 +392,18 @@ def test_jooble_api(monkeypatch):
     assert http.calls[0]["payload"] == {"keywords": "", "location": "İstanbul", "page": 1, "ResultOnPage": 50}
     assert http.calls[1]["payload"]["page"] == 2
     assert len(http.calls) == 2  # totalCount'a ulaşınca durdu
+
+
+def test_linkedin_splits_by_district_when_capped(monkeypatch):
+    # İstanbul geneli sınıra takılırsa (max_results) ilçe aramalarına geçer
+    http = ScriptedHttp([
+        ("GET", "geoId=90010422", read("linkedin_page1.html")),
+        ("GET", "location=Adalar", read("linkedin_page2.html")),
+        ("GET", "location=", read("linkedin_empty.html")),
+    ])
+    jobs = list(linkedin.fetch(src_of(linkedin, delay=0, max_results=1), ctx_for(http)))
+    ids = [j.external_id for j in jobs]
+    assert len(ids) == len(set(ids))                          # tekrar yok
+    assert set(ids) >= {"4447264118", "4450000001", "4451111111"}
+    district_calls = [c["url"] for c in http.calls if "geoId" not in c["url"]]
+    assert len(district_calls) >= 39                          # her ilçe için en az bir arama

@@ -53,6 +53,8 @@ def page_url(params: dict, start: int) -> str:
         "geoId": params.get("geoId", GEO_ID_GREATER_ISTANBUL),
         "sortBy": params.get("sortBy", "DD"),  # DD = en yeni önce
     }
+    if not q["geoId"]:
+        del q["geoId"]
     if params.get("f_TPR"):
         q["f_TPR"] = params["f_TPR"]  # r86400 (24s), r604800 (hafta), r2592000 (ay)
     q["start"] = start
@@ -129,12 +131,42 @@ def parse_cards(html: str) -> list[Job]:
     return jobs
 
 
+def _district_queries(p: dict) -> list[dict]:
+    """Tek arama ~1000 sonuçla sınırlı; İstanbul geneli sınıra takılırsa ilçe ilçe aranır."""
+    from ...geo import DISTRICTS
+
+    out = []
+    for d in DISTRICTS:
+        q = {k: v for k, v in p.items() if k not in ("geoId", "location")}
+        q["location"] = f"{d}, İstanbul, Türkiye"
+        q["geoId"] = ""
+        out.append(q)
+    return out
+
+
 def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
-    p = src.params
+    seen: set[str] = set()
+    capped = yield from _fetch_query(src.params, ctx, seen)
+    if capped and src.params.get("split_districts", True):
+        ctx.log.info("linkedin: İstanbul geneli %s sonuç sınırına ulaştı, ilçe bazında aranıyor", MAX_RESULTS)
+        for q in _district_queries(src.params):
+            if not ctx.time_left():
+                ctx.mark_partial("linkedin süre doldu (ilçe aramaları)")
+                return
+            try:
+                yield from _fetch_query(q, ctx, seen)
+            except HttpError as e:
+                ctx.log.warning("linkedin: %s araması alınamadı (%s)", q["location"], e.status)
+                ctx.mark_partial("linkedin ilçe araması")
+                return
+
+
+def _fetch_query(p: dict, ctx: FetchContext, seen: set[str]):
+    """Bir arama sorgusunu sayfa sayfa tarar; sonuç sınırına takıldıysa True döner."""
     delay = float(p.get("delay", 2.0))
     max_results = int(p.get("max_results", MAX_RESULTS))
     headers = {"Accept": "text/html,*/*;q=0.8"}
-    start, page, stale, seen = 0, 0, 0, set()
+    start, page, stale = 0, 0, 0
     while start < max_results and page < ctx.max_pages and ctx.time_left():
         if page and delay > 0:
             time.sleep(random.uniform(delay, delay * 2))
@@ -147,19 +179,19 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             # 429 / 999: LinkedIn kısıtlaması — elde edilenlerle yetin
             ctx.log.warning("linkedin: start=%s alınamadı (%s); tarama burada kesildi", start, e.status)
             ctx.mark_partial(f"linkedin start={start}")
-            return
+            return False
         page += 1
         cards = parse_cards(html)
         if not cards:
             if html.strip() and html.strip() != EMPTY_PAGE and "base-card" not in html and page == 1:
                 ctx.log.warning("linkedin: beklenmeyen yanıt (engellenmiş olabilir)")
-            return
+            return False
         new = [j for j in cards if j.external_id not in seen]
         if not new:
             # sayfalar kısmen örtüşebilir; art arda iki "yenisiz" sayfada dur
             stale += 1
             if stale >= 2:
-                return
+                return False
         else:
             stale = 0
         for j in new:
@@ -168,7 +200,10 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
         # LinkedIn sayfa başına ~10 kart döner; ham kart sayısı kadar ilerle
         start += max(len(cards), len(_URN_RAW.findall(html)))
     if start >= max_results:  # LinkedIn'in misafir sonuç sınırı: daha fazla ilan olabilir
-        ctx.mark_partial("linkedin max_results")
+        return True
+    if page >= ctx.max_pages:
+        ctx.mark_partial("linkedin max_pages")
+    return False
 
 
 def sources() -> list[Source]:
@@ -178,5 +213,5 @@ def sources() -> list[Source]:
         label="LinkedIn",
         homepage="https://www.linkedin.com/jobs/search?location=Istanbul&geoId=" + GEO_ID_GREATER_ISTANBUL,
         fetcher=fetch,
-        params={"f_TPR": "r604800"},
+        params={"f_TPR": "r2592000", "timeout": 3600},  # son 30 gün; ilçe aramaları için uzun süre
     )]
