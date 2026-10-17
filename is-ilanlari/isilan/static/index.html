@@ -120,14 +120,13 @@ h1{font-size:19px;margin:0;line-height:1.25;letter-spacing:-.01em}
 .qbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .qv .link{margin-left:4px}
 .fl{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
-.fl:first-child{margin-top:0}
+.fl:first-child,.ft+.fl{margin-top:0}
 textarea.inp{resize:vertical;min-height:60px;line-height:1.4}
 .prof{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
 .phead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .phead h3{margin:0;font-size:16px}
 .hint{background:var(--accent-soft);color:var(--accent-text);border-radius:9px;padding:8px 12px;font-size:13.5px;margin:0 0 6px}
 .prow{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-top:12px;font-size:14px}
-.prow .chk{margin:0}
 .pkm{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pkm .inp{width:auto}
 .pfoot{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -774,6 +773,7 @@ function syncFilters() {
     (P.haric.length ? '<br><b>Hariç:</b> ' + esc(P.haric.join(', ')) : '') + (P.beyaz ? '<br>Yalnızca beyaz yaka' : '') + (P.km ? '<br>En fazla ' + P.km + ' km (PTT Evleri)' : '')
     : '<span class="muted">Henüz profil yok. Aradığınız pozisyonları kaydedin, “Bana uygun” görünümü yalnızca size uyan ilanları göstersin.</span>';
   $('#profApply2').hidden = !P;
+  $('#profDel').hidden = !P;
   $$('input[data-f="group"]').forEach(function (g) {
     var items = $$('.dgroup[data-side="' + g.value + '"] input[data-f="ilce"]');
     var n = items.filter(function (i) { return i.checked; }).length;
@@ -904,7 +904,7 @@ function card(j) {
   var cl = j.collar === 'beyaz' || j.collar === 'mavi' ? '<span class="b cl">' + COLLAR[j.collar] + '</span>' : '';
   var mt = j.match && j.match.terms && j.match.terms.length
     ? '<div class="mt"><span class="sc" title="Profilinizdeki ' + fmt(terms(state.kw).length) + ' kelimeden ' + fmt(j.match.score) + ' tanesi eşleşti">Uygunluk ' + fmt(j.match.score) + '/' + fmt(terms(state.kw).length || j.match.score) + '</span>' +
-      j.match.terms.map(function (t) { return '<mark>' + esc(t) + '</mark>'; }).join('') + '</div>' : '';
+      j.match.terms.map(function (t) { var o = state.kw.filter(function (k) { return fold(k) === t; })[0]; return '<mark>' + esc(o || t) + '</mark>'; }).join('') + '</div>' : '';
   return '<article class="card"><div class="ctop"><h3><a href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(j.title || '(başlıksız ilan)') + '</a></h3>' +
     (when ? '<time class="date" datetime="' + esc(when) + '" title="' + esc(whenTitle) + '">' + relTime(when) + '</time>' : '') + '</div>' +
     (j.company || agency ? '<div class="co">' + esc(j.company) + (agency && agency !== j.company ? '<span class="via">' + (j.company ? ' · ' : '') + esc(agency) + ' aracılığıyla</span>' : '') + '</div>' : '') +
@@ -1134,8 +1134,8 @@ document.addEventListener('click', function (e) {
   var c = e.target.closest('[data-k]');
   if (c) return removeFilter(c.dataset.k, c.dataset.v);
   var qv = e.target.closest('[data-qv]');
-  if (qv) { if (qv.id === 'profApply2') drawer(false); return applyView(qv.dataset.qv); }
-  if (e.target.closest('[data-prof]')) return $('#prof').hidden || $('#profHint').hidden === false ? openProf(false) : ($('#prof').hidden = true);
+  if (qv) { if ($('#filters').classList.contains('open') && qv.closest('#filters')) drawer(false); return applyView(qv.dataset.qv); }
+  if (e.target.closest('[data-prof]')) return openProf(false);
   var d = e.target.closest('[data-dist]');
   if (d) {
     var n = d.dataset.dist;

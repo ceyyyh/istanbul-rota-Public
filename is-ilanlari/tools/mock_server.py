@@ -4,7 +4,10 @@
 
 /            -> isilan/static/index.html (sunucu modu)
 /static.html -> aynı sayfa, window.__ISILAN_DATA__ gömülü (çevrimdışı mod testi)
-/api/...     -> isilan/web.py ile aynı sözleşme
+/api/...     -> isilan/web.py ile aynı sözleşme (is_tipi, near, max_km, sort=near|fit, kw, haric dahil)
+
+Metin katlama, iş tipi sınıflandırması ve konumlar isilan.text / isilan.classify / isilan.geo'dan alınır
+(standart kütüphane dışında bağımlılık yok).
 
 Üretilen ~200 ilan TAMAMEN SAHTE test verisidir (ör. "Örnek A.Ş."); hiçbir yerde yayımlanmaz.
 """
@@ -12,16 +15,23 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
+import sys
 import threading
 import time
-import unicodedata
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-INDEX = Path(__file__).resolve().parent.parent / "isilan" / "static" / "index.html"
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from isilan.classify import collar as classify_collar  # noqa: E402
+from isilan.geo import ORIGINS, distance_km, locate  # noqa: E402
+from isilan.text import fold  # noqa: E402
+
+INDEX = ROOT / "isilan" / "static" / "index.html"
 MARKER = "<script>/*__ISILAN_DATA__*/</script>"
 
 AVRUPA = ("Arnavutköy Avcılar Bağcılar Bahçelievler Bakırköy Başakşehir Bayrampaşa Beşiktaş Beylikdüzü Beyoğlu "
@@ -59,9 +69,10 @@ COMPANIES = ["Örnek A.Ş.", "Deneme Ltd. Şti.", "Test Yazılım A.Ş.", "Mock 
 CATEGORIES = ["Bilişim", "Finans", "Satış", "Lojistik", "Sağlık", "Pazarlama", ""]
 
 
-def fold(s: str) -> str:
-    s = (s or "").replace("İ", "i").replace("I", "ı").lower().replace("ı", "i")
-    return "".join(c for c in unicodedata.normalize("NFD", s) if not unicodedata.combining(c))
+# Konum metnine eklenen semtler (yakınlık testleri için; isilan.geo.PLACE_COORDS'ta tanımlı olanlar)
+PLACES = {"Sarıyer": ["Maslak", "İstinye", "Tarabya", "PTT Evleri", "Büyükdere"], "Şişli": ["Mecidiyeköy"],
+          "Beşiktaş": ["Levent", "Etiler"], "Kağıthane": ["Seyrantepe"], "Ataşehir": ["Ataşehir Finans Merkezi"]}
+TITLES_EXTRA = ["Forklift Operatörü", "Garson", "Temizlik Personeli", "Güvenlik Görevlisi", "Asistan"]
 
 
 def iso(dt: datetime) -> str:
@@ -81,6 +92,10 @@ def make_jobs(n: int = 200) -> list[dict]:
         district = rnd.choices(DISTRICTS, weights)[0] if rnd.random() < 0.8 else None
         loc = (f"{district}, İstanbul" if rnd.random() < 0.7 else f"İstanbul ({SIDE[district].title()}) - {district}") \
             if district else rnd.choice(["İstanbul", "İstanbul, Türkiye", "İstanbul (Tümü)"])
+        if district in PLACES and rnd.random() < 0.6:
+            loc = f"{rnd.choice(PLACES[district])}, {district}, İstanbul"
+        title = rnd.choice(TITLES + TITLES_EXTRA)
+        work_model = rnd.choice(["remote", "hybrid", "onsite", "onsite", ""])
         posted = now - timedelta(hours=rnd.randint(1, 24 * 45))
         first_seen = posted + timedelta(hours=rnd.randint(0, 30))
         posted_at = None if rnd.random() < 0.15 else (posted.date().isoformat() if rnd.random() < 0.5 else iso(posted))
@@ -90,19 +105,26 @@ def make_jobs(n: int = 200) -> list[dict]:
                 dups.append({"source": other[0], "source_type": other[2], "url": f"https://example.com/{other[0]}/{i}",
                              "source_label": other[1]})
         extra = {"agency": rnd.choice(["Örnek İK Danışmanlık", "Test İnsan Kaynakları"])} if stype == "agency" else {}
+        category = rnd.choice(CATEGORIES)
+        pt = None if work_model == "remote" else locate(f"{loc} {title}", district)
         jobs.append({
             "uid": f"mock{i:04d}", "external_id": str(i), "source": name, "source_label": LABEL[name], "source_type": stype,
-            "title": rnd.choice(TITLES), "company": rnd.choice(COMPANIES), "url": f"https://example.com/ilan/{i}",
+            "title": title, "company": rnd.choice(COMPANIES), "url": f"https://example.com/ilan/{i}",
             "location": loc, "district": district, "side": SIDE.get(district) if district else None,
             "posted_at": posted_at, "first_seen": iso(first_seen), "last_seen": iso(now),
             "employment_type": rnd.choice(["Tam zamanlı", "Yarı zamanlı", "Staj", ""]),
-            "work_model": rnd.choice(["remote", "hybrid", "onsite", "onsite", ""]),
+            "work_model": work_model,
             "salary": rnd.choice(["", "", "", "35.000 - 45.000 TL", "Asgari ücret + prim"]),
-            "category": rnd.choice(CATEGORIES), "extra": extra,
+            "category": category, "extra": extra,
+            "collar": classify_collar(title, category, name, stype),
+            "lat": pt[0] if pt else None, "lon": pt[1] if pt else None,
             "description": "Bu ilan arayüz testi için üretilmiş SAHTE bir kayıttır. Gerçek bir iş ilanı değildir. "
                            "Görev tanımı, aranan nitelikler ve yan haklar burada yer alır; metin iki satırda kırpılır.",
             "duplicates": dups,
         })
+    for j in jobs:  # isilan/db.py "search" sütunu
+        j["_search"] = fold(" ".join(str(j.get(k) or "") for k in
+                                     ("title", "company", "location", "district", "category", "description")))[:2000]
     return jobs
 
 
@@ -135,7 +157,43 @@ def parse(qs: dict) -> dict:
         return (qs.get(k) or [d])[0] or d
     return {"q": one("q"), "ilce": lst("ilce"), "unk": one("ilce_bilinmiyor") in ("1", "true"), "yaka": one("yaka"),
             "st": lst("source_type"), "src": lst("source"), "wm": lst("work_model"), "days": one("days"),
-            "sort": one("sort", "new")}
+            "sort": one("sort", "new"), "collars": lst("is_tipi"), "near": point(one("near")),
+            "max_km": num(one("max_km")), "kw": terms(lst("kw")), "ex": terms(lst("haric"))}
+
+
+def num(v):
+    try:
+        return float(v) if v else None
+    except ValueError:
+        return None
+
+
+def point(v):
+    if not v or "," not in v:
+        return None
+    a, b = (num(x) for x in v.split(",", 1))
+    return (a, b) if a is not None and b is not None and -90 <= a <= 90 and -180 <= b <= 180 else None
+
+
+def terms(vals: list[str]) -> list[str]:
+    out: list[str] = []
+    for v in vals:
+        t = fold(v)
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
+def dist2(j: dict, near) -> float | None:
+    """isilan/db.py ile aynı: eşdikdörtgen yaklaşımıyla uzaklığın karesi (km²); süzme ve sıralama için."""
+    if j["lat"] is None or j["lon"] is None:
+        return None
+    kx = 111.32 * math.cos(math.radians(near[0]))
+    return ((j["lat"] - near[0]) * 111.32) ** 2 + ((j["lon"] - near[1]) * kx) ** 2
+
+
+def score(j: dict, kw: list[str]) -> int:
+    return sum(1 for t in kw if t in j["_search"])
 
 
 def match(j: dict, f: dict, ignore=()) -> bool:
@@ -154,10 +212,19 @@ def match(j: dict, f: dict, ignore=()) -> bool:
         cut = (datetime.now(timezone.utc) - timedelta(days=int(f["days"]))).date().isoformat()
         if ((j["posted_at"] or "")[:10] or j["first_seen"][:10]) < cut:
             return False
-    if f["q"]:
-        hay = fold(" ".join(str(j[k] or "") for k in ("title", "company", "location", "district", "description", "category")))
-        if not all(t in hay for t in fold(f["q"]).split()):
+    if f["q"] and not all(t in j["_search"] for t in fold(f["q"]).split()):
+        return False
+    if "collar" not in ignore and f["collars"]:
+        if (j["collar"] if j["collar"] in ("beyaz", "mavi") else "belirsiz") not in f["collars"]:
             return False
+    if f["near"] and f["max_km"]:
+        d = dist2(j, f["near"])
+        if d is None or d > f["max_km"] ** 2:
+            return False
+    if f["kw"] and not score(j, f["kw"]):
+        return False
+    if any(t in j["_search"] for t in f["ex"]):
+        return False
     return True
 
 
@@ -170,11 +237,26 @@ def query(f: dict) -> list[dict]:
         items.sort(key=lambda j: (fold(j["company"]), fold(j["title"])))
     else:
         items.sort(key=key, reverse=True)
+        if f["sort"] == "near" and f["near"]:  # konumsuzlar sonda, eşitlikte en yeni (kararlı sıralama)
+            items.sort(key=lambda j: (j["lat"] is None, dist2(j, f["near"]) or 0))
+        elif f["sort"] == "fit" and f["kw"]:
+            items.sort(key=lambda j: -score(j, f["kw"]))
     return items
 
 
+def annotate(j: dict, f: dict) -> dict:
+    d = {k: v for k, v in j.items() if not k.startswith("_")}
+    if f["near"]:
+        d["distance_km"] = round(distance_km(f["near"], (j["lat"], j["lon"])), 1) if j["lat"] is not None else None
+    if f["kw"]:
+        text = fold(" ".join(str(j.get(k) or "") for k in ("title", "company", "location", "district", "category", "description")))
+        hits = [t for t in f["kw"] if t in text]
+        d["match"] = {"score": len(hits), "terms": hits}
+    return d
+
+
 def facets(f: dict) -> dict:
-    d, st, sc, unk = {}, {}, {}, 0
+    d, st, sc, unk, cc = {}, {}, {}, 0, {}
     for j in JOBS:
         if match(j, f, ("district", "side")):
             if j["district"]:
@@ -185,13 +267,19 @@ def facets(f: dict) -> dict:
             st[j["source_type"]] = st.get(j["source_type"], 0) + 1
         if match(j, f, ("source",)):
             sc[j["source"]] = sc.get(j["source"], 0) + 1
+        if match(j, f, ("collar",)):
+            cc[j["collar"]] = cc.get(j["collar"], 0) + 1
     return {"total": sum(1 for j in JOBS if match(j, f)),
             "last_crawl": iso(datetime.now(timezone.utc) - timedelta(hours=2)),
             "districts": [{"name": n, "side": SIDE[n], "count": d.get(n, 0)} for n in DISTRICTS],
             "unknown_district": unk,
             "source_types": [{"name": k, "label": v, "count": st.get(k, 0)} for k, v in TYPE_LABELS.items()],
             "sources": [{"name": n, "label": LABEL[n], "source_type": STYPE[n], "count": c}
-                        for n, c in sorted(sc.items(), key=lambda kv: -kv[1])]}
+                        for n, c in sorted(sc.items(), key=lambda kv: -kv[1])],
+            "collars": [{"name": "beyaz", "label": "Beyaz yaka", "count": cc.get("beyaz", 0)},
+                        {"name": "mavi", "label": "Mavi yaka", "count": cc.get("mavi", 0)},
+                        {"name": "belirsiz", "label": "Belirsiz", "count": cc.get(None, 0)}],
+            "origins": ORIGINS}
 
 
 class Crawl:
@@ -248,8 +336,9 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, INDEX.read_bytes(), "text/html; charset=utf-8")
         if u.path == "/static.html":
             data = {"generated_at": iso(datetime.now(timezone.utc) - timedelta(hours=5)),
-                    "jobs": [{k: v for k, v in j.items() if k not in ("extra", "external_id")} for j in JOBS],
-                    "sources": sources_health()}
+                    "jobs": [{k: v for k, v in j.items() if k not in ("extra", "external_id") and not k.startswith("_")}
+                             for j in JOBS],
+                    "sources": sources_health(), "origins": ORIGINS}
             blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
             html = INDEX.read_text(encoding="utf-8").replace(MARKER, f"<script>window.__ISILAN_DATA__={blob};</script>")
             return self.send(200, html.encode(), "text/html; charset=utf-8")
@@ -259,7 +348,7 @@ class H(BaseHTTPRequestHandler):
             page = max(1, int((qs.get("page") or ["1"])[0] or 1))
             per = min(500, max(1, int((qs.get("per_page") or ["50"])[0] or 50)))
             return self.js({"total": len(items), "page": page, "per_page": per,
-                            "items": items[(page - 1) * per: page * per]})
+                            "items": [annotate(j, f) for j in items[(page - 1) * per: page * per]]})
         if u.path == "/api/facets":
             return self.js(facets(parse(qs)))
         if u.path == "/api/sources":
