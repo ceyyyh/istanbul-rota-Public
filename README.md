@@ -4,3 +4,9 @@
 
 - `npm test` testleri çalıştırır
 - `npm run build` dist/index.html üretir
+
+## İstanbul İş İlanları (`is-ilanlari/`)
+
+İstanbul'daki aktif iş ilanlarını iş platformlarından, şirketlerin kendi kariyer sayfalarından ve
+İK / dış kaynak firmalarından toplayıp **ilçeye göre filtreleyen** uygulama.
+Kurulum ve kullanım: [is-ilanlari/README.md](is-ilanlari/README.md) — kısaca `cd is-ilanlari && ./baslat.sh`
