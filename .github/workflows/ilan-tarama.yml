@@ -51,7 +51,8 @@ jobs:
           JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
           CAREERJET_API_KEY: ${{ secrets.CAREERJET_API_KEY }}
         run: |
-          python -m isilan crawl --browser --max-pages 200 --timeout 1500 --workers 8
+          # Kariyer.net kendi yavaş/devam eden iş akışında (kariyernet.yml) taranır; istek hakkı orada harcansın
+          python -m isilan crawl --browser --max-pages 200 --timeout 1500 --workers 8 --haric kariyernet
           python -m isilan sources | tail -n 60
 
       - name: Siteyi üret

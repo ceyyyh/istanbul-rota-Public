@@ -1,0 +1,89 @@
+# Yalnızca Kariyer.net'i 3 saatte bir, yavaş ve kibar tarar (sayfalar arası 4–8 sn, ilk 403/PerimeterX
+# engelinde durur, kaldığı sayfayı veritabanındaki `state` tablosuna yazar; sonraki çalıştırma oradan sürer).
+# Aynı `veri` dalındaki veritabanını kullanır ve siteyi ilan-tarama.yml ile aynı şekilde yeniden yayınlar.
+name: kariyernet
+
+on:
+  schedule:
+    - cron: "41 1-22/3 * * *"   # UTC 01:41, 04:41, ... 22:41 (ana taramanın xx:17 saatlerinden uzak)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Ana tarama ile aynı grup: ortak veritabanı (veri dalı) iki iş tarafından aynı anda yazılmasın
+concurrency:
+  group: ilan-tarama
+  cancel-in-progress: false
+
+jobs:
+  kariyernet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: is-ilanlari
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Playwright kurulmaz: başsız tarayıcı da engelleniyor; engelde durup sonraki çalıştırmayı beklemek yeterli
+      - name: Kurulum
+        run: pip install -q -r requirements.txt
+
+      - name: Önceki veritabanını al
+        run: |
+          if git fetch -q origin veri 2>/dev/null; then
+            git show origin/veri:isilan.db > data/isilan.db && echo "Önceki veritabanı yüklendi"
+          else
+            echo "İlk çalıştırma: veritabanı yok"
+          fi
+
+      - name: Kariyer.net'i tara
+        run: |
+          # --interval 5: aynı siteye iki istek arası en az 5 sn (ilçe için bakılan detay sayfaları dahil)
+          python -m isilan crawl kariyernet --max-pages 400 --timeout 6000 --workers 1 --interval 5
+          python -m isilan sources | grep -i kariyer || true
+          python - <<'PY'
+          import sqlite3
+          c = sqlite3.connect("data/isilan.db")
+          for k, v in c.execute("SELECT key, value FROM state WHERE key LIKE 'kariyernet:%'"):
+              print(k, v)
+          PY
+
+      - name: Siteyi üret
+        run: |
+          mkdir -p site
+          python -m isilan build-site --out site/index.html
+          python -m isilan export --format json --out site/ilanlar.json
+          touch site/.nojekyll
+
+      - name: Veritabanını sakla (veri dalı)
+        run: |
+          python - <<'PY'
+          import sqlite3
+          c = sqlite3.connect("data/isilan.db"); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.execute("VACUUM"); c.close()
+          PY
+          tmp=$(mktemp -d); cp data/isilan.db "$tmp/"
+          cd "$tmp" && git init -q -b veri && git add isilan.db
+          git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit -qm "veri (kariyernet) $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" veri
+
+      - name: Yayınla (gh-pages dalının is-ilanlari/ klasörüne; daldaki diğer içerik korunur)
+        run: |
+          site="$PWD/site"
+          tmp=$(mktemp -d)
+          if git fetch -q origin gh-pages 2>/dev/null; then
+            git worktree add -q "$tmp" origin/gh-pages
+            cd "$tmp" && git checkout -q -B gh-pages
+          else
+            cd "$tmp" && git init -q -b gh-pages && touch .nojekyll
+          fi
+          rm -rf is-ilanlari && mkdir -p is-ilanlari && cp -a "$site"/. is-ilanlari/
+          git add -A
+          tree=$(git write-tree)
+          commit=$(git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit-tree "$tree" -m "is-ilanlari (kariyernet) $(date -u +%FT%TZ)")
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" "$commit:refs/heads/gh-pages"

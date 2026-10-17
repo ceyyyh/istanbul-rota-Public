@@ -205,7 +205,7 @@ def test_kariyernet_fetch_pages_and_dedupe():
         ("GET", "istanbul?cp=3", read("kariyernet_page2.html")),  # tekrar → dur
         ("GET", "is-ilanlari/istanbul", read("kariyernet_page1.html")),
     ])
-    jobs = list(kariyernet.fetch(src_of(kariyernet), ctx_for(http)))
+    jobs = list(kariyernet.fetch(src_of(kariyernet, delay_min=0, delay_max=0, break_every=0), ctx_for(http)))
     assert len(jobs) == 4
     assert jobs[-1].location == "Tuzla, İstanbul(Asya)"
     assert [c["url"] for c in http.calls] == [

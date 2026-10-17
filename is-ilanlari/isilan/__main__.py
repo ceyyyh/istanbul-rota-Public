@@ -78,6 +78,9 @@ def cmd_crawl(a):
                 or any(s.name.startswith(w.rstrip("*")) for w in wanted if w.endswith("*"))]
         if not srcs:
             sys.exit("Eşleşen kaynak yok. `python -m isilan sources` ile listeye bakın.")
+    if a.haric:
+        skip = {x for v in a.haric for x in v.split(",") if x}
+        srcs = [s for s in srcs if s.name not in skip and s.source_type not in skip]
     opts = CrawlOptions(max_pages=a.max_pages, per_source_timeout=a.timeout, workers=a.workers,
                         fetch_details=a.details, use_browser=a.browser or a.gorunur, headless=not a.gorunur,
                         profile_dir=a.profil or (str(DEFAULT_DB.parent / "tarayici-profili") if a.gorunur else None),
@@ -271,6 +274,7 @@ def main(argv=None):
     p.add_argument("--browser", action="store_true", help="Playwright gerektiren kaynakları da çalıştır")
     p.add_argument("--gorunur", action="store_true", help="Tarayıcıyı görünür pencerede aç (Kariyer.net gibi korumalı siteler için)")
     p.add_argument("--profil", default=None, help="Kalıcı tarayıcı profili klasörü (varsayılan --gorunur ile data/tarayici-profili)")
+    p.add_argument("--haric", action="append", help="Bu kaynakları atla (ör. --haric kariyernet)")
     p.set_defaults(fn=cmd_crawl)
 
     p = sub.add_parser("serve", help="Web arayüzü")
