@@ -73,6 +73,7 @@ class Http:
 
     def request(self, method: str, url: str, **kw) -> requests.Response:
         kw.setdefault("timeout", self.timeout)
+        kw.pop("no_browser", None)
         retries = max(1, int(kw.pop("retries", self.retries)))
         last_exc: Exception | None = None
         for attempt in range(retries):

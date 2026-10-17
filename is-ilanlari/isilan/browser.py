@@ -82,6 +82,8 @@ class BrowserHttp(Http):
         return self._exec.submit(self._render, url, want_json).result()
 
     def text(self, url: str, method: str = "GET", **kw) -> str:
+        if kw.pop("no_browser", False):  # hızlı yan istekler (ör. ilçe için detay sayfası): tarayıcıya düşme
+            return super().text(url, method, **kw)
         try:
             txt = super().text(url, method, **kw)
         except HttpError as e:

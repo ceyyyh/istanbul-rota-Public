@@ -207,7 +207,7 @@ def district_from_detail(html: str) -> str | None:
     return None
 
 
-def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, seconds: float = 300) -> int:
+def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, seconds: float = 150) -> int:
     """İlçesi belirsiz satırları önce veritabanındaki eski bilgiyle, sonra (yalnızca daha önce
     bakılmamış yeni ilanlar için, `budget` kadar) detay sayfasıyla doldurur. Döner: bulunan sayısı."""
     unknown = [r for r in rows.values() if not r.get("district")]
@@ -229,7 +229,7 @@ def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, s
         if fails >= 3 or time.monotonic() > deadline:  # site detayları engelliyorsa vakit kaybetme
             break
         try:
-            html = http.get(r["url"], retries=1)
+            html = http.get(r["url"], retries=1, no_browser=True)
         except HttpError as e:
             fails = 3 if e.status is None else fails + 1  # bağlantı hiç kurulamıyorsa hemen bırak
             log_.debug("detay alınamadı %s (%s)", r["url"], e)
@@ -237,6 +237,11 @@ def fill_districts(rows: dict[str, dict], db: DB, http, budget: int, log_=log, s
         except Exception as e:  # noqa: BLE001
             fails += 1
             log_.debug("detay alınamadı %s (%s)", r["url"], e)
+            continue
+        from .browser import looks_blocked
+
+        if looks_blocked(html):  # bot koruması sayfası: detay sayfası okunamıyor, sayılı denemeden sonra bırak
+            fails += 1
             continue
         fails = 0
         r["extra"]["detail_checked"] = 1

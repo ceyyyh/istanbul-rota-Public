@@ -94,3 +94,30 @@ def test_greenhouse_eu_falls_back_to_board_page():
                  params={"company": "Acme", "slug": "acme", "region": "eu"})
     jobs = list(src.fetch(FetchContext(http=http)))
     assert [j.title for j in jobs] == ["Backend Engineer"]
+
+
+def test_detail_lookups_never_fall_back_to_browser(monkeypatch):
+    """İlçe için detay sayfası bakılırken engel → tarayıcıya düşülmez (her biri ~45 sn sürüyordu)."""
+    import pytest
+
+    from isilan.browser import BrowserHttp
+    from isilan.http import Http
+
+    def blocked(self, url, method="GET", **kw):
+        kw.pop("no_browser", None)
+        raise HttpError(url, 401)
+
+    monkeypatch.setattr(Http, "text", blocked)
+    h = BrowserHttp(min_interval=0)
+    monkeypatch.setattr(h, "browser_get", lambda *a, **k: pytest.fail("tarayıcı açılmamalı"))
+    with pytest.raises(HttpError):
+        h.get("https://x.test/job/1", no_browser=True)
+
+
+def test_blocked_detail_pages_stop_district_lookup(tmp_path):
+    db = DB(tmp_path / "b.db")
+    jobs = [Job(source="k", source_type=PLATFORM, external_id=str(i), title=f"İlan {i}", company="F",
+                url=f"https://k.test/{i}", location="İstanbul") for i in range(10)]
+    http = FakeHttp({"https://k.test/": "<html><title>Just a moment...</title></html>"})
+    run_source(Source(name="k", source_type=PLATFORM, label="K", fetcher=lambda s, c: iter(jobs)), db, http, CrawlOptions())
+    assert len(http.calls) == 3   # 3 engel sayfasından sonra vazgeçildi
