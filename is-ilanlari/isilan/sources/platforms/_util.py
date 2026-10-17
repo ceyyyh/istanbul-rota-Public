@@ -68,7 +68,7 @@ def parse_any_date(text: str | None) -> str | None:
     if m:
         y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
         try:
-            if m.group(4):
+            if m.group(4) and (int(m.group(4)) or int(m.group(5)) or int(m.group(6) or 0)):
                 return datetime(y, mo, d, int(m.group(4)), int(m.group(5)), int(m.group(6) or 0)).isoformat()
             return date(y, mo, d).isoformat()
         except ValueError:

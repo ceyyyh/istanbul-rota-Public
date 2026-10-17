@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Iterator
 
 from ...models import PLATFORM, Job
-from ...text import clean, strip_html
+from ...text import clean, fold, strip_html
 from ..base import FetchContext, Source
 from ._util import env, parse_any_date
 
@@ -41,8 +41,8 @@ def to_job(d: dict) -> Job | None:
         return None
     ext = d.get("id")
     emp = clean(d.get("type"))
-    work_model = "remote" if any(w in (clean(d.get("location")) + " " + emp).lower()
-                                 for w in ("uzaktan", "remote")) else ""
+    work_model = "remote" if any(w in fold(clean(d.get("location")) + " " + emp + " " + clean(d.get("title")))
+                                 for w in ("uzaktan", "remote", "evden")) else ""
     extra = {"via": clean(d.get("source"))} if d.get("source") else {}
     if d.get("updated"):
         extra["updated"] = clean(d.get("updated"))

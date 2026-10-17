@@ -30,7 +30,7 @@ from typing import Iterator
 
 from ...jsonld import extract_jobpostings, jobposting_to_job
 from ...models import PLATFORM, Job
-from ...text import clean
+from ...text import clean, fold
 from ..base import FetchContext, Source
 from ._util import abs_url, parse_html, parse_tr_relative_date
 
@@ -45,7 +45,7 @@ _BLOCK_MARKERS = ("px-captcha", "_pxappid", "perimeterx", "basılı tut", "basil
                   "press & hold", "press and hold")
 
 _WORK_MODEL = {"uzaktan": "remote", "remote": "remote", "hibrit": "hybrid", "hybrid": "hybrid",
-               "iş yerinde": "onsite", "is yerinde": "onsite", "ofiste": "onsite"}
+               "is yerinde": "onsite", "ofiste": "onsite", "on site": "onsite"}
 
 
 def page_url(page: int, base: str = LIST_URL) -> str:
@@ -53,7 +53,7 @@ def page_url(page: int, base: str = LIST_URL) -> str:
 
 
 def _work_model(text: str) -> str:
-    t = (text or "").lower()
+    t = fold(text or "")
     for k, v in _WORK_MODEL.items():
         if k in t:
             return v

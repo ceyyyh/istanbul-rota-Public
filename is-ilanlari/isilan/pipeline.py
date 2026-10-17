@@ -27,6 +27,7 @@ class CrawlOptions:
     workers: int = 6
     fetch_details: bool = False
     use_browser: bool = False          # needs_browser kaynaklarını da çalıştır (Playwright gerekir)
+    headless: bool = True              # False: tarayıcı penceresi görünür açılır (bot korumasını daha iyi geçer)
     min_interval: float = 1.0          # aynı alan adına iki istek arası en az bekleme
 
 
@@ -118,7 +119,7 @@ def crawl(db: DB, sources: list[Source] | None = None, opts: CrawlOptions | None
     srcs = [s for s in srcs if s not in skipped]
     if opts.use_browser:
         from .browser import BrowserHttp
-        http: Http = BrowserHttp(min_interval=opts.min_interval)
+        http: Http = BrowserHttp(min_interval=opts.min_interval, headless=opts.headless)
     else:
         http = Http(min_interval=opts.min_interval)
     lock = threading.Lock()

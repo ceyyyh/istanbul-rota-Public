@@ -116,14 +116,11 @@ _DISTRICT_VARIANTS: dict[str, list[str]] = {
     "Küçükçekmece": ["Küçük Çekmece", "K.Çekmece", "K. Çekmece"],
     "Sancaktepe": ["Sancak Tepe"],
     "Sultanbeyli": ["Sultan Beyli"],
-    "Zeytinburnu": ["Zeytin Burnu"],
-    # İki ilçe adının bir arada geçtiği, ilk geçenin yanlış olacağı bilinen kalıplar.
+    # Son ikisi: Zeytinburnu'ndaki Maltepe semti (Anadolu'daki Maltepe ilçesi değil).
+    "Zeytinburnu": ["Zeytin Burnu", "Maltepe Zeytinburnu", "Maltepe Topkapı"],
+    # Beşiktaş'taki Arnavutköy semti (Avrupa'nın kuzeyindeki Arnavutköy ilçesi değil).
     "Beşiktaş": ["Arnavutköy Beşiktaş", "Arnavutköy Bebek", "Bebek Arnavutköy"],
-    "Zeytinburnu_": [],  # yer tutucu (aşağıda temizlenir)
 }
-_DISTRICT_VARIANTS.pop("Zeytinburnu_")
-_DISTRICT_VARIANTS.setdefault("Zeytinburnu", []).append("Maltepe Zeytinburnu")
-_DISTRICT_VARIANTS.setdefault("Zeytinburnu", []).append("Maltepe Topkapı")
 
 # ---------------------------------------------------------------------------
 # Semt / mahalle / iş merkezi / OSB takma adları
@@ -469,6 +466,7 @@ def _build() -> None:
 
 _build()
 _MAX_N = max(k.count(" ") + 1 for k in _TABLE)
+_FIRST_TOKENS = frozenset(k.split(" ", 1)[0] for k in _TABLE)
 _SHORT_TOKENS = 6
 _FOLD_TO_DISTRICT = {fold(d): d for d in DISTRICTS}
 
@@ -502,7 +500,11 @@ def _analyze(text: str) -> tuple[str | None, bool]:
 
     i = 0
     table = _TABLE
+    first = _FIRST_TOKENS
     while i < n:
+        if toks[i] not in first:
+            i += 1
+            continue
         entry = None
         span = 0
         for size in range(min(_MAX_N, n - i), 0, -1):

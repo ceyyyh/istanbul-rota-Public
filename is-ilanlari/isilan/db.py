@@ -65,7 +65,7 @@ _COMPANY_SUFFIX = (" a s", " as", " ltd sti", " ltd", " sti", " san ve tic", " s
 
 
 def now_iso() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def norm_company(name: str) -> str:

@@ -386,7 +386,7 @@ def test_jooble_api(monkeypatch):
     a, b, c = jobs
     assert a.title == "Lojistik Planlama Uzmanı" and a.company == "Mavi Lojistik"
     assert a.location == "Pendik, İstanbul" and a.posted_at == "2026-10-12"
-    assert a.description == "...SAP bilgisi..."
+    assert "SAP bilgisi" in a.description and "<b>" not in a.description
     assert a.extra["via"] == "kariyer.net"
     assert b.work_model == "remote" and b.salary == "28.000 TL"
     assert http.calls[0]["payload"] == {"keywords": "", "location": "İstanbul", "page": 1, "ResultOnPage": 50}

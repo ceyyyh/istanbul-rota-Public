@@ -78,7 +78,8 @@ def cmd_crawl(a):
         if not srcs:
             sys.exit("Eşleşen kaynak yok. `python -m isilan sources` ile listeye bakın.")
     opts = CrawlOptions(max_pages=a.max_pages, per_source_timeout=a.timeout, workers=a.workers,
-                        fetch_details=a.details, use_browser=a.browser, min_interval=a.interval)
+                        fetch_details=a.details, use_browser=a.browser or a.gorunur, headless=not a.gorunur,
+                        min_interval=a.interval)
     db = DB(a.db)
     st = crawl(db, srcs, opts)
     ok = sum(1 for r in st.results.values() if r["status"] in ("ok", "partial"))
@@ -219,6 +220,7 @@ def main(argv=None):
     p.add_argument("--interval", type=float, default=1.0, help="Aynı siteye iki istek arası bekleme (sn)")
     p.add_argument("--details", action="store_true", help="Detay sayfalarını da çek (yavaş, daha zengin veri)")
     p.add_argument("--browser", action="store_true", help="Playwright gerektiren kaynakları da çalıştır")
+    p.add_argument("--gorunur", action="store_true", help="Tarayıcıyı görünür pencerede aç (Kariyer.net gibi korumalı siteler için)")
     p.set_defaults(fn=cmd_crawl)
 
     p = sub.add_parser("serve", help="Web arayüzü")

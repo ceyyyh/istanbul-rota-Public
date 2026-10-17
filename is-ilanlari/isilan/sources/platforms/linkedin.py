@@ -30,7 +30,7 @@ from urllib.parse import urlencode
 
 from ...http import HttpError
 from ...models import PLATFORM, Job
-from ...text import clean
+from ...text import clean, fold
 from ..base import FetchContext, Source
 from ._util import parse_html, parse_tr_relative_date
 
@@ -42,6 +42,7 @@ MAX_RESULTS = 1000
 EMPTY_PAGE = "<!DOCTYPE html>\n\n<!---->"
 
 _URN_ID = re.compile(r"jobPosting:(\d+)")
+_URN_RAW = re.compile(r"data-entity-urn=[\"']urn:li:jobPosting:\d+")
 _VIEW_ID = re.compile(r"/jobs/view/(?:[^/?#]*-)?(\d{6,})")
 
 
@@ -59,12 +60,12 @@ def page_url(params: dict, start: int) -> str:
 
 
 def _work_model(text: str) -> str:
-    t = text.lower()
+    t = fold(text)
     if "remote" in t or "uzaktan" in t:
         return "remote"
     if "hybrid" in t or "hibrit" in t:
         return "hybrid"
-    if "on-site" in t or "iş yerinde" in t:
+    if "on site" in t or "is yerinde" in t:
         return "onsite"
     return ""
 
@@ -133,7 +134,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     delay = float(p.get("delay", 2.0))
     max_results = int(p.get("max_results", MAX_RESULTS))
     headers = {"Accept": "text/html,*/*;q=0.8"}
-    start, page, seen = 0, 0, set()
+    start, page, stale, seen = 0, 0, 0, set()
     while start < max_results and page < ctx.max_pages and ctx.time_left():
         if page and delay > 0:
             time.sleep(random.uniform(delay, delay * 2))
@@ -154,11 +155,17 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             return
         new = [j for j in cards if j.external_id not in seen]
         if not new:
-            return
+            # sayfalar kısmen örtüşebilir; art arda iki "yenisiz" sayfada dur
+            stale += 1
+            if stale >= 2:
+                return
+        else:
+            stale = 0
         for j in new:
             seen.add(j.external_id)
             yield j
-        start += len(cards)
+        # LinkedIn sayfa başına ~10 kart döner; ham kart sayısı kadar ilerle
+        start += max(len(cards), len(_URN_RAW.findall(html)))
 
 
 def sources() -> list[Source]:
