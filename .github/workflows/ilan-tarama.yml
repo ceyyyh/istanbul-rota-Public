@@ -1,0 +1,79 @@
+# İstanbul iş ilanlarını 6 saatte bir tarar ve sonucu GitHub Pages'te yayınlar:
+#   https://<kullanıcı>.github.io/<depo>/            → arayüz (ilçe filtresi, telefonda çalışır)
+#   https://<kullanıcı>.github.io/<depo>/ilanlar.json → tüm aktif ilanlar (JSON)
+# Veritabanı taramalar arasında `veri` dalında saklanır (ilk görülme tarihi, kaldırılan ilanlar, bulunan ilçeler).
+name: ilan-tarama
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # UTC 00:17, 06:17, 12:17, 18:17 (TR saatiyle 03:17, 09:17, 15:17, 21:17)
+  workflow_dispatch:          # GitHub uygulamasından "Run workflow" ile elle başlatma
+  push:
+    branches: [main]
+    paths: ["is-ilanlari/**", ".github/workflows/ilan-tarama.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ilan-tarama
+  cancel-in-progress: false
+
+jobs:
+  tara:
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    defaults:
+      run:
+        working-directory: is-ilanlari
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kurulum
+        run: |
+          pip install -q -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Önceki veritabanını al
+        run: |
+          if git fetch -q origin veri 2>/dev/null; then
+            git show origin/veri:isilan.db > data/isilan.db && echo "Önceki veritabanı yüklendi"
+          else
+            echo "İlk çalıştırma: veritabanı yok"
+          fi
+
+      - name: Tara
+        env:
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+          CAREERJET_API_KEY: ${{ secrets.CAREERJET_API_KEY }}
+        run: |
+          python -m isilan crawl --browser --max-pages 200 --timeout 1500 --workers 8
+          python -m isilan sources | tail -n 60
+
+      - name: Siteyi üret
+        run: |
+          mkdir -p site
+          python -m isilan build-site --out site/index.html
+          python -m isilan export --format json --out site/ilanlar.json
+          touch site/.nojekyll
+
+      - name: Veritabanını sakla (veri dalı)
+        run: |
+          python - <<'PY'
+          import sqlite3
+          c = sqlite3.connect("data/isilan.db"); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.execute("VACUUM"); c.close()
+          PY
+          tmp=$(mktemp -d); cp data/isilan.db "$tmp/"
+          cd "$tmp" && git init -q -b veri && git add isilan.db
+          git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit -qm "veri $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" veri
+
+      - name: Yayınla (gh-pages dalı)
+        run: |
+          cd site && git init -q -b gh-pages && git add -A
+          git -c user.name="ilan-tarama" -c user.email="actions@users.noreply.github.com" commit -qm "site $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" gh-pages
