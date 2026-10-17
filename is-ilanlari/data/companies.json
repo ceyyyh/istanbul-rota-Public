@@ -1468,5 +1468,33 @@
   "confidence": "medium",
   "enabled": true,
   "note": "SuccessFactors Recruiting Marketing; /job/<Konum-Başlık>/<id>/ URL deseni, sitemap/JSON-LD biçimi gerçek taramada doğrulanmadı"
+ },
+ {
+  "company": "Türk Hava Yolları",
+  "ats": "careerpage",
+  "careers_url": "https://careers.turkishairlines.com/acik-pozisyonlar/",
+  "source_type": "company",
+  "evidence": "haber metinlerinde geçen resmi kariyer adresi (haiku araştırması)",
+  "confidence": "low",
+  "enabled": true
+ },
+ {
+  "company": "P&G Türkiye (Phenom)",
+  "ats": "phenom",
+  "host": "www.pgcareers.com",
+  "careers_url": "https://www.pgcareers.com/global/en/search-results?keywords=istanbul",
+  "source_type": "company",
+  "evidence": "https://www.pgcareers.com/global/en/job/PGBPGNGLOBALR000135760EXTERNALENGLOBAL (/global/en/job/ yolu Phenom kalıbı; doğrulanmadı)",
+  "confidence": "low",
+  "enabled": true
+ },
+ {
+  "company": "DO&CO Türkiye",
+  "ats": "careerpage",
+  "careers_url": "https://careers.doco.com/en/head-quarters",
+  "source_type": "company",
+  "evidence": "haiku araştırması: careers.doco.com 'Find available Positions'",
+  "confidence": "low",
+  "enabled": true
  }
 ]
