@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+data/isilan.db*
+data/companies.local.json
+site/
+*.csv
+.venv/
+.pytest_cache/
