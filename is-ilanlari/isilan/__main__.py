@@ -144,7 +144,8 @@ def cmd_build_site(a):
     for it in items:
         it = decorate(it)
         it["description"] = (it.get("description") or "")[: a.desc_len]
-        it.pop("extra", None)
+        agency = (it.get("extra") or {}).get("agency")
+        it["extra"] = {"agency": agency} if agency else {}
         it.pop("external_id", None)
         jobs.append(it)
     data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db)}
