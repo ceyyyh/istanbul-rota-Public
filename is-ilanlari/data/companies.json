@@ -849,5 +849,320 @@
     "evidence": "https://apply.workable.com/exely/j/A2BB001BE9/apply/",
     "confidence": "low",
     "enabled": true
+  },
+  {
+    "company": "Codeway",
+    "ats": "lever",
+    "slug": "codeway",
+    "careers_url": "https://jobs.lever.co/codeway",
+    "source_type": "company",
+    "evidence": "https://jobs.lever.co/codeway",
+    "confidence": "low",
+    "enabled": true,
+    "note": "board showed no open postings at time of search; company also lists roles on codeway.co/careers"
+  },
+  {
+    "company": "Getir",
+    "ats": "careerpage",
+    "careers_url": "https://getir.careers-page.com/",
+    "link_pattern": "https?://getir\\.careers-page\\.com/jobs/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://getir.careers-page.com/",
+    "confidence": "medium",
+    "enabled": true,
+    "note": "Manatal (careers-page.com) hosted board"
+  },
+  {
+    "company": "Pixery",
+    "ats": "breezy",
+    "slug": "pixery",
+    "careers_url": "https://pixery.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://pixery.breezy.hr/",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Fugo Games",
+    "ats": "breezy",
+    "slug": "fugo-games",
+    "careers_url": "https://fugo-games.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://fugo-games.breezy.hr/",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "SmartMessage (ODC)",
+    "ats": "breezy",
+    "slug": "smartmessage",
+    "careers_url": "https://smartmessage.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://smartmessage.breezy.hr/",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Arteria Ventures",
+    "ats": "breezy",
+    "slug": "arteria",
+    "careers_url": "https://arteria.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://arteria.breezy.hr/",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "IHATA Holding (NMQ Digital)",
+    "ats": "breezy",
+    "slug": "nmq-digital",
+    "careers_url": "https://nmq-digital.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://nmq-digital.breezy.hr/",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Duolingo",
+    "ats": "breezy",
+    "slug": "duolingo",
+    "careers_url": "https://duolingo.breezy.hr/",
+    "source_type": "company",
+    "evidence": "https://duolingo.breezy.hr/p/8cf35776140a-marketing-manager-turkey-marketing",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Michael Page Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.michaelpage.com.tr/en/jobs/istanbul",
+    "link_pattern": "https?://www\\.michaelpage\\.com\\.tr/en/job-detail/[^\"'\\s?#]+",
+    "source_type": "agency",
+    "evidence": "https://www.michaelpage.com.tr/en/jobs/turkey/istanbul",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Page Executive Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.pageexecutive.com/jobs/istanbul",
+    "source_type": "agency",
+    "evidence": "https://www.pageexecutive.com/jobs/istanbul",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Carrier",
+    "ats": "careerpage",
+    "careers_url": "https://jobs.carrier.com/en/location/estambul-jobs/29289/298795-745042-745044/4",
+    "link_pattern": "https?://jobs\\.carrier\\.com/en/job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://jobs.carrier.com/en/location/estambul-jobs/29289/298795-745042-745044/4",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Unilever Türkiye (careers site)",
+    "ats": "careerpage",
+    "careers_url": "https://careers.unilever.com/en/location/istanbul-jobs/34155/298795-745042/3",
+    "link_pattern": "https?://careers\\.unilever\\.com/en/job/istanbul/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://careers.unilever.com/en/job/istanbul/b-and-w-cmi-lead-turkiye/34155/92685178480",
+    "confidence": "medium",
+    "enabled": false,
+    "note": "duplicate source of the Unilever Workday entry; disabled by default"
+  },
+  {
+    "company": "Citi",
+    "ats": "careerpage",
+    "careers_url": "https://jobs.citi.com/location/istanbul-jobs/287/298795-745042/3",
+    "link_pattern": "https?://jobs\\.citi\\.com/job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://jobs.citi.com/location/istanbul-jobs/287/298795-745042/3",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "IQVIA",
+    "ats": "careerpage",
+    "careers_url": "https://jobs.iqvia.com/en/location/istanbul-jobs/32424/298795-745042/3",
+    "link_pattern": "https?://jobs\\.iqvia\\.com/(en/)?job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://jobs.iqvia.com/en/location/istanbul-jobs/32424/298795-745042/3",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Amazon Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.amazon.jobs/en/locations/istanbul-turkey",
+    "link_pattern": "https?://(www\\.)?amazon\\.jobs/(en/)?jobs/\\d+[^\"'\\s?#]*",
+    "source_type": "company",
+    "evidence": "https://www.amazon.jobs/en/locations/istanbul-turkey",
+    "confidence": "medium",
+    "enabled": true,
+    "note": "amazon.jobs also exposes /en/search.json?loc_query=Istanbul"
+  },
+  {
+    "company": "Veeam Software (careers site)",
+    "ats": "careerpage",
+    "careers_url": "https://careers.veeam.com/jobs?location=Istanbul",
+    "link_pattern": "https?://careers\\.veeam\\.com/job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://careers.veeam.com/job/istanbul/country-manager-turkey/22681/100664017824",
+    "confidence": "low",
+    "enabled": false,
+    "note": "duplicate of Veeam Greenhouse entry"
+  },
+  {
+    "company": "Randstad Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.randstad.com.tr/is-ilanlari/",
+    "source_type": "agency",
+    "evidence": "https://www.randstad.com.tr/en/find-a-job/faq/",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Adecco Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.adecco.com.tr/is-ilanlari/",
+    "source_type": "agency",
+    "evidence": "https://www.kariyer.net/is-ilani/adecco-recruitment-young-expert-4520891",
+    "confidence": "low",
+    "enabled": true,
+    "note": "careers_url not directly verified; Adecco TR also posts on kariyer.net"
+  },
+  {
+    "company": "Picus Security",
+    "ats": "lever",
+    "slug": "picus",
+    "careers_url": "https://jobs.lever.co/picus",
+    "source_type": "company",
+    "evidence": "https://jobs.lever.co/picus/b74e0263-a097-451a-b66b-43f2b528b3b4",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Jotform",
+    "ats": "careerpage",
+    "careers_url": "https://www.jotform.com/about/istanbul/",
+    "source_type": "company",
+    "evidence": "https://jotform.com/about/istanbul/",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Insider (legacy board)",
+    "ats": "lever",
+    "slug": "useinsider",
+    "careers_url": "https://jobs.lever.co/useinsider",
+    "source_type": "company",
+    "evidence": "https://jobs.lever.co/useinsider/005b0939-962d-4d91-b74b-72931f100c28",
+    "confidence": "medium",
+    "enabled": true,
+    "note": "older Insider board; current board is insiderone"
+  },
+  {
+    "company": "Token Metrics",
+    "ats": "lever",
+    "slug": "tokenmetrics",
+    "careers_url": "https://jobs.lever.co/tokenmetrics",
+    "source_type": "company",
+    "evidence": "https://jobs.lever.co/tokenmetrics/73334715-18be-4ea8-b0d5-1250f2e00a1a",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Welo Global",
+    "ats": "lever",
+    "slug": "weloglobal",
+    "careers_url": "https://jobs.lever.co/weloglobal",
+    "source_type": "company",
+    "evidence": "https://jobs.lever.co/weloglobal/4472ea53-9c4e-4cac-9ff2-85d6047f1f06",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Obilet",
+    "ats": "recruitee",
+    "slug": "obilet",
+    "careers_url": "https://obilet.recruitee.com/",
+    "source_type": "company",
+    "evidence": "https://obilet.recruitee.com/o/planning-reporting-supervisor",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "cbs Corporate Business Solutions",
+    "ats": "recruitee",
+    "slug": "cbsconsulting",
+    "careers_url": "https://cbsconsulting.recruitee.com/",
+    "source_type": "company",
+    "evidence": "https://cbsconsulting.recruitee.com/o/fullstack-developer-mfd",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "ABB",
+    "ats": "careerpage",
+    "careers_url": "https://careers.abb/global/en/search-results?keywords=Istanbul",
+    "link_pattern": "https?://careers\\.abb/global/en/job/[A-Z0-9]+/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://careers.abb/global/en/job/JR00043283/Marketing-Sales-Manager",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Teknopark İstanbul (park companies)",
+    "ats": "careerpage",
+    "careers_url": "https://www.teknoparkistanbul.com.tr/en/career",
+    "source_type": "agency",
+    "evidence": "https://www.teknoparkistanbul.com.tr/en/career",
+    "confidence": "low",
+    "enabled": true,
+    "note": "job board listing roles of companies in Teknopark Istanbul"
+  },
+  {
+    "company": "Bosch Group (Türkiye)",
+    "ats": "smartrecruiters",
+    "slug": "BoschGroup",
+    "careers_url": "https://jobs.smartrecruiters.com/BoschGroup",
+    "source_type": "company",
+    "evidence": "https://jobs.smartrecruiters.com/BoschGroup/744000115452812-executive-assistant",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Novartis",
+    "ats": "workday",
+    "host": "novartis.wd3.myworkdayjobs.com",
+    "tenant": "novartis",
+    "site": "Novartis_Careers",
+    "careers_url": "https://novartis.wd3.myworkdayjobs.com/Novartis_Careers",
+    "source_type": "company",
+    "evidence": "https://novartis.wd3.myworkdayjobs.com/Novartis_Careers/",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "AstraZeneca",
+    "ats": "careerpage",
+    "careers_url": "https://careers.astrazeneca.com/search-jobs?l=Istanbul",
+    "link_pattern": "https?://careers\\.astrazeneca\\.com/job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://careers.astrazeneca.com/search-jobs",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Accor Türkiye (careers site)",
+    "ats": "careerpage",
+    "careers_url": "https://careers.accor.com/global/en/turkiye",
+    "source_type": "company",
+    "evidence": "https://careers.accor.com/global/en/turkiye",
+    "confidence": "low",
+    "enabled": false,
+    "note": "Accor jobs also come via SmartRecruiters AccorHotel; disabled to avoid duplicates"
   }
 ]

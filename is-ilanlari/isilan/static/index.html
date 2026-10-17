@@ -265,7 +265,7 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
           <p class="note" id="distNone" hidden>Eşleşen ilçe yok.</p>
           <div class="unk">
             <label class="chk"><input type="checkbox" data-f="unk"><span class="nm">İlçesi belirsiz ilanları da göster</span><span class="cnt" id="unkCnt"></span></label>
-            <p class="note" id="unkNote">İlçe ya da yaka seçildiğinde, konumu yalnızca “İstanbul” olan ilanları da listeler.</p>
+            <p class="note" id="unkNote">En az bir ilçe seçtiğinizde kullanılabilir. İlçe seçilmemişken tüm ilanlar (ilçesi belirsizler dahil) listelenir.</p>
           </div>
         </fieldset>
         <fieldset class="fsec">
@@ -503,39 +503,64 @@ function jobParams(page) {
 }
 
 /* ---------- facets & filter panel ---------- */
-var F = null;
-function srcLabel(n) {
-  var s = F && F.sources.filter(function (x) { return x.name === n; })[0];
-  return s ? s.label : n;
+var F = null;      // geçerli filtrelere göre faset sayıları (/api/facets?<filtreler>)
+var TOT = null;    // filtresiz /api/facets (başlıktaki toplam ve son tarama)
+var SRC = {};      // görülen tüm kaynaklar: ad -> {name,label,source_type}
+var srcKeys = '';
+function srcLabel(n) { return SRC[n] ? SRC[n].label : n; }
+function chk(f, v, label, cnt) {
+  return '<label class="chk"><input type="checkbox" data-f="' + f + '" value="' + esc(v) + '"><span class="nm">' + esc(label) + '</span>' +
+    (cnt ? '<span class="cnt"></span>' : '') + '</label>';
 }
-function chk(f, v, label, count, extra) {
-  return '<label class="chk' + (count === 0 ? ' zero' : '') + (extra || '') + '"><input type="checkbox" data-f="' + f + '" value="' + esc(v) + '"><span class="nm">' + esc(label) + '</span>' +
-    (count == null ? '' : '<span class="cnt">' + fmt(count) + '</span>') + '</label>';
-}
-function renderFilters() {
+function buildFilters() {
   var by = {avrupa: [], anadolu: []};
-  var ds = (F.districts && F.districts.length) ? F.districts : Object.keys(SIDE_OF).map(function (n) { return {name: n, side: SIDE_OF[n], count: 0}; });
+  var ds = (F && F.districts && F.districts.length) ? F.districts : Object.keys(SIDE_OF).map(function (n) { return {name: n, side: SIDE_OF[n]}; });
   ds.forEach(function (d) { var s = d.side || SIDE_OF[d.name] || 'avrupa'; (by[s] = by[s] || []).push(d); });
   $('#distList').innerHTML = ['avrupa', 'anadolu'].map(function (side) {
     var arr = (by[side] || []).sort(function (a, b) { return coll.compare(a.name, b.name); });
-    var tot = arr.reduce(function (s, d) { return s + (d.count || 0); }, 0);
-    return '<div class="dgroup" data-side="' + side + '"><label class="chk ghead"><input type="checkbox" data-f="group" value="' + side + '" aria-label="' + SIDE_LABEL[side] + ': tümünü seç"><span class="sd ' + side + '" aria-hidden="true"></span><span class="nm">' + SIDE_LABEL[side] + '</span><span class="cnt">' + fmt(tot) + '</span></label><ul>' +
-      arr.map(function (d) { return '<li data-n="' + esc(norm(d.name)) + '">' + chk('ilce', d.name, d.name, d.count || 0) + '</li>'; }).join('') + '</ul></div>';
+    return '<div class="dgroup" data-side="' + side + '"><label class="chk ghead"><input type="checkbox" data-f="group" value="' + side + '" aria-label="' + SIDE_LABEL[side] + ': tümünü seç"><span class="sd ' + side + '" aria-hidden="true"></span><span class="nm">' + SIDE_LABEL[side] + '</span><span class="cnt"></span></label><ul>' +
+      arr.map(function (d) { return '<li data-n="' + esc(norm(d.name)) + '">' + chk('ilce', d.name, d.name, 1) + '</li>'; }).join('') + '</ul></div>';
   }).join('');
-  $('#unkCnt').textContent = fmt(F.unknown_district || 0);
-  var sts = F.source_types && F.source_types.length ? F.source_types : Object.keys(ST_LABEL).map(function (n) { return {name: n, label: ST_LABEL[n], count: 0}; });
-  $('#stList').innerHTML = sts.map(function (t) { return chk('source_type', t.name, t.label || ST_LABEL[t.name] || t.name, t.count); }).join('');
-  var srcs = (F.sources || []).slice().sort(function (a, b) { return (b.count || 0) - (a.count || 0) || coll.compare(a.label, b.label); });
-  $('#srcList').innerHTML = srcs.length ? srcs.map(function (s) {
-    return '<div data-st="' + esc(s.source_type) + '" data-n="' + esc(norm(s.label + ' ' + s.name)) + '">' + chk('source', s.name, s.label || s.name, s.count) + '</div>';
-  }).join('') : '<p class="note">Henüz kaynak yok.</p>';
-  $('#sqWrap').hidden = srcs.length <= 8;
+  $('#stList').innerHTML = Object.keys(ST_LABEL).map(function (t) { return chk('source_type', t, ST_LABEL[t], 1); }).join('');
   $('#wmList').innerHTML = Object.keys(WM).map(function (k) { return chk('work_model', k, WM[k]); }).join('');
   $('#dayList').innerHTML = DAYS.map(function (d) {
     return '<label class="chk"><input type="radio" name="days" data-f="days" value="' + d[0] + '"><span class="nm">' + d[1] + '</span></label>';
   }).join('');
-  filterDistricts();
-  syncFilters();
+}
+function buildSources() {
+  var keys = Object.keys(SRC).sort().join('|');
+  if (keys === srcKeys) return;
+  srcKeys = keys;
+  var order = {platform: 0, company: 1, agency: 2};
+  var srcs = Object.keys(SRC).map(function (k) { return SRC[k]; }).sort(function (a, b) {
+    return ((order[a.source_type] == null ? 9 : order[a.source_type]) - (order[b.source_type] == null ? 9 : order[b.source_type])) || coll.compare(a.label, b.label);
+  });
+  $('#srcList').innerHTML = srcs.length ? srcs.map(function (s) {
+    return '<div data-st="' + esc(s.source_type) + '" data-n="' + esc(norm(s.label + ' ' + s.name)) + '">' + chk('source', s.name, s.label, 1) + '</div>';
+  }).join('') : '<p class="note">Henüz kaynak yok.</p>';
+  $('#sqWrap').hidden = srcs.length <= 8;
+}
+function setCnt(input, n) {
+  var l = input.closest('.chk');
+  $('.cnt', l).textContent = fmt(n);
+  l.classList.toggle('zero', !n);
+}
+function updateCounts() {
+  if (!F) return;
+  var dc = {}, sc = {}, tc = {}, side = {avrupa: 0, anadolu: 0};
+  (F.districts || []).forEach(function (d) { dc[d.name] = d.count || 0; var s = d.side || SIDE_OF[d.name]; if (s in side) side[s] += d.count || 0; });
+  (F.source_types || []).forEach(function (t) { tc[t.name] = t.count || 0; });
+  (F.sources || []).forEach(function (s) {
+    sc[s.name] = s.count || 0;
+    if (!SRC[s.name]) SRC[s.name] = {name: s.name, label: s.label || s.name, source_type: s.source_type};
+  });
+  state.source.forEach(function (n) { if (!SRC[n]) SRC[n] = {name: n, label: n, source_type: ''}; });
+  buildSources();
+  $$('input[data-f="ilce"]').forEach(function (i) { setCnt(i, dc[i.value] || 0); });
+  $$('input[data-f="group"]').forEach(function (i) { setCnt(i, side[i.value]); });
+  $$('input[data-f="source_type"]').forEach(function (i) { setCnt(i, tc[i.value] || 0); });
+  $$('input[data-f="source"]').forEach(function (i) { setCnt(i, sc[i.value] || 0); });
+  $('#unkCnt').textContent = fmt(F.unknown_district || 0);
 }
 function filterDistricts() {
   var q = norm($('#dq').value.trim()), any = false;
@@ -555,7 +580,7 @@ function filterSources() {
 }
 function activeCount() {
   return state.ilce.length + state.source_type.length + state.source.length + state.work_model.length +
-    (state.yaka ? 1 : 0) + (state.days ? 1 : 0) + (state.q.trim() ? 1 : 0) + (state.ilce_bilinmiyor && (state.ilce.length || state.yaka) ? 1 : 0);
+    (state.yaka ? 1 : 0) + (state.days ? 1 : 0) + (state.q.trim() ? 1 : 0) + (state.ilce_bilinmiyor && state.ilce.length ? 1 : 0);
 }
 function chip(k, v, label, cls) {
   return '<button type="button" class="chip' + (cls ? ' ' + cls : '') + '" data-k="' + k + '" data-v="' + esc(v) + '" aria-label="' + esc(label) + ' filtresini kaldır"><span>' + esc(label) + '</span><span class="x" aria-hidden="true">×</span></button>';
@@ -578,14 +603,17 @@ function syncFilters() {
   if (document.activeElement !== $('#q') && $('#q').value !== state.q) $('#q').value = state.q;
   filterDistricts();
   filterSources();
-  $('#unkNote').hidden = !!(state.ilce.length || state.yaka);
+  var unk = $('input[data-f="unk"]');
+  unk.disabled = !state.ilce.length;
+  unk.closest('.chk').classList.toggle('zero', unk.disabled);
+  $('#unkNote').hidden = !!state.ilce.length;
   $('#clrDist').hidden = !(state.ilce.length || state.yaka || state.ilce_bilinmiyor);
   $('#distChips').innerHTML = state.ilce.map(function (d) { return chip('ilce', d, d, 'd'); }).join('');
   var c = [];
   if (state.q.trim()) c.push(chip('q', '', '“' + state.q.trim() + '”'));
   if (state.yaka) c.push(chip('yaka', '', SIDE_LABEL[state.yaka], 'd'));
   state.ilce.forEach(function (d) { c.push(chip('ilce', d, d, 'd')); });
-  if (state.ilce_bilinmiyor && (state.ilce.length || state.yaka)) c.push(chip('unk', '', '+ ilçesi belirsiz'));
+  if (state.ilce_bilinmiyor && state.ilce.length) c.push(chip('unk', '', '+ ilçesi belirsiz'));
   state.source_type.forEach(function (t) { c.push(chip('source_type', t, ST_LABEL[t] || t)); });
   state.source.forEach(function (s) { c.push(chip('source', s, srcLabel(s))); });
   state.work_model.forEach(function (w) { c.push(chip('work_model', w, WM[w] || w)); });
@@ -610,7 +638,7 @@ function removeFilter(k, v) {
   else state[k] = '';
   changed();
 }
-function changed() { syncFilters(); writeURL(); loadJobs(1); }
+function changed() { syncFilters(); writeURL(); loadJobs(1); loadFacets(); }
 
 /* ---------- jobs ---------- */
 var reqId = 0, shown = 0, total = 0, page = 1;
@@ -638,7 +666,7 @@ function card(j) {
     '</article>';
 }
 function emptyHTML() {
-  if (F && !F.total && !activeCount()) {
+  if (TOT && !TOT.total && !activeCount()) {
     return '<div class="empty"><h3>Henüz ilan yok</h3><p>' + (DATA ? 'Bu kopyada ilan bulunmuyor.' : 'İlk taramayı başlatmak için “Şimdi tara” düğmesini kullanın.') + '</p></div>';
   }
   return '<div class="empty"><h3>Bu filtrelerle ilan bulunamadı</h3><p>Filtreleri gevşetmeyi ya da başka ilçeler seçmeyi deneyin.' +
@@ -659,7 +687,7 @@ function loadJobs(p) {
     if (p === 1) { list.innerHTML = html || emptyHTML(); shown = items.length; }
     else { list.insertAdjacentHTML('beforeend', html); shown += items.length; }
     list.removeAttribute('aria-busy');
-    $('#resCount').innerHTML = fmt(total) + ' ilan' + (F && activeCount() ? '<small>/ ' + fmt(F.total) + '</small>' : '');
+    $('#resCount').innerHTML = fmt(total) + ' ilan' + (TOT && activeCount() ? '<small>/ ' + fmt(TOT.total) + '</small>' : '');
     $('#applyF').textContent = fmt(total) + ' ilanı göster';
     var more = shown < total && items.length > 0;
     $('#more').hidden = !more && shown <= PER;
@@ -677,19 +705,25 @@ function loadJobs(p) {
 
 /* ---------- header / facets ---------- */
 function renderMeta() {
-  var lc = F && F.last_crawl;
-  $('#meta').innerHTML = '<b>' + fmt(F ? F.total : 0) + '</b> ilan · ' +
+  var lc = TOT && TOT.last_crawl;
+  $('#meta').innerHTML = '<b>' + fmt(TOT ? TOT.total : 0) + '</b> ilan · ' +
     (lc ? (DATA ? 'Güncelleme: ' : 'Son tarama: ') + '<time datetime="' + esc(lc) + '" title="' + esc(fullDate(lc)) + '">' + relTime(lc) + '</time>' : 'Henüz tarama yapılmadı');
 }
+var facId = 0;
 function loadFacets() {
-  return api('/api/facets').then(function (f) {
-    F = f; F.sources = F.sources || []; F.districts = F.districts || [];
-    renderMeta();
-    renderFilters();
-  }).catch(function (e) {
-    $('#meta').textContent = 'Sunucuya ulaşılamadı (' + e.message + ')';
-    if (!F) { F = {total: 0, districts: [], sources: [], source_types: [], unknown_district: 0}; renderFilters(); }
-  });
+  var id = ++facId;
+  return api('/api/facets', filterParams()).then(function (f) {
+    if (id !== facId) return;
+    var first = !F;
+    F = f;
+    if (first) buildFilters();
+    updateCounts();
+    syncFilters();
+  }).catch(function (e) { if (id === facId) toast('Filtre sayıları alınamadı: ' + e.message); });
+}
+function loadTotals() {
+  return api('/api/facets').then(function (f) { TOT = f; renderMeta(); })
+    .catch(function (e) { $('#meta').textContent = 'Sunucuya ulaşılamadı (' + e.message + ')'; });
 }
 
 /* ---------- sources page ---------- */
@@ -772,7 +806,7 @@ function startCrawl(sources) {
   }).catch(function (e) { $('#crawlBtn').disabled = false; toast('Tarama başlatılamadı: ' + e.message); });
 }
 function refreshAll() {
-  loadFacets().then(function () { loadJobs(1); });
+  loadTotals(); loadFacets(); loadJobs(1);
   if (state.tab === 'kaynaklar' || srcCache) loadSources();
 }
 
@@ -868,8 +902,10 @@ $('#sort').value = state.sort;
 if (DATA) { $('#offTag').hidden = false; }
 else { $('#crawlBtn').hidden = false; pollCrawl(); }
 setTab(state.tab, false);
-loadFacets().then(function () { loadJobs(1); });
-setInterval(function () { if (F) renderMeta(); }, 60000);
+buildFilters();
+syncFilters();
+loadTotals(); loadFacets(); loadJobs(1);
+setInterval(function () { if (TOT) renderMeta(); }, 60000);
 })();
 </script>
 </body>
