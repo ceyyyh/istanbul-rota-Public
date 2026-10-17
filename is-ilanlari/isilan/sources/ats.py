@@ -209,7 +209,16 @@ def _parse_xml(txt: str) -> ET.Element:
 
 def fetch_greenhouse(src: Source, ctx: FetchContext) -> Iterator[Job]:
     slug = src.params["slug"]
-    data = ctx.http.get_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true")
+    # AB'de barındırılan panolar (job-boards.eu.greenhouse.io) ayrı API alan adındadır
+    hosts = ["boards-api.greenhouse.io", "boards-api.eu.greenhouse.io"]
+    if src.params.get("region") == "eu":
+        hosts.reverse()
+    try:
+        data = ctx.http.get_json(f"https://{hosts[0]}/v1/boards/{slug}/jobs?content=true")
+    except HttpError as e:
+        if e.status != 404:
+            raise
+        data = ctx.http.get_json(f"https://{hosts[1]}/v1/boards/{slug}/jobs?content=true")
     for j in data.get("jobs", []):
         locs = [_name(j.get("location"))]
         for o in j.get("offices") or []:
