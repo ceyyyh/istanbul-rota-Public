@@ -1,0 +1,10 @@
+[{"data": {"jobListings": {
+  "jobListings": [
+    {"jobview": {
+      "header": {"ageInDays": 10, "employerNameFromSearch": "Boğaziçi Lojistik", "jobTypeKeys": [],
+                 "locationName": "Istanbul", "locationType": "C", "payPeriodAdjustedPay": null},
+      "job": {"jobTitleText": "Operasyon Uzmanı", "listingId": 1009876543299},
+      "map": {"country": "Turkey"}}}
+  ],
+  "paginationCursors": [{"cursor": "AB:CD:1", "pageNumber": 1}]
+}}}]

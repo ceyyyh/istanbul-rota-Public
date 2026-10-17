@@ -1,0 +1,8 @@
+{"jobs":[
+ {"id":4407035,"title":"Fullstack Developer","slug":"fullstack-developer-4407035",
+  "company":{"companyProfileName":"Örnek Yazılım"},"location":{"locationName":"İstanbul(Asya)"},
+  "otherLocations":[{"locationName":"İstanbul(Avr.)"}],"workPlaces":[{"workPlaceName":"Hibrit"}],
+  "publishDate":"2026-10-12T09:30:00"},
+ {"id":4382680,"title":"Veri Analisti","slug":"veri-analisti-4382680","company":null,
+  "isCompanyHidden":true,"location":{"locationName":"Ankara"},"workPlaces":[{"workPlaceName":"Uzaktan"}]}
+],"totalCount":3,"pageCount":2}

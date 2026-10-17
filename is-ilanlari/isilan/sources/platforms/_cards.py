@@ -243,3 +243,52 @@ def paginate(ctx: FetchContext, fetch_page: Callable[[int], list[Job]], *, sourc
         lp = last_page() if last_page else None
         if lp is not None and page >= lp:
             break
+
+
+# --- JS ağırlıklı siteler için genel (en iyi çaba) liste ayrıştırıcı ---------------
+
+def generic_list(html: str, *, base: str, link_re: "re.Pattern[str]", source: str,
+                 source_type: str, location_hint: str = "") -> list[Job]:
+    """Önce sayfadaki JobPosting JSON-LD'lerini, yoksa `link_re` ile eşleşen ilan
+    bağlantılarını okur. `link_re` 1. grubu ilan kimliği olmalıdır. Bağlantı kartında
+    yalnızca başlık güvenle okunabilir; konum yalnızca `location_hint` (ör. "istanbul")
+    geçen bir satırdan alınır, firma bilinmiyorsa boş kalır."""
+    from ._util import abs_url  # döngüsel içe aktarmayı önlemek için yerel
+    from ...text import fold
+
+    out: list[Job] = []
+    seen: set[str] = set()
+    for d in extract_jobpostings(html):
+        j = jobposting_to_job(d, source=source, source_type=source_type)
+        if not j.url or not j.title:
+            continue
+        j.url = abs_url(base, j.url)
+        m = link_re.search(j.url)
+        j.external_id = m.group(1) if m else (j.external_id or j.url)
+        if j.external_id not in seen:
+            seen.add(j.external_id)
+            out.append(j)
+    if out:
+        return out
+    root = parse_html(html)
+    for a in root.find_all("a", href=True):
+        url = abs_url(base, a.get("href")).split("#")[0]
+        m = link_re.search(url)
+        if not m or m.group(1) in seen:
+            continue
+        head = a.find("h1|h2|h3|h4|h5|h6")
+        title = (head.text() if head is not None else "") or clean(a.get("title"))
+        # yaprak öğelerin metinleri (bitişik <span>'ler birleşmesin diye) + satırlar
+        leaves = [n.text() for n in a.iter() if not any(isinstance(c, Node) for c in n.children)]
+        lines = [x for x in leaves if x] + a.lines()
+        if not title and lines:
+            title = lines[0]
+        if not title:
+            continue
+        seen.add(m.group(1))
+        loc = ""
+        if location_hint:
+            loc = next((ln for ln in lines if location_hint in fold(ln) and ln != title), "")
+        out.append(Job(source=source, source_type=source_type, external_id=m.group(1),
+                       title=title, company="", url=url, location=loc))
+    return out

@@ -1,0 +1,18 @@
+[{"data": {"jobListings": {
+  "jobListings": [
+    {"jobview": {
+      "header": {"adOrderSponsorshipLevel": "STANDARD", "ageInDays": 2, "employer": {"id": 12345},
+                 "employerNameFromSearch": "Örnek Fintech", "jobTypeKeys": ["japi.jobtype.fulltime"],
+                 "locationName": "Istanbul", "locationType": "C", "payCurrency": "TRY", "payPeriod": "MONTHLY",
+                 "payPeriodAdjustedPay": {"p10": 60000, "p90": 90000}, "remoteWorkTypes": null},
+      "job": {"jobTitleText": "Product Manager", "listingId": 1009876543210},
+      "map": {"country": "Turkey"}}},
+    {"jobview": {
+      "header": {"ageInDays": 0, "employer": {"id": null}, "employerNameFromSearch": "Uzaktan Ltd",
+                 "jobTypeKeys": [], "locationName": "Remote", "locationType": "", "payPeriodAdjustedPay": null,
+                 "remoteWorkTypes": ["WORK_FROM_HOME"]},
+      "job": {"jobTitleText": "Data Engineer", "listingId": 1009876543211},
+      "map": {"country": null}}}
+  ],
+  "paginationCursors": [{"cursor": "AB:CD:2", "pageNumber": 2}]
+}}}]

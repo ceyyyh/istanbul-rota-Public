@@ -980,7 +980,7 @@
     "source_type": "company",
     "evidence": "https://jobs.citi.com/location/istanbul-jobs/287/298795-745042/3",
     "confidence": "medium",
-    "enabled": true
+    "enabled": false
   },
   {
     "company": "IQVIA",
@@ -1164,5 +1164,286 @@
     "confidence": "low",
     "enabled": false,
     "note": "Accor jobs also come via SmartRecruiters AccorHotel; disabled to avoid duplicates"
+  },
+  {
+    "company": "H&M Group",
+    "ats": "smartrecruiters",
+    "slug": "HMGroup",
+    "careers_url": "https://jobs.smartrecruiters.com/HMGroup",
+    "source_type": "company",
+    "evidence": "https://jobs.smartrecruiters.com/HMGroup/744000022741445-quality-specialist-arket",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Red Bull",
+    "ats": "smartrecruiters",
+    "slug": "RedBull",
+    "careers_url": "https://jobs.smartrecruiters.com/RedBull",
+    "source_type": "company",
+    "evidence": "https://jobs.smartrecruiters.com/RedBull/744000134790769-student-marketeer-uskudar-universitesi-",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "SIXT",
+    "ats": "smartrecruiters",
+    "slug": "SIXT",
+    "careers_url": "https://jobs.smartrecruiters.com/SIXT",
+    "source_type": "company",
+    "evidence": "https://careers.smartrecruiters.com/SIXT/?page=1&search=",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Alpaca",
+    "ats": "greenhouse",
+    "slug": "alpaca",
+    "careers_url": "https://job-boards.greenhouse.io/alpaca",
+    "source_type": "company",
+    "evidence": "https://job-boards.greenhouse.io/alpaca/jobs/6146918004",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Randstad Türkiye (global site)",
+    "ats": "careerpage",
+    "careers_url": "https://www.randstad.com/jobs/turkey/istanbul-europe/",
+    "link_pattern": "https?://www\\.randstad\\.com/jobs/[^\"'\\s?#]+_[a-z0-9-]+/?",
+    "source_type": "agency",
+    "evidence": "https://www.randstad.com/jobs/turkey/istanbul-europe/",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Crytek Istanbul",
+    "ats": "careerpage",
+    "careers_url": "https://www.crytek.com/career",
+    "source_type": "company",
+    "evidence": "https://www.crytek.com/career",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Ace Games",
+    "ats": "workable",
+    "slug": "ace-games",
+    "careers_url": "https://apply.workable.com/ace-games/",
+    "source_type": "company",
+    "evidence": "https://apply.workable.com/ace-games/llms.txt",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "NewMind AI",
+    "ats": "workable",
+    "slug": "newmindai",
+    "careers_url": "https://apply.workable.com/newmindai/",
+    "source_type": "company",
+    "evidence": "https://apply.workable.com/newmindai/?lng=en",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "istanbul.com",
+    "ats": "careerpage",
+    "careers_url": "https://istanbul.com/career",
+    "source_type": "company",
+    "evidence": "https://istanbul.com/career",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Hyphen Connect",
+    "ats": "greenhouse",
+    "slug": "hyphenconnect",
+    "careers_url": "https://job-boards.greenhouse.io/hyphenconnect",
+    "source_type": "agency",
+    "evidence": "https://job-boards.greenhouse.io/hyphenconnect/jobs/4975291007",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "GitLab",
+    "ats": "greenhouse",
+    "slug": "gitlab",
+    "careers_url": "https://job-boards.greenhouse.io/gitlab",
+    "source_type": "company",
+    "evidence": "https://job-boards.greenhouse.io/gitlab/jobs/8609979002",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "Ticimax (team.blue)",
+    "ats": "teamtailor",
+    "slug": "teamblueticimax",
+    "careers_url": "https://teamblueticimax.teamtailor.com/jobs",
+    "source_type": "company",
+    "evidence": "https://teamblueticimax.teamtailor.com/",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "team.blue Turkey",
+    "ats": "careerpage",
+    "careers_url": "https://trcareers.team.blue/jobs",
+    "link_pattern": "https?://trcareers\\.team\\.blue/jobs/\\d+[^\"'\\s?#]*",
+    "source_type": "company",
+    "evidence": "https://trcareers.team.blue/jobs",
+    "confidence": "high",
+    "enabled": true,
+    "note": "Teamtailor-hosted board on custom domain"
+  },
+  {
+    "company": "Citi (Workday)",
+    "ats": "workday",
+    "host": "citi.wd5.myworkdayjobs.com",
+    "tenant": "citi",
+    "site": "2",
+    "careers_url": "https://citi.wd5.myworkdayjobs.com/2",
+    "source_type": "company",
+    "evidence": "https://citi.wd5.myworkdayjobs.com/2/3/refreshFacet/318c8bb6f553100021d223d9780d30be",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Hitachi Energy",
+    "ats": "workday",
+    "host": "hitachi.wd1.myworkdayjobs.com",
+    "tenant": "hitachi",
+    "site": "hitachi",
+    "careers_url": "https://hitachi.wd1.myworkdayjobs.com/hitachi",
+    "source_type": "company",
+    "evidence": "https://hitachi.wd1.myworkdayjobs.com/fr-CA/hitachi/job/Istanbul-Marmara-Turkey/Electrical-Designer_R0072616",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Philips",
+    "ats": "workday",
+    "host": "philips.wd3.myworkdayjobs.com",
+    "tenant": "philips",
+    "site": "jobs-and-careers",
+    "careers_url": "https://philips.wd3.myworkdayjobs.com/jobs-and-careers",
+    "source_type": "company",
+    "evidence": "https://philips.wd3.myworkdayjobs.com/jobs-and-careers/job/Istanbul/Services-and-Solutions-Delivery-Specialist---Billing-Admin_564172-1",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Schneider Electric Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://careers.se.com/turkey",
+    "source_type": "company",
+    "evidence": "https://careers.se.com/turkey",
+    "confidence": "low",
+    "enabled": true
+  },
+  {
+    "company": "The Coca-Cola Company",
+    "ats": "careerpage",
+    "careers_url": "https://careers.coca-colacompany.com/jobs?location=Istanbul",
+    "link_pattern": "https?://careers\\.coca-colacompany\\.com/job/\\d+/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://careers.coca-colacompany.com/job/23677321/software-engineer-full-stack-istanbul-tr/",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Hitachi (careers site)",
+    "ats": "careerpage",
+    "careers_url": "https://careers.hitachi.com/search/jobs/in/istanbul",
+    "source_type": "company",
+    "evidence": "https://careers.hitachi.com/search/jobs/in/istanbul",
+    "confidence": "medium",
+    "enabled": false,
+    "note": "overlaps with Hitachi Workday entry"
+  },
+  {
+    "company": "Abbott",
+    "ats": "workday",
+    "host": "abbott.wd5.myworkdayjobs.com",
+    "tenant": "abbott",
+    "site": "abbottcareers",
+    "careers_url": "https://abbott.wd5.myworkdayjobs.com/abbottcareers",
+    "source_type": "company",
+    "evidence": "https://abbott.wd5.myworkdayjobs.com/abbottcareers/job/Trkiye---Istanbul/Tbbi-Sat-Temsilcisi---Genel-Bavuru_31159634",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Sanofi",
+    "ats": "workday",
+    "host": "sanofi.wd3.myworkdayjobs.com",
+    "tenant": "sanofi",
+    "site": "SanofiCareers",
+    "careers_url": "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers",
+    "source_type": "company",
+    "evidence": "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers/job/Istanbul/People-Services-Time-to-Pay-Manager--Turkey---Levant_R2784450-1",
+    "confidence": "high",
+    "enabled": true
+  },
+  {
+    "company": "Takeda",
+    "ats": "careerpage",
+    "careers_url": "https://jobs.takeda.com/location/istanbul-turkey-jobs/1113/298795-745042/3",
+    "link_pattern": "https?://jobs\\.takeda\\.com/job/[^\"'\\s?#]+",
+    "source_type": "company",
+    "evidence": "https://jobs.takeda.com/location/istanbul-turkey-jobs/1113/298795-745042/3",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "Mondelēz International",
+    "ats": "careerpage",
+    "careers_url": "https://www.mondelezinternational.com/careers/jobs/?location=Istanbul",
+    "link_pattern": "https?://www\\.mondelezinternational\\.com/careers/jobs/job\\?jobid=R-\\d+[^\"'\\s#]*",
+    "source_type": "company",
+    "evidence": "https://www.mondelezinternational.com/careers/jobs/job?jobid=R-81244&jobtitle=Senior+Legal+Counsel%2C+Turkey",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "DSV",
+    "ats": "careerpage",
+    "careers_url": "https://www.dsv.com/en-us/careers/job-search",
+    "source_type": "company",
+    "evidence": "https://www.dsv.com/en-us/careers/job-search",
+    "confidence": "low",
+    "enabled": true,
+    "note": "filter by Istanbul on the page"
+  },
+  {
+    "company": "Johnson & Johnson",
+    "ats": "workday",
+    "host": "jj.wd5.myworkdayjobs.com",
+    "tenant": "jj",
+    "site": "JJ",
+    "careers_url": "https://jj.wd5.myworkdayjobs.com/JJ",
+    "source_type": "company",
+    "evidence": "https://www.careers.jnj.com/en/jobs/r-083828/etkinlik-yoenetimi-ve-bakanlik-bildirimi-uzmani-11-aylik/",
+    "confidence": "medium",
+    "enabled": true
+  },
+  {
+    "company": "EY Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://careers.ey.com/ey/search/?locationsearch=Istanbul",
+    "link_pattern": "https?://careers\\.ey\\.com/ey/job/Istanbul-[^\"'\\s?#]+/\\d+/?",
+    "source_type": "company",
+    "evidence": "https://careers.ey.com/ey/job/Istanbul-EY-T%C3%BCrkiye-Business-Consulting-Senior-(Istanbul)-34398/1437124133/",
+    "confidence": "medium",
+    "enabled": true,
+    "note": "SuccessFactors-based career site"
+  },
+  {
+    "company": "PwC Türkiye",
+    "ats": "careerpage",
+    "careers_url": "https://www.pwc.com.tr/en/kariyer-sayfalari.html",
+    "source_type": "company",
+    "evidence": "https://www.pwc.com.tr/experienced-professionals",
+    "confidence": "low",
+    "enabled": true,
+    "note": "experienced hires mostly routed to LinkedIn / kariyer.net"
   }
 ]

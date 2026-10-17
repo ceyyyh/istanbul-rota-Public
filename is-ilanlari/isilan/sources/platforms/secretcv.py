@@ -85,6 +85,7 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     paging_ok = True
     page = 1
     while used < budget and (page == 1 or ctx.time_left()):
+        used += 1  # başarısız istekler de bütçeden düşer
         try:
             html = ctx.http.get(page_url(base_url, page))
         except HttpError as e:
@@ -93,7 +94,6 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
             ctx.log.info("secretcv: sayfa %d alınamadı (%s)", page, e)
             paging_ok = False
             break
-        used += 1
         fresh = take(parse_list(html, src.name))
         if not fresh:
             if page == 2:  # 2. sayfa yeni ilan getirmediyse sayfalama yok sayılıyor demektir
@@ -108,12 +108,12 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     for slug in src.params.get("district_slugs", DISTRICT_SLUGS):
         if used >= budget or not ctx.time_left():
             break
+        used += 1
         try:
             html = ctx.http.get(f"{BASE}/is-ilanlari/{slug}-is-ilanlari")
         except HttpError as e:
             ctx.log.debug("secretcv ilçe listesi %s alınamadı: %s", slug, e)
             continue
-        used += 1
         yield from maybe_enrich(take(parse_list(html, src.name)), ctx)
 
 

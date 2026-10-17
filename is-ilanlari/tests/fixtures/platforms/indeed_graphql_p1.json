@@ -1,0 +1,29 @@
+{"data": {"jobSearch": {
+  "pageInfo": {"nextCursor": "CURSOR_2"},
+  "results": [
+    {"job": {
+      "key": "a1b2c3d4e5f60718",
+      "title": "Muhasebe Uzmanı",
+      "sourceEmployerName": "Deneme Holding",
+      "dateOnIndeed": 1760572800000,
+      "description": {"html": "<p>Ön muhasebe &amp; <b>ETA</b> bilgisi</p>"},
+      "location": {"countryCode": "TR", "admin1Code": "34", "city": "Ataşehir"},
+      "compensation": {"baseSalary": {"unitOfWork": "MONTH", "range": {"min": 40000, "max": 55000}}, "currencyCode": "TRY"},
+      "attributes": [{"key": "CF3CP", "label": "Tam zamanlı"}, {"key": "PAXZC", "label": "Hibrit"}],
+      "employer": {"name": "Deneme Holding A.Ş."},
+      "recruit": {"viewJobUrl": "https://tr.indeed.com/viewjob?jk=a1b2c3d4e5f60718"}
+    }},
+    {"job": {
+      "key": "ffee00112233aabb",
+      "title": "Kurye",
+      "sourceEmployerName": "Hızlı Teslimat",
+      "dateOnIndeed": 1760313600000,
+      "description": {"html": "Motorlu kurye"},
+      "location": {"countryCode": "TR", "admin1Code": "34", "city": "İstanbul"},
+      "compensation": {"baseSalary": null, "currencyCode": null},
+      "attributes": [{"key": "75GKK", "label": "Yarı zamanlı"}],
+      "employer": null,
+      "recruit": {"viewJobUrl": "https://hizli.example/kariyer/kurye"}
+    }}
+  ]
+}}}

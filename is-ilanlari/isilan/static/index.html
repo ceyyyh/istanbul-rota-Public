@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
 <title>İstanbul İş İlanları</title>
 <script>/*__ISILAN_DATA__*/</script>
 <style>
@@ -138,7 +139,9 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 .desc{color:var(--muted);font-size:13.5px;margin:8px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .dup{margin-top:8px;font-size:13px}
 .dup ul{margin:6px 0 0;padding-left:18px}
-.dup li{margin:2px 0}
+.dup li{margin:4px 0}
+.dup li .b{font-size:11.5px;padding:1px 7px;margin-left:4px}
+.via{font-weight:400}
 .more{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:16px;color:var(--muted);font-size:13px}
 .empty{text-align:center;padding:40px 16px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--r);color:var(--muted)}
 .empty h3{color:var(--text);margin:0 0 6px;font-size:16px}
@@ -154,15 +157,17 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 .sgroup{margin-bottom:22px}
 .sgroup h3{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .stbl{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.srow{display:grid;grid-template-columns:minmax(0,2fr) 120px 110px minmax(0,1.6fr) auto;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);font-size:14px}
+.srow{display:grid;grid-template-columns:minmax(0,2fr) 130px 100px minmax(0,1.6fr) 64px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--border);font-size:14px}
 .srow:first-child{border-top:0}
+.c-a{text-align:right}
 .srow.hd{background:var(--surface2);font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding-top:7px;padding-bottom:7px}
 .sname{display:flex;gap:10px;align-items:center;min-width:0}
 .sname a,.sname strong{font-weight:600;overflow-wrap:anywhere}
 .sname small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--off)}
-.dot.ok{background:var(--ok)}.dot.error{background:var(--err)}.dot.empty{background:var(--warn)}
-.st-ok{color:var(--ok)}.st-error{color:var(--err)}.st-empty{color:var(--warn)}.st-null{color:var(--muted)}
+.dot.s-ok{background:var(--ok)}.dot.s-error{background:var(--err)}.dot.s-empty,.dot.s-partial{background:var(--warn)}
+.st-ok{color:var(--ok)}.st-error{color:var(--err)}.st-empty,.st-partial{color:var(--warn)}.st-null{color:var(--muted)}
+.nb{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--surface2);color:var(--muted);vertical-align:1px}
 .num{font-variant-numeric:tabular-nums}
 .serr{grid-column:1/-1;margin:-4px 0 0 20px;font-size:12.5px;color:var(--err);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
 .muted{color:var(--muted)}
@@ -189,10 +194,11 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 @media (max-width:760px){
   .srow{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
   .srow.hd{display:none}
-  .srow .c-st{grid-column:2;grid-row:1;text-align:right}
-  .srow .c-n,.srow .c-l{grid-column:1/-1;font-size:13px;margin-left:20px}
-  .srow .c-a{grid-column:2;grid-row:2;justify-self:end}
-  .srow .c-l{grid-row:3}
+  .srow .c-st{grid-column:2;grid-row:1;text-align:right;font-size:13px}
+  .srow .c-n,.srow .c-l{grid-column:1;font-size:13px;margin-left:20px}
+  .srow .c-n{grid-row:2}.srow .c-l{grid-row:3}
+  .srow .c-a{grid-column:2;grid-row:2/span 2;align-self:center}
+  .stat{padding:6px 12px}.stat b{font-size:17px}
   .lbl{display:inline;color:var(--muted)}
   .serr{margin-left:20px}
 }
@@ -202,6 +208,10 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
   .card{padding:12px 14px}
   .ctop{flex-direction:column;gap:2px}
   .date{order:2;padding:0}
+}
+@media (max-width:430px){
+  #crawlBtn{padding:9px}
+  #crawlBtn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -225,7 +235,7 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
         <p class="meta" id="meta" aria-live="polite">Yükleniyor…</p>
       </div>
     </div>
-    <button class="btn primary" id="crawlBtn" type="button" hidden><svg class="i"><use href="#i-refresh"/></svg><span>Şimdi tara</span></button>
+    <button class="btn primary" id="crawlBtn" type="button" title="Tüm kaynakları şimdi tara" hidden><svg class="i"><use href="#i-refresh"/></svg><span>Şimdi tara</span></button>
     <nav class="tabs" role="tablist" aria-label="Sayfalar">
       <button class="tab" role="tab" id="tab-ilanlar" aria-controls="p-ilanlar" data-tab="ilanlar" type="button">İlanlar</button>
       <button class="tab" role="tab" id="tab-kaynaklar" aria-controls="p-kaynaklar" data-tab="kaynaklar" type="button">Kaynaklar</button>
@@ -345,7 +355,7 @@ var ST_LABEL = {platform: 'Platformlar', company: 'Şirket kariyer sayfaları', 
 var ST_SHORT = {platform: 'Platform', company: 'Şirket sayfası', agency: 'İK firması'};
 var WM = {remote: 'Uzaktan', hybrid: 'Hibrit', onsite: 'Ofiste'};
 var DAYS = [['', 'Tümü'], ['1', 'Son 24 saat'], ['3', 'Son 3 gün'], ['7', 'Son 7 gün'], ['30', 'Son 30 gün']];
-var STATUS = {ok: 'Sorunsuz', error: 'Hata', empty: 'İlan yok', 'null': 'Henüz taranmadı'};
+var STATUS = {ok: 'Sorunsuz', partial: 'Kısmen', error: 'Hata', empty: 'İlan yok', 'null': 'Henüz taranmadı'};
 var LISTS = ['ilce', 'source_type', 'source', 'work_model'];
 
 /* ---------- time helpers ---------- */
@@ -652,17 +662,22 @@ function card(j) {
     : '<span class="b nodist">' + icon('pin') + 'İlçe belirsiz</span>';
   var loc = j.location && norm(j.location) !== norm(j.district) ? '<span class="loc">' + esc(j.location) + '</span>' : '';
   var id = 'd' + esc(j.uid);
+  var agency = j.extra && typeof j.extra.agency === 'string' ? j.extra.agency : '';
   return '<article class="card"><div class="ctop"><h3><a href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(j.title || '(başlıksız ilan)') + '</a></h3>' +
     (when ? '<time class="date" datetime="' + esc(when) + '" title="' + esc(whenTitle) + '">' + relTime(when) + '</time>' : '') + '</div>' +
-    (j.company ? '<div class="co">' + esc(j.company) + '</div>' : '') +
+    (j.company || agency ? '<div class="co">' + esc(j.company) + (agency && agency !== j.company ? '<span class="via">' + (j.company ? ' · ' : '') + esc(agency) + ' aracılığıyla</span>' : '') + '</div>' : '') +
     '<div class="bs">' + dist +
     '<span class="b ' + esc(j.source_type) + '" title="' + esc(ST_SHORT[j.source_type] || '') + '">' + esc(j.source_label || j.source) + '</span>' +
     (WM[j.work_model] ? '<span class="b">' + WM[j.work_model] + '</span>' : '') +
     (j.employment_type ? '<span class="b">' + esc(j.employment_type) + '</span>' : '') +
+    (j.category ? '<span class="b">' + esc(j.category) + '</span>' : '') +
     (j.salary ? '<span class="b sal">' + esc(j.salary) + '</span>' : '') + loc + '</div>' +
     (j.description ? '<p class="desc">' + esc(j.description) + '</p>' : '') +
     (dups.length ? '<div class="dup"><button type="button" class="link" aria-expanded="false" aria-controls="' + id + '">+' + dups.length + ' kaynakta daha</button><ul id="' + id + '" hidden>' +
-      dups.map(function (d) { return '<li><a href="' + esc(safeUrl(d.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(d.source_label || d.url) + '</a></li>'; }).join('') + '</ul></div>' : '') +
+      dups.map(function (d) {
+        return '<li><a href="' + esc(safeUrl(d.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(d.source_label || d.source || d.url) + '</a>' +
+          (ST_SHORT[d.source_type] ? ' <span class="b ' + d.source_type + '">' + ST_SHORT[d.source_type] + '</span>' : '') + '</li>';
+      }).join('') + '</ul></div>' : '') +
     '</article>';
 }
 function emptyHTML() {
@@ -734,15 +749,16 @@ function loadSources() {
   });
 }
 function renderSources() {
-  var S = srcCache || [], cnt = {ok: 0, error: 0, empty: 0, 'null': 0};
+  var S = srcCache || [], cnt = {ok: 0, partial: 0, error: 0, empty: 0, 'null': 0};
   S.forEach(function (s) { cnt[s.last_status in cnt ? s.last_status : 'null']++; });
   $('#ssum').innerHTML = '<div class="stat"><b>' + fmt(S.length) + '</b>kaynak</div>' +
     '<div class="stat"><b class="st-ok">' + fmt(cnt.ok) + '</b>sorunsuz</div>' +
     '<div class="stat"><b class="st-error">' + fmt(cnt.error) + '</b>hatalı</div>' +
+    (cnt.partial ? '<div class="stat"><b class="st-partial">' + fmt(cnt.partial) + '</b>kısmen</div>' : '') +
     '<div class="stat"><b class="st-empty">' + fmt(cnt.empty) + '</b>ilan yok</div>' +
     (cnt['null'] ? '<div class="stat"><b>' + fmt(cnt['null']) + '</b>taranmadı</div>' : '') +
     '<label class="chk" style="margin-left:auto"><input type="checkbox" id="onlyBad"' + (srcOnlyBad ? ' checked' : '') + '><span class="nm">Yalnızca sorunlu kaynaklar</span></label>';
-  var rows = S.filter(function (s) { return !srcOnlyBad || s.last_status === 'error' || s.last_status === 'empty'; });
+  var rows = S.filter(function (s) { return !srcOnlyBad || ['error', 'empty', 'partial'].indexOf(s.last_status) >= 0; });
   var html = Object.keys(ST_LABEL).concat(['_']).map(function (t) {
     var g = rows.filter(function (s) { return t === '_' ? !ST_LABEL[s.source_type] : s.source_type === t; })
       .sort(function (a, b) { return coll.compare(a.label || a.name, b.label || b.name); });
@@ -752,12 +768,12 @@ function renderSources() {
       g.map(function (s) {
         var st = s.last_status in STATUS ? s.last_status : 'null';
         var name = s.homepage ? '<a href="' + esc(safeUrl(s.homepage)) + '" target="_blank" rel="noopener noreferrer">' + esc(s.label || s.name) + '</a>' : '<strong>' + esc(s.label || s.name) + '</strong>';
-        return '<div class="srow" role="row"><div class="sname" role="cell"><span class="dot ' + st + '" aria-hidden="true"></span><div>' + name + '<small>' + esc(s.name) + '</small></div></div>' +
+        return '<div class="srow" role="row"><div class="sname" role="cell"><span class="dot s-' + st + '" aria-hidden="true"></span><div>' + name + (s.needs_browser ? '<span class="nb" title="Bu kaynak yalnızca tarayıcı (Chromium) ile taranabilir">tarayıcı gerekli</span>' : '') + '<small>' + esc(s.name) + '</small></div></div>' +
           '<div class="c-st st-' + st + '" role="cell">' + STATUS[st] + '</div>' +
           '<div class="c-n num" role="cell"><b>' + fmt(s.active_count) + '</b> <span class="lbl">aktif ilan</span></div>' +
           '<div class="c-l muted" role="cell">' + (s.last_run ? '<span class="lbl">Son tarama: </span><time title="' + esc(fullDate(s.last_run)) + '">' + relTime(s.last_run) + '</time>' + (s.last_count != null ? ' · ' + fmt(s.last_count) + ' ilan çekildi' : '') : '—') + '</div>' +
           '<div class="c-a" role="cell">' + (DATA ? '' : '<button type="button" class="btn sm" data-crawl="' + esc(s.name) + '" aria-label="' + esc(s.label || s.name) + ' kaynağını tara">Tara</button>') + '</div>' +
-          (st === 'error' && s.last_error ? '<div class="serr" role="cell">' + esc(s.last_error) + '</div>' : '') + '</div>';
+          ((st === 'error' || st === 'partial') && s.last_error ? '<div class="serr" role="cell">' + esc(s.last_error) + '</div>' : '') + '</div>';
       }).join('') + '</div></section>';
   }).join('');
   $('#slist').innerHTML = html || '<div class="empty"><h3>' + (S.length ? 'Sorunlu kaynak yok' : 'Kaynak bulunamadı') + '</h3></div>';
@@ -778,7 +794,9 @@ function renderCrawl(s) {
   var p = $('#crawlProg');
   if (tot) { p.max = tot; p.value = done; } else p.removeAttribute('value');
   $('#crawlTxt').textContent = pr.current ? 'Taranıyor: ' + pr.current : 'Taranıyor…';
-  $('#crawlNum').textContent = tot ? fmt(done) + ' / ' + fmt(tot) + ' kaynak' : '';
+  var R = s.results || {}, nw = 0;
+  Object.keys(R).forEach(function (k) { nw += +R[k].new || 0; });
+  $('#crawlNum').textContent = (tot ? fmt(done) + ' / ' + fmt(tot) + ' kaynak' : '') + (nw ? ' · ' + fmt(nw) + ' yeni ilan' : '');
   var log = (s.log || []).slice(-200).join('\n'), pre = $('#crawlLog');
   var atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8;
   pre.textContent = log || '—';
@@ -791,7 +809,9 @@ function pollCrawl() {
     if (s.running) { wasRunning = true; pollT = setTimeout(pollCrawl, 2000); }
     else if (wasRunning) {
       wasRunning = false;
-      toast('Tarama tamamlandı');
+      var R = s.results || {}, nw = 0, er = 0;
+      Object.keys(R).forEach(function (k) { nw += +R[k].new || 0; if (R[k].status === 'error') er++; });
+      toast('Tarama tamamlandı · ' + fmt(nw) + ' yeni ilan' + (er ? ' · ' + er + ' kaynakta hata' : ''));
       refreshAll();
     }
   }).catch(function () { pollT = setTimeout(pollCrawl, 5000); });

@@ -101,7 +101,6 @@ def parse_cards(html: str) -> list[Job]:
             if part and all(part.lower() not in p.lower() for p in parts):
                 parts.append(part)
         location = ", ".join(parts)
-        district = None
         cand = town or (visible if visible and not _SIDE.search(visible) and "istanbul" not in visible.lower()
                         and "i̇stanbul" not in visible.lower() and not _MORE.search(visible) else "")
         extra: dict = {}
@@ -128,7 +127,6 @@ def parse_cards(html: str) -> list[Job]:
             company=company,
             url=url,
             location=location,
-            district=district,
             posted_at=posted,
             employment_type=clean(card.get("worktypetext")),
             work_model=_work_model(card.get("workmodeltext") or ""),

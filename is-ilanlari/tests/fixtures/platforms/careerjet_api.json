@@ -1,0 +1,11 @@
+{"type": "JOBS", "hits": 3, "pages": 1, "response_time": 0.05, "message": "",
+ "jobs": [
+  {"title": "İnsan Kaynakları Uzmanı", "company": "Örnek Danışmanlık", "date": "Tue, 14 Oct 2026 08:00:00 GMT",
+   "description": "İşe alım süreçlerini <b>yönetecek</b>...", "locations": "Şişli, İstanbul",
+   "salary": "", "salary_min": 45000, "salary_max": 60000, "salary_currency_code": "TRY", "salary_type": "M",
+   "site": "www.ornekdanismanlik.com.tr", "url": "https://jobviewtrack.com/tr-tr/job-1a2b3c/abc?sid=1"},
+  {"title": "Elektrik Teknisyeni", "company": "Enerji A.Ş.", "date": "Thu, 09 Oct 2026 10:30:00 GMT",
+   "description": "Bakım onarım", "locations": "İstanbul", "salary": "30.000 TL",
+   "site": "", "url": "https://jobviewtrack.com/tr-tr/job-4d5e6f/def"},
+  {"title": "", "company": "Boş", "url": "https://jobviewtrack.com/tr-tr/job-x"}
+ ]}
