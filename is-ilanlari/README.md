@@ -86,6 +86,13 @@ python -m isilan add-url "Şirket" https://sirket.com/kariyer   # kendi kariyer 
 
 ## Bir siteden az ilan geliyorsa
 
+**Hepsini tek seferde:** `hepsini-yap.bat` (Windows) ya da `./hepsini-yap.sh` — ya da `python -m isilan tam`.
+Aşağıdaki adımları sırayla uygular: teşhis → derin tarama (400 sayfa) → korumalı siteler görünür tarayıcıyla →
+hâlâ sorunlu kaynakların dosyalarını `data/teshis.zip` içinde toplar. Bitince arayüz açılır.
+İlk çalıştırma uzun sürebilir (1-2 saat); tarayıcı penceresi açılırsa ve doğrulama isterse siz tamamlayın.
+
+Adımları elle yapmak isterseniz:
+
 1. **Teşhis edin:** `python -m isilan teshis kariyernet linkedin` (ya da tüm platformlar için `teshis platform`).
    Her kaynak için kısa bir tarama yapar ve nedenini söyler: *engelliyor*, *sayfa geldi ama ayrıştırılamadı*,
    *İstanbul olarak tanınmadı*, *bağlanılamadı*. Ham sayfalar `data/teshis/<kaynak>/` klasörüne kaydedilir.

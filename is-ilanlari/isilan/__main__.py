@@ -212,6 +212,14 @@ def cmd_teshis(a):
     print("Az ilan gelen kaynakların klasörünü zip'leyip gönderirseniz ayrıştırıcı gerçek sayfaya göre düzeltilebilir.")
 
 
+def cmd_tam(a):
+    from .tam import run
+
+    run(a.db, DEFAULT_DB.parent if a.db == str(DEFAULT_DB) else Path(a.db).parent,
+        max_pages=a.max_pages, timeout=a.timeout, workers=a.workers, use_browser=not a.tarayicisiz)
+    print("Sonuçları görmek için: python -m isilan serve  →  http://127.0.0.1:8000")
+
+
 def cmd_add_company(a):
     from .discover import probe_company
 
@@ -292,6 +300,13 @@ def main(argv=None):
 
     p = sub.add_parser("ilceler", help="İlçe bazında ilan sayıları")
     p.set_defaults(fn=cmd_ilceler)
+
+    p = sub.add_parser("tam", help="Hepsini sırayla: teşhis → derin tarama → korumalı siteler tarayıcıyla → teşhis zip'i")
+    p.add_argument("--max-pages", type=int, default=400)
+    p.add_argument("--timeout", type=float, default=3600)
+    p.add_argument("--workers", type=int, default=6)
+    p.add_argument("--tarayicisiz", action="store_true", help="Görünür tarayıcı adımını atla")
+    p.set_defaults(fn=cmd_tam)
 
     p = sub.add_parser("teshis", help="Az/hiç ilan getiren kaynakları teşhis et, ham sayfaları kaydet")
     p.add_argument("source", nargs="*", help="Kaynak adları ya da tür (platform/company/agency); boşsa hepsi")
