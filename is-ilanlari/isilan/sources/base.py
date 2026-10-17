@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Iterator
+from typing import Any, Callable, Iterator
 
 from ..http import Http
 from ..models import Job
@@ -26,6 +26,9 @@ class FetchContext:
     # Kaynak, tarama yarıda kesildiği hâlde hata fırlatmadan döndüyse (ör. 2. sayfada 429, kaynağa özgü
     # sonuç sınırı) True yapar. Pipeline bu durumda görünmeyen ilanları hemen pasife almaz.
     partial: bool = False
+    # Taramalar arası kalıcı küçük durum (get(key, default) / set(key, value); pipeline kaynağa özel
+    # ad alanıyla verir, bkz. db.StateView). None ise kaynak durumsuz çalışmalıdır (testler, teşhis).
+    state: Any = None
 
     def mark_partial(self, reason: str = "") -> None:
         self.partial = True

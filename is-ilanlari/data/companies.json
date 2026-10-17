@@ -1455,5 +1455,18 @@
   "confidence": "low",
   "enabled": true,
   "note": "experienced hires mostly routed to LinkedIn / kariyer.net"
+ },
+ {
+  "company": "SAP Türkiye",
+  "ats": "successfactors",
+  "host": "jobs.sap.com",
+  "careers_url": "https://jobs.sap.com/go/T%C3%BCrkiye/9054501/",
+  "sitemap": "https://jobs.sap.com/sitemap.xml",
+  "max_jobs": 300,
+  "source_type": "company",
+  "evidence": "https://jobs.sap.com/go/T%C3%BCrkiye/9054501/",
+  "confidence": "medium",
+  "enabled": true,
+  "note": "SuccessFactors Recruiting Marketing; /job/<Konum-Başlık>/<id>/ URL deseni, sitemap/JSON-LD biçimi gerçek taramada doğrulanmadı"
  }
 ]

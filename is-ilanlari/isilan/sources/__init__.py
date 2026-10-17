@@ -9,7 +9,7 @@ from .base import FetchContext, Source
 
 log = logging.getLogger(__name__)
 
-MODULES = ["platforms", "ats", "careerpage", "agencies"]
+MODULES = ["platforms", "ats", "ats_enterprise", "careerpage", "agencies"]
 
 
 def all_sources(include_disabled: bool = False) -> list[Source]:

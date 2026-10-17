@@ -56,6 +56,12 @@ CREATE TABLE IF NOT EXISTS runs (
     error TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_runs_source ON runs(source, id);
+-- Kaynakların taramalar arası küçük durumu (ör. Kariyer.net kaldığı sayfa imleci); değer JSON metni
+CREATE TABLE IF NOT EXISTS state (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at TEXT
+);
 """
 
 COLUMNS = ["uid", "source", "source_type", "external_id", "title", "company", "url", "location", "district",
@@ -90,6 +96,19 @@ def norm_company(name: str) -> str:
 
 def dedupe_key(title: str, company: str, district: str | None) -> str:
     return f"{fold(title)}|{norm_company(company)}|{district or ''}"
+
+
+class StateView:
+    """Bir kaynağa ayrılmış durum ad alanı: `get/set` anahtarları "<kaynak>:<anahtar>" olarak saklanır."""
+
+    def __init__(self, db: "DB", prefix: str):
+        self._db, self._prefix = db, prefix
+
+    def get(self, key: str, default=None):
+        return self._db.get_state(f"{self._prefix}:{key}", default)
+
+    def set(self, key: str, value) -> None:
+        self._db.set_state(f"{self._prefix}:{key}", value)
 
 
 class DB:
@@ -203,6 +222,29 @@ class DB:
         with self._lock, self.conn:
             self.conn.execute("UPDATE runs SET finished_at=?, status=?, count=?, kept=?, error=? WHERE id=?",
                               (now_iso(), status, count, kept, (error or "")[:1000] or None, run_id))
+
+    # ---- kaynak durumu (anahtar → JSON değer) ----
+    def get_state(self, key: str, default=None):
+        with self._lock:
+            r = self.conn.execute("SELECT value FROM state WHERE key=?", (key,)).fetchone()
+        if r is None or r[0] is None:
+            return default
+        try:
+            return json.loads(r[0])
+        except json.JSONDecodeError:
+            return default
+
+    def set_state(self, key: str, value) -> None:
+        with self._lock, self.conn:
+            if value is None:
+                self.conn.execute("DELETE FROM state WHERE key=?", (key,))
+            else:
+                self.conn.execute("INSERT INTO state(key, value, updated_at) VALUES (?,?,?) "
+                                  "ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
+                                  (key, json.dumps(value, ensure_ascii=False), now_iso()))
+
+    def state_for(self, prefix: str) -> "StateView":
+        return StateView(self, prefix)
 
     # ---- okuma ----
     def last_runs(self) -> dict[str, sqlite3.Row]:

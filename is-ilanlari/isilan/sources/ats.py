@@ -738,12 +738,15 @@ FETCHERS: dict[str, Callable[[Source, FetchContext], Iterator[Job]]] = {
 }
 
 
+_ENTERPRISE_ATS = {"successfactors", "sitemap", "sap", "phenom", "eightfold", "taleo", "icims"}
+
+
 def make_source(entry: dict) -> Source | None:
     params = dict(entry)
     ats = clean(params.get("ats")).lower()
     if ats == "lever-eu":
         ats, params["region"] = "lever", "eu"
-    if ats == "careerpage":
+    if ats == "careerpage" or ats in _ENTERPRISE_ATS:  # kurumsal türleri ats_enterprise.py işler
         return None
     fetcher = FETCHERS.get(ats)
     if fetcher is None:

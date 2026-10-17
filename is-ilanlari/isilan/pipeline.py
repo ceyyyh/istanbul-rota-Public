@@ -262,7 +262,8 @@ def run_source(src: Source, db: DB, http: Http, opts: CrawlOptions, status: Craw
     counted = CountingHttp(http)
     ctx = FetchContext(http=counted, max_pages=opts.max_pages, fetch_details=opts.fetch_details,
                        deadline=time.monotonic() + max(opts.per_source_timeout, float(src.params.get("timeout", 0) or 0)),
-                       log=logging.getLogger(f"isilan.source.{src.name}"))
+                       log=logging.getLogger(f"isilan.source.{src.name}"),
+                       state=db.state_for(src.name) if hasattr(db, "state_for") else None)
     rows: dict[str, dict] = {}
     count = 0
     error = None
