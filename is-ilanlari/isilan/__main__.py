@@ -156,7 +156,10 @@ def cmd_build_site(a):
         jobs.append(it)
     from .geo import ORIGINS
 
-    data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db), "origins": ORIGINS}
+    from .bigco import CATALOG
+
+    data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db), "origins": ORIGINS,
+            "gruplar": CATALOG}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str).replace("</", "<\\/")
     tpl = (Path(__file__).resolve().parent / "static" / "index.html").read_text(encoding="utf-8")
     marker = "<script>/*__ISILAN_DATA__*/</script>"

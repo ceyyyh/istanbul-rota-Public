@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from .db import DB
+from .bigco import SECTOR_OF
 from .geo import DISTRICT_SIDE, DISTRICTS, ORIGINS
 from .models import AGENCY, COMPANY, PLATFORM
 from .pipeline import CrawlOptions, CrawlStatus, crawl
@@ -68,6 +69,8 @@ def parse_filters(qs: dict[str, list[str]]) -> dict:
         "max_km": _num(one("max_km")),
         "kw": lst("kw"),
         "exclude": lst("haric"),
+        "buyuk": one("buyuk") in ("1", "true", "evet"),
+        "grups": lst("grup"),
     }
 
 
@@ -111,6 +114,10 @@ def facets(db: DB, f: dict) -> dict:
     c_counts: dict[str | None, int] = {}
     for it in items(("collar",)):
         c_counts[it.get("collar")] = c_counts.get(it.get("collar"), 0) + 1
+    g_counts: dict[str, int] = {}
+    for it in items(("grup",)):
+        if it.get("grup"):
+            g_counts[it["grup"]] = g_counts.get(it["grup"], 0) + 1
     meta = source_meta()
     srcs = [{"name": n, "label": label_of(n), "source_type": meta.get(n, {}).get("source_type", ""), "count": c}
             for n, c in sorted(s_counts.items(), key=lambda kv: -kv[1])]
@@ -125,6 +132,9 @@ def facets(db: DB, f: dict) -> dict:
                     {"name": "mavi", "label": "Mavi yaka", "count": c_counts.get("mavi", 0)},
                     {"name": "belirsiz", "label": "Belirsiz", "count": c_counts.get(None, 0)}],
         "origins": ORIGINS,
+        "gruplar": [{"name": n, "sektor": SECTOR_OF.get(n, ""), "count": c}
+                    for n, c in sorted(g_counts.items(), key=lambda kv: -kv[1])],
+        "buyuk_total": sum(g_counts.values()),
     }
 
 

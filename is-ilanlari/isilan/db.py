@@ -9,6 +9,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from .bigco import group_of
 from .text import fold
 
 DEFAULT_DB = Path(os.environ.get("ISILAN_DB", Path(__file__).resolve().parents[1] / "data" / "isilan.db"))
@@ -40,7 +41,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     collar TEXT,
     lat REAL,
     lon REAL,
-    title_search TEXT
+    title_search TEXT,
+    grup TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_jobs_active ON jobs(active, district);
 CREATE INDEX IF NOT EXISTS ix_jobs_source ON jobs(source, active);
@@ -66,10 +68,10 @@ CREATE TABLE IF NOT EXISTS state (
 
 COLUMNS = ["uid", "source", "source_type", "external_id", "title", "company", "url", "location", "district",
            "side", "posted_at", "employment_type", "work_model", "description", "salary", "category", "extra",
-           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search"]
+           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search", "grup"]
 
 # Sonradan eklenen sütunlar: eski veritabanlarına ALTER TABLE ile eklenir ve doldurulur
-_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT"}
+_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT", "grup": "TEXT"}
 
 # Aynı ilan birden çok kaynakta varsa hangisi "asıl" gösterilsin: önce şirketin kendi sayfası
 TYPE_PRIORITY = {"company": 0, "agency": 1, "platform": 2}
@@ -142,14 +144,17 @@ class DB:
         from .classify import collar
         from .geo import locate
 
-        rows = self.conn.execute("SELECT uid, title, category, source, source_type, location, district FROM jobs").fetchall()
+        from .bigco import group_of
+
+        rows = self.conn.execute("SELECT uid, title, category, source, source_type, location, district, company FROM jobs").fetchall()
         upd = []
         for r in rows:
             c = locate(f"{r['location'] or ''} {r['title'] or ''}", r["district"])
             upd.append((collar(r["title"] or "", r["category"] or "", r["source"], r["source_type"]),
-                        c[0] if c else None, c[1] if c else None, fold(r["title"] or ""), r["uid"]))
+                        c[0] if c else None, c[1] if c else None, fold(r["title"] or ""), group_of(r["company"] or ""),
+                        r["uid"]))
         with self._lock, self.conn:
-            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=? WHERE uid=?", upd)
+            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=?, grup=? WHERE uid=?", upd)
         return len(upd)
 
     # ---- yazma ----
@@ -164,6 +169,7 @@ class DB:
                 r["extra"] = json.dumps(r.get("extra") or {}, ensure_ascii=False)
                 r["search"] = fold(" ".join(str(r.get(k) or "") for k in ("title", "company", "location", "district", "category", "description")))[:2000]
                 r["title_search"] = fold(r.get("title") or "")
+                r["grup"] = group_of(r.get("company") or "")
                 r["last_seen"] = seen_at
                 r["active"] = 1
                 if cur:
@@ -271,7 +277,8 @@ class DB:
               work_models: list[str] | None = None, days: int | None = None, sort: str = "new",
               page: int = 1, per_page: int = 50, dedupe: bool = True, ignore: tuple[str, ...] = (),
               collars: list[str] | None = None, near: tuple[float, float] | None = None,
-              max_km: float | None = None, kw: list[str] | None = None, exclude: list[str] | None = None) -> dict:
+              max_km: float | None = None, kw: list[str] | None = None, exclude: list[str] | None = None,
+              buyuk: bool = False, grups: list[str] | None = None) -> dict:
         """Filtrelenmiş ve (isteğe bağlı) tekilleştirilmiş ilan listesi. `ignore`: faset sayımı için
         yok sayılacak filtre adları."""
         where, args = ["active=1"], []
@@ -312,6 +319,12 @@ class DB:
                 parts.append("collar IS NULL")
             if parts:
                 where.append("(" + " OR ".join(parts) + ")")
+        if "grup" not in ignore:
+            if grups:
+                where.append(f"grup IN ({','.join('?' * len(grups))})")
+                args.extend(grups)
+            elif buyuk:
+                where.append("grup IS NOT NULL")
         dist_sql = None
         if near:
             # Kuş uçuşu uzaklığın karesi (km²), eşdikdörtgen yaklaşımı — sıralama ve süzme için yeterli
@@ -351,7 +364,7 @@ class DB:
         return {"total": total, "page": page, "per_page": per_page, "items": items, "_all": _LazyItems(self, reps)}
 
     # Hafif sütunlar: tekilleştirme ve faset sayımı için tüm satırları (açıklama vb. olmadan) okur
-    _LIGHT = "uid, dedupe_key, source, source_type, district, url, collar"
+    _LIGHT = "uid, dedupe_key, source, source_type, district, url, collar, grup"
 
     def _version(self):
         """Veri değiştiğinde değişen anahtar: bu bağlantının yazmaları + başka bağlantıların
@@ -418,7 +431,7 @@ class _LazyItems(list):
 
     def __init__(self, db: "DB", reps: list[tuple]):
         super().__init__({"uid": r[0], "dedupe_key": r[1], "source": r[2], "source_type": r[3], "district": r[4],
-                          "url": r[5], "collar": r[6], "duplicates": [{"source": x[2], "source_type": x[3], "url": x[5]} for x in d]}
+                          "url": r[5], "collar": r[6], "grup": r[7], "duplicates": [{"source": x[2], "source_type": x[3], "url": x[5]} for x in d]}
                          for r, d in reps)
         self._db, self._reps = db, reps
 

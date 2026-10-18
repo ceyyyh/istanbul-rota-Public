@@ -66,6 +66,11 @@ TITLES = ["Yazılım Geliştirici", "Kıdemli Backend Geliştirici", "Muhasebe U
           "Ürün Yöneticisi", "Çağrı Merkezi Müşteri Temsilcisi (uzun başlık örneği — vardiyalı çalışma)"]
 COMPANIES = ["Örnek A.Ş.", "Deneme Ltd. Şti.", "Test Yazılım A.Ş.", "Mock Lojistik A.Ş.", "Örnek Gıda San. Tic. A.Ş.",
              "Sahte Perakende A.Ş.", "Deneme Sağlık Hizmetleri A.Ş."]
+# Büyük şirket grupları (sahte örnek; ad, sektör)
+GRUPLAR = [("Koç Topluluğu", "Holding"), ("Sabancı Holding", "Holding"), ("Anadolu Grubu", "Gıda & İçecek"),
+           ("İş Bankası Grubu", "Bankacılık"), ("Turkcell", "Telekom"), ("Türk Hava Yolları", "Havacılık"),
+           ("Unilever", "Tüketim"), ("Doğuş Grubu", "Holding"), ("Zorlu Holding", "Holding")]
+GRUP_SEKTOR = dict(GRUPLAR)
 CATEGORIES = ["Bilişim", "Finans", "Satış", "Lojistik", "Sağlık", "Pazarlama", ""]
 
 
@@ -106,6 +111,7 @@ def make_jobs(n: int = 200) -> list[dict]:
                              "source_label": other[1]})
         extra = {"agency": rnd.choice(["Örnek İK Danışmanlık", "Test İnsan Kaynakları"])} if stype == "agency" else {}
         category = rnd.choice(CATEGORIES)
+        grup = rnd.choice(GRUPLAR)[0] if rnd.random() < 0.25 else None
         pt = None if work_model == "remote" else locate(f"{loc} {title}", district)
         jobs.append({
             "uid": f"mock{i:04d}", "external_id": str(i), "source": name, "source_label": LABEL[name], "source_type": stype,
@@ -115,7 +121,7 @@ def make_jobs(n: int = 200) -> list[dict]:
             "employment_type": rnd.choice(["Tam zamanlı", "Yarı zamanlı", "Staj", ""]),
             "work_model": work_model,
             "salary": rnd.choice(["", "", "", "35.000 - 45.000 TL", "Asgari ücret + prim"]),
-            "category": category, "extra": extra,
+            "category": category, "extra": extra, "grup": grup,
             "collar": classify_collar(title, category, name, stype),
             "lat": pt[0] if pt else None, "lon": pt[1] if pt else None,
             "description": "Bu ilan arayüz testi için üretilmiş SAHTE bir kayıttır. Gerçek bir iş ilanı değildir. "
@@ -158,7 +164,8 @@ def parse(qs: dict) -> dict:
     return {"q": one("q"), "ilce": lst("ilce"), "unk": one("ilce_bilinmiyor") in ("1", "true"), "yaka": one("yaka"),
             "st": lst("source_type"), "src": lst("source"), "wm": lst("work_model"), "days": one("days"),
             "sort": one("sort", "new"), "collars": lst("is_tipi"), "near": point(one("near")),
-            "max_km": num(one("max_km")), "kw": terms(lst("kw")), "ex": terms(lst("haric"))}
+            "max_km": num(one("max_km")), "kw": terms(lst("kw")), "ex": terms(lst("haric")),
+            "grup": lst("grup"), "buyuk": one("buyuk") in ("1", "true") or bool(lst("grup"))}
 
 
 def num(v):
@@ -217,6 +224,11 @@ def match(j: dict, f: dict, ignore=()) -> bool:
     if "collar" not in ignore and f["collars"]:
         if (j["collar"] if j["collar"] in ("beyaz", "mavi") else "belirsiz") not in f["collars"]:
             return False
+    if "grup" not in ignore:
+        if f["buyuk"] and j["grup"] is None:
+            return False
+        if f["grup"] and j["grup"] not in f["grup"]:
+            return False
     if f["near"] and f["max_km"]:
         d = dist2(j, f["near"])
         if d is None or d > f["max_km"] ** 2:
@@ -256,7 +268,7 @@ def annotate(j: dict, f: dict) -> dict:
 
 
 def facets(f: dict) -> dict:
-    d, st, sc, unk, cc = {}, {}, {}, 0, {}
+    d, st, sc, unk, cc, gc = {}, {}, {}, 0, {}, {}
     for j in JOBS:
         if match(j, f, ("district", "side")):
             if j["district"]:
@@ -269,6 +281,8 @@ def facets(f: dict) -> dict:
             sc[j["source"]] = sc.get(j["source"], 0) + 1
         if match(j, f, ("collar",)):
             cc[j["collar"]] = cc.get(j["collar"], 0) + 1
+        if j["grup"] and match(j, f, ("grup",)):
+            gc[j["grup"]] = gc.get(j["grup"], 0) + 1
     return {"total": sum(1 for j in JOBS if match(j, f)),
             "last_crawl": iso(datetime.now(timezone.utc) - timedelta(hours=2)),
             "districts": [{"name": n, "side": SIDE[n], "count": d.get(n, 0)} for n in DISTRICTS],
@@ -279,6 +293,9 @@ def facets(f: dict) -> dict:
             "collars": [{"name": "beyaz", "label": "Beyaz yaka", "count": cc.get("beyaz", 0)},
                         {"name": "mavi", "label": "Mavi yaka", "count": cc.get("mavi", 0)},
                         {"name": "belirsiz", "label": "Belirsiz", "count": cc.get(None, 0)}],
+            "gruplar": [{"name": n, "sektor": GRUP_SEKTOR.get(n, ""), "count": c}
+                        for n, c in sorted(gc.items(), key=lambda kv: (-kv[1], kv[0]))],
+            "buyuk_total": sum(gc.values()),
             "origins": ORIGINS}
 
 
@@ -338,7 +355,8 @@ class H(BaseHTTPRequestHandler):
             data = {"generated_at": iso(datetime.now(timezone.utc) - timedelta(hours=5)),
                     "jobs": [{k: v for k, v in j.items() if k not in ("extra", "external_id") and not k.startswith("_")}
                              for j in JOBS],
-                    "sources": sources_health(), "origins": ORIGINS}
+                    "sources": sources_health(), "origins": ORIGINS,
+                    "gruplar": [{"name": n, "sektor": k} for n, k in GRUPLAR]}
             blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
             html = INDEX.read_text(encoding="utf-8").replace(MARKER, f"<script>window.__ISILAN_DATA__={blob};</script>")
             return self.send(200, html.encode(), "text/html; charset=utf-8")
