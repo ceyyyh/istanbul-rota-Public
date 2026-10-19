@@ -787,12 +787,12 @@
  {
   "company": "Garanti BBVA",
   "ats": "careerpage",
-  "careers_url": "https://kariyer.garantibbva.com.tr/tum",
+  "careers_url": "https://kariyer.garantibbva.com.tr/tum-kariyer-firsatlari",
   "source_type": "company",
-  "evidence": "https://www.iscihaber.net/garanti-bbva-bircok-kadroya-alim-yapacak",
+  "evidence": "https://kariyer.garantibbva.com.tr/tum-kariyer-firsatlari",
   "confidence": "low",
-  "enabled": false,
-  "note": "2026-10-17 gerçek taramada 404/400 verdi; kapatıldı."
+  "enabled": true,
+  "note": "2026-10-19 keşif iş akışı: yalnızca arama kanıtı, canlı sayfa açılamadı; eski adres (/tum) 404 veriyordu"
  },
  {
   "company": "Migros",
@@ -1496,5 +1496,35 @@
   "evidence": "haiku araştırması: careers.doco.com 'Find available Positions'",
   "confidence": "low",
   "enabled": true
+ },
+ {
+  "company": "Boyner Grup",
+  "ats": "careerpage",
+  "careers_url": "https://kurumsal.boyner.com.tr/kariyer-firsatlari",
+  "source_type": "company",
+  "evidence": "https://kurumsal.boyner.com.tr/kariyer-firsatlari",
+  "confidence": "low",
+  "enabled": true,
+  "note": "2026-10-19 keşif iş akışı: yalnızca arama kanıtı, canlı sayfa açılamadı"
+ },
+ {
+  "company": "İBB Kariyer (İstanbul Büyükşehir Belediyesi)",
+  "ats": "careerpage",
+  "careers_url": "https://kariyer.ibb.istanbul/ilanlar",
+  "source_type": "company",
+  "evidence": "https://kariyer.ibb.istanbul/ilanlar",
+  "confidence": "low",
+  "enabled": true,
+  "note": "2026-10-19 keşif iş akışı: yalnızca arama kanıtı, canlı sayfa açılamadı"
+ },
+ {
+  "company": "Global Bilgi (Turkcell)",
+  "ats": "careerpage",
+  "careers_url": "https://globalbilgi.hrpeak.com/jobs",
+  "source_type": "company",
+  "evidence": "https://globalbilgi.hrpeak.com/jobs",
+  "confidence": "low",
+  "enabled": true,
+  "note": "2026-10-19 keşif iş akışı: yalnızca arama kanıtı, canlı sayfa açılamadı; HRPeak platformu"
  }
 ]

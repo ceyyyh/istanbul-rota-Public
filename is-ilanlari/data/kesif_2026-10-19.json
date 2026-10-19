@@ -1,0 +1,472 @@
+{
+ "stats": {
+  "ham": 231,
+  "aday": 145,
+  "dogrulandi": 22,
+  "kismen": 0,
+  "reddedildi": 28,
+  "dogrulamaBasarisiz": 0
+ },
+ "companies": [
+  {
+   "company": "Garanti BBVA",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "kariyer.garantibbva.com.tr",
+   "careers_url": "https://kariyer.garantibbva.com.tr/tum-kariyer-firsatlari",
+   "status": "verified",
+   "evidence_url": "https://kariyer.garantibbva.com.tr/tum-kariyer-firsatlari",
+   "notes": "Verified only via WebSearch snippets (WebFetch and direct access unavailable). The listing page https://kariyer.garantibbva.com.tr/tum-kariyer-firsatlari is indexed, and multiple job postings under the same host and /ilan/ slug pattern appear, e.g. https://kariyer.garantibbva.com.tr/ilan/R00000006739/0000006654/istanbul-musteri-danismani and https://kariyer.garantibbva.com.tr/ilan/R00000003111/0000003161/istanbul-musteri-danismani, plus an Istanbul Müşteri Danışmanı posting dated 03.10.2025. The originally given proof posting R00000007447 did not appear in the results, so it was not confirmed. A snippet also lists an Istanbul (Hibrit) Müşteri Danışmanı with a closing date of 14.10.2026, which is before today (2026-10-19), so its current status is unknown. Snapshots disagree on the number of open listings, and the live page was not checked, so current openings are not confirmed."
+  },
+  {
+   "company": "VakıfBank",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/turkiye-vakiflar-bankasi-t-a-o-17349-8065",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/turkiye-vakiflar-bankasi-t-a-o-mufettis-yrd-bt-mufettis-yrd-kontrolor-yrd-ve-b-4581057",
+   "notes": "Verified only via WebSearch results (WebFetch and direct site access are unavailable here, so the page itself was not opened). The exact listing URL appeared in a kariyer.net-restricted search with the title \"Türkiye Vakıflar Bankası T.A.O. Müfettiş Yrd, BT Müfettiş Yrd, Kontrolör Yrd. ve BT Kontrolör Yrd. Sınavı İş İlanı - 16.10.2026\". The search summary says the listing is for Istanbul locations, applications close 03.11.2026, and the written exam is 15.11.2026. Eligibility details were not seen in full. The firm profile URL https://www.kariyer.net/firma-profil/turkiye-vakiflar-bankasi-t-a-o-17349-8065 also appeared in results and lists VakıfBank postings, including older 2016-2025 ones (a 2025 VakıfBank sınav listing is closed). The 2026 listing is therefore a current posting, but its open or closed status should be confirmed on the page before applying. The \"İşe alım sistemi\" field stays unknown; the listing refers to an Istanbul University candidate application system per the search summary."
+  },
+  {
+   "company": "TEB (Türk Ekonomi Bankası)",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/turk-ekonomi-bankasi-a-s-1126-225993",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/turk-ekonomi-bankasi-a-s-teb-pratik-islem-yetkilisi-3211130",
+   "notes": "Yalnızca WebSearch kullanıldı. İlk kanıt URL'si arama sonuçlarında göründü: \"Türk Ekonomi Bankası A.Ş. TEB Pratik İşlem Yetkilisi İş İlanı - 02.10.2026\" başlığıyla, kariyer.net/is-ilani/ altında ve verilen slug ile birebir eşleşiyor. Aynı host altında başka TEB ilanları da görüldü (Adana Pratik İşlem Yetkilisi, 20.02.2026; Yeni Mezun, 28.08.2023; Çağrı Merkezi ilanları 06.10.2026 ve 11.09.2026). Kariyer profil sayfası (firma-profil/turk-ekonomi-bankasi-a-s-1126-225993) da arama sonucunda göründü, ancak sayfa içeriği tam okunamadı; sonuç özetinde açık ilan listesi olduğu belirtildi. İstanbul ile ilgili doğrudan bir kanıt yok: 3211130 ilanının başlığında lokasyon yazmıyor, \"İstanbul (Asya)\" bilgisi yalnızca arama özetinde geçiyor ve doğrulanamadı; bu yüzden istanbul_posting_seen false. Sistem adı bilinmiyor (unknown), kapsam dışı bırakıldı."
+  },
+  {
+   "company": "Albaraka Türk Katılım Bankası",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/albaraka-turk-katilim-bankasi-a-s-2569-17235",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/albaraka-turk-katilim-bankasi-a-s-gelecegin-satis-liderleri-4505403",
+   "notes": "Yalnızca WebSearch kullanıldı; sayfalar açılmadı. Arama sonucunda kariyer.net üzerinde \"Albaraka Türk Katılım Bankası A.Ş. Geleceğin Satış Liderleri İş İlanı - 18.09.2026\" başlıklı ilan (URL'nin slug'ı ilk kanıtla aynı) ve aynı firma profil sayfası (https://www.kariyer.net/firma-profil/albaraka-turk-katilim-bankasi-a-s-2569-17235) görüldü. Arama özetine göre ilan tam zamanlı ve yerinde çalışma olarak İstanbul (Asya ve Avrupa) dahil birkaç ilde açık pozisyonlar içeriyor; bu bilgi arama özetinden geliyor, ilanın kendisi açılıp doğrulanmadı. Başvuru son tarihi ve ücret doğrulanamadı. Ayrıca Albaraka HR portalında (https://albaraka.hrpeak.com/jobs) aynı programın 19.08.2026 tarihli olarak listelendiği, bankaciyim.net'te tek kontenjan yazıldığı ve Banka Dünyası yazısının Ekim 2024 tarihli olduğu görüldü; bu kaynaklar arasında tutarsızlık var. Sonuç: ilan ve firma profili arama sonuçlarında mevcut, ancak sayfalar doğrudan incelenmedi."
+  },
+  {
+   "company": "Anadolubank",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/anadolubank-3037-22380",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/anadolubank-cagri-merkezi-musteri-temsilcisi-4410145",
+   "notes": "Web search (WebSearch only) returned the Kariyer.net listing \"Anadolubank Çağrı Merkezi Müşteri Temsilcisi İş İlanı - 05.10.2026\" at the exact URL given, and the search also returned the Anadolubank company page https://www.kariyer.net/firma-profil/anadolubank-3037-22380 listing several other open Anadolubank positions (Operasyon Yönetmeni, Özel Bankacılık Portföy Yöneticisi, both dated 05.10.2026). The listing is for an Istanbul (Ümraniye, Asya yakası) call center role. Caveats: I only saw search-result snippets, not the live pages (WebFetch was not allowed), so the listing's current open/closed status and the \"10 açık ilan\" count were not confirmed. The Istanbul posting is evidenced; the hiring system (\"İşe alım sistemi\") and any details beyond the search snippet remain unknown and were left unfilled. Related pages in results: https://www.anadolubank.com.tr/dijital/cagri-merkezi and https://www.isinolsa.com/anadolubank-personel-alimi/ (third-party, not verified as official)."
+  },
+  {
+   "company": "Burgan Bank Türkiye",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/burgan-bank-turkiye-17959-8735",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/firma-profil/burgan-bank-turkiye-17959-8735",
+   "notes": "Yalnızca WebSearch kullanıldı (2 arama). Firma profil sayfası (kariyer.net/firma-profil/burgan-bank-turkiye-17959-8735) arama sonuçlarında göründü ve aynı host/slug altında birden çok iş ilanı listeleniyor. Arama sonuçlarında İstanbul Avrupa konumlu ilanlar görüldü: Perakende Kredi Tahsis Yöneticisi (12.06.2026, https://www.kariyer.net/is-ilani/burgan-bank-turkiye-perakende-kredi-tahsis-yoneticisi-4473381), Arapça Bilen Dijital Bankacılık Müşteri Temsilcisi (04.05.2026, kapanmış görünüyor, https://www.kariyer.net/is-ilani/burgan-bank-turkiye-arapca-bilen-dijital-bankacilik-musteri-temsilcisi-3275168) ve Leasing Tahsilat ve Risk İzleme Yöneticisi (05.08.2026, İstanbul). Ayrıca Faktoring Operasyon Yetkilisi (İstanbul Avrupa, 17.09.2026, https://www.kariyer.net/is-ilani/burgan-bank-turkiye-faktoring-operasyon-yetkilisi-3477706) görüldü. Verilen ilk kanıt URL'si (kariyer.net/is-ilani/burgan-bank-turkiye-merkez-sube-ozel-bankacilik-musteri-yoneticisi-4508435) arama sonuçlarında doğrudan dönmedi; bu nedenle evidence_url olarak arama sonucunda görülen firma profil sayfası kullanıldı. Bazı ilanlar kapanmış/başvuru kabul edilmiyor olarak işaretli; güncel açık pozisyonlar canlı sayfadan doğrulanmalı. Sistem (işe alım yazılımı) bilinmiyor: \"unknown\"."
+  },
+  {
+   "company": "Aktif Bank",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/aktif-yatirim-bankasi-a-s-aktif-bank-26490-18116",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/aktif-yatirim-bankasi-a-s-aktif-bank-pavo-merkezi-operasyonlar-uzmani-4514719",
+   "notes": "WebSearch ile kariyer.net'te aynı firma slug'ı (aktif-yatirim-bankasi-a-s-aktif-bank) altında birden fazla iş ilanı göründü: Pavo Merkezi Operasyonlar Uzmanı (28.07.2026, İstanbul Avrupa Yakası, verilen kanıt URL'si), Bireysel Krediler Operasyonları Müdürü (11.04.2025), şube stajyeri ilanları (Ankara 25.02.2025, İstanbul Anadolu Yakası 03.09.2025, İzmir 2023, İstanbul 2024) ve diğerleri. İletişim Merkezi Yatırım Uzmanı ilanının yayından kaldırıldığı görünüyor. Sınırlamalar: Firma profil sayfası (firma-profil/...-26490-18116) arama sonuçlarında görülmedi; doğrudan sayfa erişimi yapılamadı, bu yüzden ilanların içeriği yalnızca arama özetine ve başlık/tarih bilgisine dayanıyor. Kanıt verilen ilan URL'si arama sonucunda doğrudan listelenmiştir. Ilanların güncel açıklıkları doğrulanmadı."
+  },
+  {
+   "company": "MetLife Emeklilik ve Hayat",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "metlifecareers.com/en_US/ml",
+   "careers_url": "https://www.metlifecareers.com/en_US/ml/JobDetail/Telesatis-M-steri-Temsilcisi/20868",
+   "status": "verified",
+   "evidence_url": "https://www.metlifecareers.com/en_US/ml/JobDetail/Telesatis-M-steri-Temsilcisi/20868",
+   "notes": "WebSearch (site-restricted to metlifecareers.com) returned the exact requested URL with title \"Telesatış Müşteri Temsilcisi - Istanbul, Türkiye - 20868 - MetLife\". The search snippet shows Istanbul location, full-time hybrid, posted 02-Oct-2026, and role details. Verification is based on the search result only; the page itself was not fetched, since WebFetch is unavailable. A second, broader search returned no metlifecareers.com result but did return MetLife Turkey listings on kariyer.net and Indeed for the same role (Tele-Satış Müşteri Temsilcisi, Istanbul), which corroborate the role exists. Note that the title on the careers site is \"Müşteri\" and not the \"Müşteri\" variant in the task, but the URL slug and ID match exactly."
+  },
+  {
+   "company": "Amazon",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "amazon.jobs İstanbul lokasyon sayfası",
+   "careers_url": "https://www.amazon.jobs/en/locations/istanbul-turkey",
+   "status": "verified",
+   "evidence_url": "https://www.amazon.jobs/en/locations/istanbul-turkey",
+   "notes": "Yalnızca WebSearch kullanıldı (tek sorgu: \"amazon.jobs Istanbul Turkey jobs location\"). Arama sonuçlarında amazon.jobs alanında İstanbul'a ait ilan sayfaları göründü: https://amazon.jobs/jobs/2790335, https://amazon.jobs/jobs/2845327, https://amazon.jobs/jobs/2848487, https://amazon.jobs/jobs/2815509. Snippet'lerde İstanbul merkezli roller görüldü (Sr. Strategic Supply Chain Manager, TR Retail Team Vendor Manager, Retail Instock Manager; ayrıca Tuzla IST2 fulfilment merkezi için Warehouse Operator ilanı, üçüncü taraf job board'da İstanbul Accounts Manager). Lokasyon sayfası https://www.amazon.jobs/en/locations/istanbul-turkey arama indeksinde \"Amazon Türkiye'deki ekibimize katılın\" başlığıyla göründü; ancak sayfanın içeriğini (ilan listesini) doğrudan görmedim, WebFetch kullanılamadığı için. İlanların lokasyon slug'ı altında mı yoksa /jobs/<id> yollarında mı listelendiği doğrulanamadı. Arama indeksi anlık görüntü olduğundan ilanların bazıları artık kapalı olabilir. Doğrulanmış kabul edildi çünkü amazon.jobs alanında İstanbul ilanları arama sonuçlarında kanıtlandı; lokasyon sayfasının kendisi indekste bulundu."
+  },
+  {
+   "company": "Commencis",
+   "sector": "",
+   "ats": "lever",
+   "ats_detail": "jobs.lever.co/commencis",
+   "careers_url": "https://jobs.lever.co/commencis",
+   "status": "verified",
+   "evidence_url": "https://jobs.lever.co/commencis",
+   "notes": "WebSearch sonuçlarında https://jobs.lever.co/commencis sayfası \"Commencis jobs\" başlığıyla görünüyor ve İstanbul konumlu açık pozisyonları listeliyor (Client Delivery ve Engineering ekipleri). Aynı slug altında bireysel ilan da görüldü: https://jobs.lever.co/commencis/fdb46315-4b0e-4883-ac7e-dcd971d0d504 (Senior Sales & Account Manager, İstanbul, hibrit). Arama snippet'lerinde ayrıca Senior AI Software Engineer, Software Architect (Backend - Digital Banking) ve .Net Boot Camp 2026 görüldü. Indeed ve Glassdoor'da da Commencis'e ait İstanbul ilanları var, ancak bunların tarihleri ve sayıları farklılık gösteriyor. Doğrudan sayfa erişimi yapılmadı; ilanların hâlâ açık olup olmadığı doğrulanmadı, başvuru öncesi canlı sayfadan kontrol edilmeli. Youthall sayfası ise o an açık ilan olmadığını gösteriyor."
+  },
+  {
+   "company": "Good Job Games",
+   "sector": "",
+   "ats": "greenhouse",
+   "ats_detail": "boards.greenhouse.io/goodjobgames",
+   "careers_url": "https://builtin.com/company/good-job-games/jobs",
+   "status": "verified",
+   "evidence_url": "https://job-boards.greenhouse.io/goodjobgames",
+   "notes": "Greenhouse board for slug goodjobgames exists in search results. Search returned multiple individual postings under the same slug, on both boards.greenhouse.io/goodjobgames/jobs/... and job-boards.greenhouse.io/goodjobgames/jobs/... (e.g. https://boards.greenhouse.io/goodjobgames/jobs/4193301003, https://job-boards.greenhouse.io/goodjobgames/jobs/4221785003). Snippets describe roles located in Sarıyer and Levent, Istanbul. Snippets mention 26 open jobs, but this count comes from a search summary, not a page I could open directly. Direct page access was not possible (WebSearch only), so the postings were confirmed only from search-result metadata and snippets. The first evidence link (hitmarker.net job 4724853) was NOT found: a search for it returned no matching listing, so that ID is unconfirmed. Hitmarker results were unrelated companies (Tripledot, Voodoo). Built In (https://builtin.com/company/good-job-games/jobs) appeared in search results as a company jobs page but its listings were not inspected. Some snippet details (salary from a third-party aggregator, headcount figures) are unverified."
+  },
+  {
+   "company": "Spyke Games",
+   "sector": "",
+   "ats": "lever",
+   "ats_detail": "jobs.lever.co/spyke-games",
+   "careers_url": "https://jobs.lever.co/spyke-games",
+   "status": "verified",
+   "evidence_url": "https://jobs.lever.co/spyke-games",
+   "notes": "WebSearch ile doğrulandı (yalnızca arama sonuçları; sayfaların kendisi açılmadı). Arama sonuçlarında https://jobs.lever.co/spyke-games kariyer panosu ve aynı host/slug altında birden fazla iş ilanı görüldü: Game Developer (…/6879c36b-a336-4796-a2a9-7a4b1617d3b7), 3D Marketing Artist (…/4c361f74-5939-42d0-8589-9373c4a68e07), Product Manager (…/cce93ae1-350d-48f8-87a9-5197969dd94f), Data Analyst (…/5ed2a2e8-c2f3-48e7-a6b7-8de049055960), Performance Marketing Specialist (…/8e5d6d79-2056-4c83-9c68-4de94e2a8890), Backend Game Developer (…/77ea64f9-0d67-4fc5-884b-0d6d5064abaa), Data Scientist (…/f4566647-ecb8-47de-bec4-3928fbe67d16), 2D Animator (…/5dae1c71-86d7-4b28-aa2f-b6ab68bca148), Level Designer (…/13e16ba5-0bc9-4d0a-8e0d-7c101ba46657). Arama özetine göre ilanlar İstanbul'da, tam zamanlı ve ofis içi; Istanbul bilgisi arama özetinden geldi, ilan sayfası doğrudan okunmadı. Üçüncü taraf siteler (swiftcruit, scoutify, gamejobs.co, freehire, builtin) farklı ilan sayıları ve tarihler gösteriyor; güncel sayı için resmi Lever sayfasına bakılmalı."
+  },
+  {
+   "company": "Boyner Grup",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "kurumsal.boyner.com.tr/kariyer-firsatlari",
+   "careers_url": "https://kurumsal.boyner.com.tr/kariyer-firsatlari",
+   "status": "verified",
+   "evidence_url": "https://kurumsal.boyner.com.tr/kariyer-firsatlari",
+   "notes": "Arama sonucunda https://kurumsal.boyner.com.tr/kariyer-firsatlari sayfası göründü ve arama özetinde merkez ofis ilanları (Product Manager, Marketing Manager, Senior Product Owner - Data & CRM; İstanbul, hibrit) ile Cevahir ve Cepa (Ankara) mağaza ilanları (Stüdyo Depo Yetkilisi, Satış Danışmanı) listelendi. Sayfa tarihsiz olduğu için ilanların güncelliği doğrulanamadı. Sayfa, ilanların kariyer platformlarında yayınlandığını belirtiyor. Kariyer.net'te Boyner Grup'a ait İstanbul ilanları da göründü (Havalimanı kasiyer, Maslak Outlet, Venezia Outlet, Florentia Village part-time satış danışmanı); ancak verilen ilk kanıt olan Atlaspark AVM satış danışmanı ilanı arama sonuçlarında görünmedi. İstanbul ilanı görüldüğü için istanbul_posting_seen=true, Atlaspark ilanı doğrulanmadı. Kariyer.net sonuçlarında bazı ilanlar kapanmış olabilir (Ordu, Iğdır 2024)."
+  },
+  {
+   "company": "İstanbul Sabiha Gökçen Uluslararası Havalimanı",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/istanbul-sabiha-gokcen-uluslararasi-havalimani-20677-11723",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/firma-profil/istanbul-sabiha-gokcen-uluslararasi-havalimani-20677-11723",
+   "notes": "Verified via WebSearch only. The company profile page https://www.kariyer.net/firma-profil/istanbul-sabiha-gokcen-uluslararasi-havalimani-20677-11723 appeared in search results with the title \"İstanbul Sabiha Gökçen Uluslararası Havalimanı İş İlanları - İş Başvurusu\". Under the same host and slug pattern, several individual postings were seen in search results: Electrical Maintenance Technician (17.02.2026, https://www.kariyer.net/is-ilani/istanbul-sabiha-gokcen-uluslararasi-havalimani-elektrik-bakim-teknisyeni-4360156), HVAC Mechanical Technician (08.12.2025, https://www.kariyer.net/is-ilani/istanbul-sabiha-gokcen-uluslararasi-havalimani-hvac-mekanik-teknisyeni-4300502), Cyber Security Manager (07.06.2024), IT Operations Support Specialist (19.08.2024), and others. The specific first-evidence posting \"Aviation Marketing Chief\" (…-aviation-marketing-chief-4478507) did NOT appear in either search, so it is not confirmed. Searches did not show whether the listings are currently open; most visible ones are marked closed. The listing page exists, but the specific Aviation Marketing Chief posting is unverified."
+  },
+  {
+   "company": "DSV Türkiye",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "dsv.com/en/careers/job-openings/tr",
+   "careers_url": "https://www.dsv.com/en/careers/job-openings/tr/business-development-manager-contract-logistics-turkey-istanbul-114856-engb",
+   "status": "verified",
+   "evidence_url": "https://www.dsv.com/en/careers/job-openings/tr/sales-representative-sales-marketing-turkey-istanbul-95992-engb",
+   "notes": "WebSearch iki sorguyla calisti. DSV'nin Turkiye kariyer panosu, dsv.com/en/careers/job-openings/tr/ altinda Istanbul ilanlari gosteriyor. Ayni host/slug altinda gorulen ilan: \"Sales Representative, Sales & Marketing, Turkey, Istanbul, TR\" (95992-engb, Beykoz ofisi, 11 Temmuz 2025). Ayrica DSV'nin global ilan sayfasinda Istanbul icin 5 rol listeleniyor. Istenen ilan (business-development-manager-contract-logistics-turkey-istanbul-114856-engb) ise aramalarda GORULMEDI; dogrulanmis degil. Bu nedenle o belirli URL icin dogrulama yapilamadi. Arama sonuclarinda gorulen diger Istanbul ilanlari: Accountant (128725-en_GB, Kavacik), Administrative Specialist (Gebze, Glassdoor). Gorulen ilanlarda Business Development Manager / contract logistics Istanbul rolu yok. Sonuc: pano var ve Istanbul ilanlari iceriyor, ancak hedef ilan kanitlanmadi."
+  },
+  {
+   "company": "CEVA Logistics",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "jobs.cmacgm-group.com/CEVA",
+   "careers_url": "https://jobs.cmacgm-group.com/CEVA/job/Istanbul-Ground-&-Rail-Transportation-Procurement-Professional-Turkey/1205427701",
+   "status": "verified",
+   "evidence_url": "https://jobs.cmacgm-group.com/CEVA/go/Ground-&-Rail-Logistics/9545901/",
+   "notes": "Tek WebSearch denemesi yapıldı (WebFetch kullanılmadı). Arama sonucunda jobs.cmacgm-group.com/CEVA altında bir \"Ground & Rail Logistics\" sayfası göründü; bu, CEVA ilan panosunun aynı host/slug altında var olduğunu gösteriyor. Ancak İstanbul'daki \"Istanbul Ground & Rail Transportation Procurement Professional\" ilanının (ID 1205427701) kendisi arama sonuçlarında görünmedi; sayfa içeriğini doğrudan doğrulayamadım. Snippet'te Transportation Procurement alanı ve İstanbul'da bir CEVA Ground & Rail SVP'si (LinkedIn) geçiyor, fakat bu bir açık pozisyonu kanıtlamıyor. Ayrıca ilanın hâlâ açık olup olmadığı belirlenemedi. Sonuç: pano var olabilir (verified=true, yalnızca host/slug varlığı için), ilan görülmedi (istanbul_posting_seen=false)."
+  },
+  {
+   "company": "Wyndham Hotels (Ramada by Wyndham Istanbul, corporate Istanbul office)",
+   "sector": "",
+   "ats": "own-site",
+   "ats_detail": "careers.wyndhamhotels.com",
+   "careers_url": "https://careers.wyndhamhotels.com/job/Istanbul-Specialist%2C-Architecture%2C-Design-&-Construction-Turkey-34394/1326068800",
+   "status": "verified",
+   "evidence_url": "https://careers.wyndhamhotels.com/job/Istanbul-Specialist,-Architecture,-Design-&-Construction-Turkey-34394/1326068800/",
+   "notes": "WebSearch (restricted to careers.wyndhamhotels.com) returned a job detail page with the same host and slug as the given URL: \"Specialist, Architecture, Design & Construction Turkey Job Details\" in Istanbul (Req Id 24414). The indexed URL uses unencoded commas and a trailing slash; the request's URL used %2C encoding. The search snippet lists full-time, based at the WHG Turkiye office in Istanbul, and requires an Interior Design/Architecture/related degree, Turkish and English fluency, and AutoCAD skills. No posting date was visible, so whether the role is still open is unknown. Other Istanbul listings on the same host also appeared (International Collections Specialist EMEA, Training Officer Turkiye, Manager Franchise Operations Turkiye), which supports that the Istanbul board is live. Only WebSearch was used; the page itself was not fetched."
+  },
+  {
+   "company": "Starbucks Türkiye (operated by Alshaya)",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/is-ilani/alshaya-saha-starbucks-barista-istanbul-avrupa-1162788",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/alshaya-saha-starbucks-barista-istanbul-avrupa-1162788",
+   "notes": "Yalnızca WebSearch kullanıldı; sayfa açılmadı. Arama sonucunda tam bu URL \"ALSHAYA SAHA Starbucks Barista / İstanbul (Avrupa) İş İlanı - 22.09.2026\" başlığıyla listelendi. Aynı host ve slug desenli (kariyer.net/is-ilani/alshaya-saha-starbucks-barista-<ilçe>-<id>) diğer ilanlar da göründü: Esenler, Zeytinburnu, Beylikdüzü, Fatih, Sultangazi. Ayrıca kariyer.net'te \"İstanbul Avrupa Yakası Barista\" listesi ve Alshaya Saha firma sayfası sonuçlarda yer aldı, eleman.net'te de Alshaya Group Sultangazi ilanı görüldü. Sınırlamalar: ilanın hâlâ aktif olup olmadığı doğrulanmadı (arama sonuçları bazı ilanların süresinin dolduğunu veya eski olduğunu gösteriyor); istihdam sistemi ve iş akışı belirlenemedi (sistem \"unknown\" bırakıldı). Bu nedenle sonuç yalnızca ilanın varlığını kanıtlar, başvuru açıklığını kanıtlamaz."
+  },
+  {
+   "company": "Simit Sarayı (Simit Sarayı Yatırım ve Ticaret A.Ş.)",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/is-ilani/simit-sarayi-yatirim-ve-ticaret-a-s-uretim-elemani-4539336",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/simit-sarayi-yatirim-ve-ticaret-a-s-uretim-elemani-4539336",
+   "notes": "WebSearch (2 aramada) bu tam URL'yi Kariyer.net sonucu olarak döndürdü; başlığı \"İstanbul(Asya) (Sancaktepe)\" olarak görünüyor, yani İstanbul'da bir ilan. Arama sonuçları yalnızca başlık ve kısa içerik gösterdi; ilanın tam metnini, ilan numarası detayını veya başvuru sayfasını doğrudan açarak doğrulayamadım (WebFetch kullanılmadı). Aynı firma için Kariyer.net'te ikinci bir \"Üretim Elemanı\" ilanı (4504649) ve eleman.net'te Sancaktepe fabrikası için üretim personeli ilanları da görüldü. Kariyer.net sonucunda ayrıca bir \"International Sales Manager\" ilanı (4577833) çıktı. Bu, firmanın kariyer sayfasında/listesinde ilan bulunduğunu destekliyor, ancak ilan canlılığı (hâlâ yayında olup olmadığı) arama sonuçlarından kesin çıkarılamaz."
+  },
+  {
+   "company": "Denizbank",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/denizbank-2494-16410",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/firma-profil/denizbank-2494-16410",
+   "notes": "Yalnızca WebSearch kullanıldı. Firma profil sayfası (https://www.kariyer.net/firma-profil/denizbank-2494-16410) arama sonuçlarında \"DenizBank İş İlanları - İş Başvurusu\" başlığıyla görünüyor ve snippet'te \"Tümünü Gör (22)\" yazıyor. Aynı host altında DenizBank ilanları da görüldü: /is-ilani/denizbank-iletisim-merkezi-musteri-temsilcisi-istanbul-4466730 (14.08.2026, İstanbul, kariyer.net), /is-ilani/denizbank-guvenlik-gorevlisi-aydin-4456997 (11.06.2026), /is-ilani/denizbank-guvenlik-gorevlisi-4202557 (07.08.2025). Doğrulanamayan kısım: İlk kanıt olarak verilen ilan https://www.kariyer.net/is-ilani/denizbank-guvenlik-gorevlisi-genel-mudurluk-4258440 arama sonuçlarında bulunamadı; ne var ne yok olduğu doğrulanamadı. Ayrıca profil sayfası ve ilanlar yalnızca arama snippet'lerinden görüldü, sayfalar doğrudan açılmadı. Sonuç: DenizBank'ın kariyer.net'te aktif ilan panosu var (profil ve ilanlar görünüyor); ancak belirtilen Genel Müdürlük güvenlik görevlisi ilanının (4258440) varlığı kanıtlanmadı. Arama sonucundaki güvenlik görevlisi ilanları 2025 tarihli veya başka lokasyonlu (Aydın); Genel Müdürlük ilanı için en yakın kanıt 07.08.2025 tarihli ilan (4202557). Bu ilan 2025'ten kalma görünüyor, kapanmış olabilir."
+  },
+  {
+   "company": "Türkiye Finans Katılım Bankası",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/turkiye-finans-katilim-bankasi-4594-29477",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/is-ilani/turkiye-finans-katilim-bankasi-cagri-merkezi-musteri-temsilcisi-3673141",
+   "notes": "Yalnızca WebSearch kullanıldı. Arama sonuçlarında kariyer.net'te Türkiye Finans Katılım Bankası'na ait \"Çağrı Merkezi Müşteri Temsilcisi\" ilanı görüldü (ilan tarihi 17.08.2026, İstanbul (Asya) Ümraniye, hibrit, tam zamanlı; Müşteri Memnuniyeti Müdürlüğü). Aynı firma slug'ı altında (turkiye-finans-katilim-bankasi) başka ilanlar da listelenmişti: Part Time Çağrı Merkezi (17.10.2025, artık kabul etmiyor), İngilizce Bilen Çağrı Merkezi (07.02.2025, kapalı), We Zorunlu Staj Programı (29.06.2026) ve Core Yeni Mezun Programı (29.09.2026). Firma profil sayfası (https://www.kariyer.net/firma-profil/turkiye-finans-katilim-bankasi-4594-29477) arama sonucunda görüldü ve yaklaşık 60 açık ilan olduğu belirtiliyor. Ancak ilan durumu (açık/kapalı) ve ilan tarihlerinin bazılarının gelecek tarihli görünmesi nedeniyle güncel başvuru durumu sayfadan doğrulanmalı. Sistem tipi (işe alım sistemi) bilinmiyor, \"unknown\" bırakıldı."
+  },
+  {
+   "company": "HSBC Türkiye",
+   "sector": "",
+   "ats": "unknown",
+   "ats_detail": "",
+   "careers_url": "https://www.kariyer.net/firma-profil/hsbc-3937-28820",
+   "status": "verified",
+   "evidence_url": "https://www.kariyer.net/firma-profil/hsbc-3937-28820",
+   "notes": "Yalnızca WebSearch ile doğrulandı. Kariyer.net firma profili (https://www.kariyer.net/firma-profil/hsbc-3937-28820) arama sonucunda göründü. Aynı kariyer.net host'u altında HSBC ilanları da göründü: Gişe Yetkilisi (İstanbul, tam zamanlı, https://www.kariyer.net/is-ilani/hsbc-gise-yetkilisi-4422325), Müşteri İlişkileri Uzman Yardımcısı (İstanbul Avrupa Yakası, hibrit, https://www.kariyer.net/is-ilani/hsbc-musteri-iliskileri-uzman-yardimcisi-4497478), HSBC Türkiye staj programı (https://docs.kariyer.net/is-ilani/hsbc-hsbc-turkiye-intern-program-4109539) ve 2019 tarihli kapanmış bir stajyer ilanı. Gişe ilanının kapanış tarihi 06.06.2026 olarak görünüyor; ilanın hâlâ açık olup olmadığı doğrulanamadı. İlan listesi arama özetinden okundu, sayfaların tamamı açılmadı (WebFetch kullanılamıyor). LinkedIn tarafı doğrulanamadı: tr.linkedin.com/jobs/hsbc-jobs sayfası arama sonuçlarında hiç çıkmadı, bu yüzden ilk kanıt olarak verilen LinkedIn adresi doğrulanmadı. Sistem tipi (İK/ATS) bilinmiyor, \"unknown\" bırakıldı."
+  }
+ ],
+ "platforms": [
+  {
+   "name": "Expat.com (Istanbul iş ilanları)",
+   "url": "https://www.expat.com/en/jobs/",
+   "istanbul_listings_page": "https://www.expat.com/en/jobs/middle-east/turkey/istanbul/",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.expat.com/en/jobs/middle-east/turkey/istanbul/ (arama sonucunda \"Job offers in Istanbul\" başlığı; ilanlar Ocak 2025 tarihli görünüyor, güncelliği doğrulanamadı)"
+  },
+  {
+   "name": "JobCrawls",
+   "url": "https://www.jobcrawls.com/",
+   "istanbul_listings_page": "https://www.jobcrawls.com/en/jobs/location/lfo_istanbul_hilltown_istanbul_turkey",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.jobcrawls.com/en/jobs/location/lfo_istanbul_hilltown_istanbul_turkey (arama sonucunda İstanbul konumlu ilan sayfası; teknoloji, sağlık ve hizmet ilanları listelediği belirtildi, canlı ilan sayısı doğrulanmadı)"
+  },
+  {
+   "name": "Academic Jobs (İstanbul)",
+   "url": "https://academicjobs.com/",
+   "istanbul_listings_page": "https://academicjobs.com/en-tr/istanbul/jobs",
+   "has_istanbul_listings": true,
+   "evidence": "https://academicjobs.com/en-tr/istanbul/jobs (arama sonucunda İstanbul akademik ilan sayfası; üniversite ve araştırma pozisyonları, güncel ilan sayısı doğrulanmadı)"
+  },
+  {
+   "name": "Kariyer Kapısı (T.C. Cumhurbaşkanlığı İnsan Kaynakları Ofisi)",
+   "url": "https://kariyerkapisi.cbiko.gov.tr/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": false,
+   "evidence": "Arama sonuçlarında İstanbul'a özel ilan sayfası veya kanıtı görülmedi; yalnızca kamu işe alım platformu olarak anıldı."
+  },
+  {
+   "name": "Haber Gazetesi",
+   "url": "https://www.habergazetesi.com.tr",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.habergazetesi.com.tr/istanbul-is-ilanlari-1 appeared in search results, but the arama snippets show only news articles about Istanbul's job market (e.g. https://www.habergazetesi.com.tr/istanbuldaki-is-ilanlari-ekonomideki-canlanmayi-gozler-onune-seriyor), with no actual listings and no dedicated jobs section found. Its article recommends secretcv.com for current postings."
+  },
+  {
+   "name": "kariyeristanbul.net",
+   "url": "https://www.kariyeristanbul.net/",
+   "istanbul_listings_page": "https://www.kariyeristanbul.net/",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.kariyeristanbul.net/ (arama sonucunda İstanbul kamu, İŞKUR, özel sektör, belediye ve banka ilanlarını listelediğini belirtiyor; bazı ilanlar 2020 tarihli görünüyor, güncelliği doğrulanmalı)"
+  },
+  {
+   "name": "iyibiris.com",
+   "url": "https://www.iyibiris.com/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.iyibiris.com/ (arama sonucunda İstanbul Avrupa ve İstanbul Anadolu yakası için ayrı iş ilanı sayfaları olduğu belirtiliyor; alt sayfa URL'si görülmedi)"
+  },
+  {
+   "name": "Staj Bank",
+   "url": "https://www.stajbank.com/",
+   "istanbul_listings_page": "https://www.stajbank.com/staj-ilanlari",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.stajbank.com/staj-ilanlari (İstanbul ilçelerine göre staj ilanları listeleniyor; çoğu MESEM/meslek lisesi odaklı)"
+  },
+  {
+   "name": "Stajyeri.com.tr",
+   "url": "https://www.stajyeri.com.tr/",
+   "istanbul_listings_page": "https://www.stajyeri.com.tr/",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.stajyeri.com.tr/ (sayfada 49 aktif ilan görünüyor ve İstanbul ilanları listeleniyor)"
+  },
+  {
+   "name": "Unisbul",
+   "url": "https://www.unisbul.com/",
+   "istanbul_listings_page": "https://www.unisbul.com/staj-is-ilanlari",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.unisbul.com/staj-is-ilanlari (İstanbul Avrupa ve İstanbul Anadolu için ayrı staj ilanı sayfaları var)"
+  },
+  {
+   "name": "CVyolla",
+   "url": "https://www.cvyolla.com/",
+   "istanbul_listings_page": "https://www.cvyolla.com/staj-ilanlari.php?c=istanbul",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.cvyolla.com/staj-ilanlari.php?c=istanbul (şehre göre staj ilanı filtresi, İstanbul dahil)"
+  },
+  {
+   "name": "LesCARD",
+   "url": "https://www.lescard.com/",
+   "istanbul_listings_page": "https://www.lescard.com/is-ilanlari/istanbul/cagri-merkezi-musteri-temsilcisi",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.lescard.com/is-ilanlari/istanbul/cagri-merkezi-musteri-temsilcisi (İstanbul çağrı merkezi ilanları başlığı altında 100 ilan; bazı ilanlar çağrı merkezi dışı)"
+  },
+  {
+   "name": "işegel.net",
+   "url": "https://isegel.net/",
+   "istanbul_listings_page": "https://isegel.net/is-ilanlari/istanbul/cagri-merkezi-musteri-hizmetleri",
+   "has_istanbul_listings": true,
+   "evidence": "https://isegel.net/is-ilanlari/istanbul/cagri-merkezi-musteri-hizmetleri (İstanbul çağrı merkezi ve müşteri hizmetleri sayfasında 8 ilan, 6 Eylül 2026 itibarıyla)"
+  },
+  {
+   "name": "Cvbenim",
+   "url": "https://cvbenim.com/",
+   "istanbul_listings_page": "https://cvbenim.com/cagri-merkezi-musteri-temsilcisi-is-ilanlari",
+   "has_istanbul_listings": true,
+   "evidence": "https://cvbenim.com/cagri-merkezi-musteri-temsilcisi-is-ilanlari (Avrupa yakası ilçeleri gösteren ilanlar var; bazıları Tüm Şehirler olarak işaretli)"
+  },
+  {
+   "name": "ik-danismanlik.com",
+   "url": "https://ik-danismanlik.com/",
+   "istanbul_listings_page": "https://ik-danismanlik.com/is-ilanlari/istanbul-cagri-merkezi/",
+   "has_istanbul_listings": true,
+   "evidence": "https://ik-danismanlik.com/is-ilanlari/istanbul-cagri-merkezi/ (çok sayıda İstanbul çağrı merkezi ilanı; bazıları birkaç hafta önce yayınlanmış)"
+  },
+  {
+   "name": "Global Bilgi (Turkcell) kariyer",
+   "url": "https://globalbilgi.hrpeak.com/jobs",
+   "istanbul_listings_page": "https://globalbilgi.hrpeak.com/jobs",
+   "has_istanbul_listings": true,
+   "evidence": "https://globalbilgi.hrpeak.com/jobs (çoğu ilan İstanbul dışında; İstanbul için yalnızca bir Otomotiv Müşteri Temsilcisi ilanı görünüyor)"
+  },
+  {
+   "name": "Seri İş İlanları",
+   "url": "https://www.seriisilanlari.com/",
+   "istanbul_listings_page": "https://www.seriisilanlari.com/17867/cagri-merkezi-elemani-is-ilanlari",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.seriisilanlari.com/17867/cagri-merkezi-elemani-is-ilanlari (35 çağrı merkezi elemanı ilanı; İstanbul'a özgü olduğu doğrulanmadı, çoğu 2023-2025 tarihli)"
+  },
+  {
+   "name": "İBB Kariyer (İSTAÇ üzerinden)",
+   "url": "https://kariyer.ibb.istanbul/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.istac.istanbul/insan-kaynaklari/is-staj-basvuru-aydinlatma-metni (İBB'ye bağlı kurumların staj başvurularının bu site üzerinden alındığı belirtiliyor; ilan listesi doğrulanmadı)"
+  },
+  {
+   "name": "Okan Üniversitesi Kariyer Merkezi",
+   "url": "https://www.okan.edu.tr/okm/sayfa/1220/staj-ilanlari/",
+   "istanbul_listings_page": "https://www.okan.edu.tr/okm/sayfa/1220/staj-ilanlari/",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.okan.edu.tr/okm/sayfa/1220/staj-ilanlari/ (İstanbul Okan Üniversitesi kariyer merkezi çok sayıda staj ilanı yayımlıyor; kurumsal sayfa, genel job board değil)"
+  },
+  {
+   "name": "The Muse",
+   "url": "https://www.themuse.com",
+   "istanbul_listings_page": "https://www.themuse.com/hiring/location/istanbul-turkey/keyword/corporate-sales-and-education-executive",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.themuse.com/hiring/location/istanbul-turkey/keyword/corporate-sales-and-education-executive (listing title: '10,000+ Corporate Sales And Education Executive jobs in Istanbul, Turkey'). Search summary also reported director-level Istanbul roles with 2026 posting dates. Global board, not Turkey-specific."
+  },
+  {
+   "name": "Talent.com Türkiye",
+   "url": "https://tr.talent.com",
+   "istanbul_listings_page": "https://tr.talent.com/en/jobs/l-istanbul,-türkiye",
+   "has_istanbul_listings": true,
+   "evidence": "https://tr.talent.com/en/jobs/l-istanbul,-türkiye (Istanbul job listings page with senior and mid-level roles, per search summary). Coverage completeness not verified."
+  },
+  {
+   "name": "Corvi Careers",
+   "url": "https://corvi.careers",
+   "istanbul_listings_page": "https://corvi.careers/jobs/istanbul/account-executive-jobs/",
+   "has_istanbul_listings": true,
+   "evidence": "https://corvi.careers/jobs/istanbul/account-executive-jobs/ (page 'Last updated 2026-07-04'; about 24 Account Executive jobs in Istanbul, mostly mid-level, few senior). Not a dedicated executive board."
+  },
+  {
+   "name": "iAgora",
+   "url": "https://www.iagora.com",
+   "istanbul_listings_page": "https://www.iagora.com/work/de/jobs/management/turkei/istanbul",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.iagora.com/work/de/jobs/management/turkei/istanbul (only page title 'Angebot veröffentlichen' seen in search; no Istanbul management listings confirmed in results)."
+  },
+  {
+   "name": "KiTalent",
+   "url": "https://kitalent.com/tr/istanbul-turkey-executive-search/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": false,
+   "evidence": "https://kitalent.com/tr/istanbul-turkey-executive-search/ is an executive search (headhunting) firm's marketing page, not a job listing board. No job ads seen."
+  },
+  {
+   "name": "Academicjobs.com",
+   "url": "https://www.academicjobs.com",
+   "istanbul_listings_page": "https://www.academicjobs.com/en-tr/beyoglu/executive-jobs",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.academicjobs.com/en-tr/beyoglu/executive-jobs appeared in results, but its content contained factual errors (e.g., mislabels TÜBİTAK) and no reliable Istanbul executive listings were confirmed. Low reliability."
+  },
+  {
+   "name": "İBB Kariyer (İstanbul Büyükşehir Belediyesi)",
+   "url": "https://kariyer.ibb.istanbul/",
+   "istanbul_listings_page": "https://kariyer.ibb.istanbul/ilanlar",
+   "has_istanbul_listings": true,
+   "evidence": "https://kariyer.ibb.istanbul/ilanlar"
+  },
+  {
+   "name": "Memurjet",
+   "url": "https://www.memurjet.com/",
+   "istanbul_listings_page": "https://www.memurjet.com/is-ilanlari/istanbul",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.memurjet.com/is-ilanlari/istanbul"
+  },
+  {
+   "name": "Memurlar.Net",
+   "url": "https://ilan.memurlar.net/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://ilan.memurlar.net/ilan/78621/iett-148-memur-alacak.html"
+  },
+  {
+   "name": "Memur365",
+   "url": "https://memur365.com/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://memur365.com/amp/kamu-personel-alimi/ibb-kpss-sartsiz-en-az-ilkokul-mezunu-personel-alimi-yapacak-27779h"
+  },
+  {
+   "name": "Memurol",
+   "url": "https://memurol.com/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://memurol.com/ilan/iett-44-memur-alacak"
+  },
+  {
+   "name": "İşin Olsa",
+   "url": "https://www.isinolsa.com/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.isinolsa.com/ibb-iett-44-memur-alimi-yapacak/"
+  },
+  {
+   "name": "İlanlarım",
+   "url": "https://isilanlarim.com.tr/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://isilanlarim.com.tr/blog/iett-ye-muhendis-memur-ve-uzman-alimi-35-kadro-acik-dpb845462"
+  },
+  {
+   "name": "KariyerİBB (kariyeribb.com)",
+   "url": "https://www.kariyeribb.com/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": true,
+   "evidence": "https://www.kariyeribb.com/"
+  },
+  {
+   "name": "İlan.gov.tr (KPSS B ve Mahalli İdareler kadro alımları)",
+   "url": "https://www.ilan.gov.tr/",
+   "istanbul_listings_page": "unknown",
+   "has_istanbul_listings": false,
+   "evidence": "https://www.ilan.gov.tr/ilan/kategori/727/kpss-b-ve-mahalli-idareler-kadro-alimlari"
+  }
+ ]
+}
