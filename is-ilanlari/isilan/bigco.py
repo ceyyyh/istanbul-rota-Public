@@ -38,7 +38,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     ("Eczacıbaşı Topluluğu", "Holding", ["eczacibasi", "vitra", "artema", "ipek kagit", "selpak", "intema",
                                          "eczacibasi ilac", "eczacibasi monrol", "kale kilit"]),
     ("OYAK Grubu", "Holding", ["oyak", "erdemir", "isdemir", "oyak renault", "oyak cimento", "omsan", "oyak yatirim"]),
-    ("Zorlu Holding", "Holding", ["zorlu holding", "vestel", "zorlu enerji", "korteks", "zorlu center", "taç ev tekstili"]),
+    ("Zorlu Holding", "Holding", ["zorlu holding", "vestel", "zorlu enerji", "korteks", "zorlu center", "taç ev tekstili", "zorlu"]),
     ("Borusan Holding", "Holding", ["borusan", "borusan otomotiv", "borusan lojistik", "borusan mannesmann",
                                     "borusan cat", "borusan enbw", "supsan"]),
     ("Doğuş Grubu", "Holding", ["dogus holding", "dogus grubu", "dogus otomotiv", "dogus teknoloji", "d ream",
@@ -84,7 +84,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     ("Şekerbank", "Banka & Finans", ["sekerbank"]),
     ("Odeabank", "Banka & Finans", ["odeabank"]),
     ("Allianz Türkiye", "Banka & Finans", ["allianz"]),
-    ("AXA Sigorta", "Banka & Finans", ["axa sigorta", "axa hayat"]),
+    ("AXA Sigorta", "Banka & Finans", ["axa sigorta", "axa hayat", "axa emeklilik"]),
     ("Papara", "Banka & Finans", ["papara"]),
     ("Param", "Banka & Finans", ["param teknoloji", "turkiye param"]),
     ("iyzico", "Banka & Finans", ["iyzico"]),
@@ -106,6 +106,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     ("Google", "Telekom & Teknoloji", ["google"]),
     ("Amazon", "Telekom & Teknoloji", ["amazon turkiye", "amazon com", "amazon web services", "aws turkiye", "amazon development"]),
     ("Huawei", "Telekom & Teknoloji", ["huawei"]),
+    ("Ericsson", "Telekom & Teknoloji", ["ericsson"]),
     ("Samsung", "Telekom & Teknoloji", ["samsung"]),
     ("IBM", "Telekom & Teknoloji", ["ibm"]),
     ("Oracle", "Telekom & Teknoloji", ["oracle"]),
@@ -114,7 +115,7 @@ GROUPS: list[tuple[str, str, list[str]]] = [
     # --- Danışmanlık (Big4) ---
     ("Deloitte", "Danışmanlık", ["deloitte"]),
     ("PwC", "Danışmanlık", ["pwc", "pricewaterhousecoopers"]),
-    ("EY", "Danışmanlık", ["ey turkiye", "ernst young", "ernst and young"]),
+    ("EY", "Danışmanlık", ["ey turkiye", "ey global", "ernst young", "ernst and young"]),
     ("KPMG", "Danışmanlık", ["kpmg"]),
     # --- Havacılık, lojistik ---
     ("Türk Hava Yolları", "Havacılık & Lojistik", ["turk hava yollari", "turkish airlines", "thy teknik", "thy a o",
@@ -236,6 +237,16 @@ for _name, _sector, _als in GROUPS:
 _ALIASES.sort(key=lambda x: -len(x[0]))  # uzun takma ad önce ("yapi kredi yatirim" > "yapi kredi")
 _RX = re.compile(r"(?:^| )(" + "|".join(re.escape(a) for a, _ in _ALIASES) + r")(?= |$)")
 _BY_ALIAS = dict(_ALIASES)
+
+# Odak bölgede (Maslak, Levent, Esentepe, Kağıthane, Sarıyer) büyük ofisi olan işverenlerin grup adları
+# (yalnız GROUPS adları; ilçe bilgisi tutulmaz). linkedin_buyuk bunları her taramada önce arar.
+ODAK: frozenset[str] = frozenset({
+    "Turkcell", "Sabancı Holding", "İş Bankası Grubu", "Koç Topluluğu", "Garanti BBVA", "QNB Türkiye",
+    "DenizBank", "TEB", "Allianz Türkiye", "AXA Sigorta", "Deloitte", "KPMG", "EY", "PwC", "Accenture",
+    "Microsoft", "Google", "Huawei", "Samsung", "Ericsson", "Unilever", "Procter & Gamble", "Philip Morris",
+    "JTI", "Anadolu Grubu", "Mercedes-Benz Türk", "Doğuş Grubu", "Borusan Holding", "Eczacıbaşı Topluluğu",
+    "Zorlu Holding",
+})
 
 SECTOR_OF: dict[str, str] = {n: s for n, s, _ in GROUPS}
 CATALOG: list[dict] = [{"name": n, "sektor": s} for n, s, _ in GROUPS]
