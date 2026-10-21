@@ -4,7 +4,8 @@ Genel İstanbul araması (linkedin.py) ~1000 sonuçla sınırlıdır; büyük ş
 sınıra hiç girmez. Bu kaynak, büyük şirket kataloğundaki (bigco.py) her şirket adını İstanbul konumuyla
 ayrı ayrı arar ve yalnızca şirket adı kataloğla eşleşen ilanları tutar.
 
-Nazik ve dönüşümlü çalışır: her taramada kataloğun bir dilimini (`per_run` sorgu) arar, aramalar arasında
+Nazik ve dönüşümlü çalışır: her taramada önce odak listesinden küçük bir dilim (en çok 8 sorgu, ayrı
+`focus_cursor` imleciyle döner), sonra kataloğun bir dilimini (toplam `per_run` sorgu) arar, aramalar arasında
 beklenir, LinkedIn 429/999 ile kısıtlarsa hemen durur; kaldığı yer kaydedilir ve sonraki tarama oradan
 devam eder. Bu yüzden her tarama "eksik" sayılır; görülmeyen ilanlar yalnızca 7 gün sonra pasife alınır.
 """
@@ -21,6 +22,7 @@ from ..base import FetchContext, Source
 from .linkedin import EMPTY_PAGE, page_url, parse_cards
 
 NAME = "linkedin-buyuk"
+FOCUS_PER_RUN = 8  # her taramada aranacak en çok odak sorgusu (tüm liste focus_cursor ile döner)
 
 
 def _alias_queries(groups) -> list[str]:
@@ -91,24 +93,28 @@ def _search(kw: str, p, ctx: FetchContext, seen: set[str], first: bool) -> Itera
 
 def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     p = src.params
-    focus = focus_queries()
-    focus_set = set(focus)
+    all_focus = focus_queries()
+    focus_set = set(all_focus)  # kesilmemiş tam liste: dönüşümlü kısımda tekrar aranmaz, odak imleciyle sırayla gezilir
     qs = [q for q in queries() if q not in focus_set]  # dönüşümlü kısım: odak sorguları hariç
     per_run = int(p.get("per_run", 80))
-    # odak sorguları toplam sınırın en çok yarısını alır; dönüşümlü kısım hep ilerler
-    focus = focus[: max(per_run // 2, 0)]
+    # odak payı: taramada en çok `focus_per_run` (8) sorgu ve toplam sınırın yarısı; dönüşümlü kısım hep ilerler.
+    # Odak listesi kendi imleciyle (focus_cursor) döner: tüm odak grupları birkaç taramada bir aranır.
+    n_focus = min(int(p.get("focus_per_run", FOCUS_PER_RUN)), max(per_run // 2, 0), len(all_focus))
     state = ctx.state
     cursor = int(state.get("cursor", 0)) if state is not None else 0
     if cursor >= len(qs):
         cursor = 0
+    fcursor = int(state.get("focus_cursor", 0)) % len(all_focus) if state is not None and all_focus else 0
+    focus = [all_focus[(fcursor + i) % len(all_focus)] for i in range(n_focus)]
     seen: set[str] = set()
     done = 0
     try:
-        for kw in focus:  # her taramada tazelenir; imleç değişmez (kısıtlamada bozulmaz)
+        for kw in focus:  # her taramada odak diliminden; imleç yalnız tamamlanan sorguyla ilerler (429'da kalır)
             if not ctx.time_left():
                 return
             yield from _search(kw, p, ctx, seen, first=not done)
             done += 1
+            fcursor = (fcursor + 1) % len(all_focus)
         while done < per_run and ctx.time_left() and qs:
             if cursor >= len(qs):
                 cursor = 0
@@ -125,6 +131,8 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
         ctx.mark_partial("linkedin-buyuk dönüşümlü tarama")
         if state is not None:
             state.set("cursor", cursor)
+            if all_focus:
+                state.set("focus_cursor", fcursor)
 
 
 def sources() -> list[Source]:

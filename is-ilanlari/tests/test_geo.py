@@ -421,6 +421,8 @@ def test_locate_shared_names_need_a_district():
     assert locate("Pınar Mahallesi", "Sarıyer") == (41.136, 29.034)
     assert locate("Pınar Mh.", "Sarıyer") == (41.136, 29.034)
     assert locate("Kozdere", "Sarıyer") == (41.145, 29.040)
+    assert locate("Huzur", "Sarıyer") == (41.112, 29.027)          # yalın "huzur" da Sarıyer'de koordinat verir
+    assert locate("Huzur", None) is None and locate("Huzur", "Kağıthane") == DISTRICT_COORDS["Kağıthane"]
     # başka ilçedeki aynı adlı mahalle Sarıyer'in noktasını almaz: ilçe merkezi
     assert locate("Huzur Mah.", "Kağıthane") == DISTRICT_COORDS["Kağıthane"]
     assert locate("Pınar Mah.", "Esenyurt") == DISTRICT_COORDS["Esenyurt"]

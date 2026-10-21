@@ -31,7 +31,9 @@ from isilan.enrich import SEMTLER, detect_kidem, detect_semt, has_salary, normal
     ("Senior Manager, Audit", "yonetici"),
     ("Finance Director", "yonetici"),
     ("Head of Marketing", "yonetici"),
-    ("Genel Müdür Yardımcısı", "yonetici"),
+    ("Genel Müdür Yardımcısı", "kidemli"),   # yardımcı: yönetici değil, üst düzey bireysel rol
+    ("Müdür Yardımcısı", "kidemli"),
+    ("Assistant Manager", "kidemli"),
 ])
 def test_kidem_olumlu(title, beklenen):
     assert detect_kidem(title) == beklenen
@@ -40,6 +42,8 @@ def test_kidem_olumlu(title, beklenen):
 @pytest.mark.parametrize("title", [
     "Internal Audit Analyst",       # "intern" "internal" içinde eşleşmemeli
     "Yönetici Asistanı",           # yönetici değil, asistan
+    "Genel Müdür Asistanı", "Müdür Sekreteri", "Manager Assistant", "Director Assistant",
+    "Assistant to the General Manager",
     "Lead Generation Temsilcisi",
     "Garson",
     "Software Engineer",
@@ -89,7 +93,7 @@ def test_semt_tablo_ve_takma_adlar():
     assert detect_semt("Kanyon AVM", None) == "Levent"
     assert detect_semt("Zorlu Center", "Beşiktaş") == "Zincirlikuyu"
     assert detect_semt("Torun Center, Şişli", "Şişli") == "Esentepe"
-    assert detect_semt("İstanbul", "Kadıköy", "", "Kozyatağı'ndaki ofisimizde") == "Kozyatağı"
+    assert detect_semt("İstanbul", None, "", "Ofisimiz Maslak 1453'te yer almaktadır.") == "Maslak"
     assert detect_semt("Mecidiyeköy / İSTANBUL", "Şişli") == "Mecidiyeköy"
 
 
@@ -186,3 +190,57 @@ def test_semt_tablosu_geo_ile_celismiyor():
         canon = enrich._SEMT_ALIAS.get(ad, ad)
         ok = {enrich._SEMT_ILCE[canon]} | enrich._SEMT_EK_ILCE.get(canon, set())
         assert geo.detect_district(ad) in ok, ad
+
+
+def test_maas_binlik_ayirici():
+    for d in ("Maaş: 45.000 TL", "Ücret 17.002 TL", "Salary: 60,000 USD", "Brüt ücret 35.000-40.000 TL",
+              "Maaş 1.250.000 TRY", "Aylık ücret: 45 000 TL", "Maaş aralığı 30000-40000"):
+        assert has_salary("", d), d
+
+
+def test_maas_yanlis_pozitifler():
+    for d in ("Günlük yemek ücreti 250 TL", "Yıllık ücretli izin 2024 yılı", "Servis ücreti 1500 TL kesilir",
+              "Ücretli izin 20 gün", "Maaş 2024 yılı bütçesine göre belirlenir", "Ücretsiz otopark 1000 araçlık",
+              "Rekabetçi maaş"):
+        assert not has_salary("", d), d
+    assert has_salary("", "Yemek ücreti 250 TL; maaş 45.000 TL")   # yemek ifadesi atlanır, maaş sayılır
+
+
+def test_istihdam_trainee_staj_degil():
+    assert normalize_istihdam("Trainee", "") == ""
+    assert normalize_istihdam("", "Management Trainee") == ""
+    assert normalize_istihdam("INTERN", "") == "staj"
+    assert detect_kidem("Management Trainee") == "yeni_mezun"
+
+
+def test_semt_aciklamada_kisi_adi_semt_sayilmaz():
+    assert detect_semt("İstanbul", None, "Satış Temsilcisi", "İletişim: Levent Yılmaz") == ""
+    assert detect_semt("İstanbul", None, "Satış Temsilcisi", "Fulya Hanım ile görüşünüz") == ""
+    assert detect_semt("İstanbul", "Beşiktaş", "", "Etiler'deki ofisimizde") == ""     # düz semt adı açıklamada aranmaz
+    assert detect_semt("İstanbul", None, "", "Spine Tower'da çalışacak") == "Maslak"   # plaza takma adı kabul
+    assert detect_semt("Etiler", "Beşiktaş", "", "İletişim: Levent Yılmaz") == "Etiler"
+
+
+def test_enrich_version_degisince_backfill_tekrar_calisir(tmp_path):
+    from isilan import db as dbmod
+    path = tmp_path / "v.db"
+    db = DB(path)
+    assert db.get_state("enrich_version") == dbmod.ENRICH_VERSION
+    db.upsert_jobs([dict(uid="a1", source="t", source_type="platform", external_id="1", title="Uzman",
+                         company="Firma", url="https://t/1", location="Maslak", district="Sarıyer",
+                         employment_type="", salary="", description="", extra={}, dedupe_key="k1")],
+                   "2026-10-01T00:00:00.000Z")
+    db.conn.execute("UPDATE jobs SET semt='', kidem='' WHERE uid='a1'")   # eski kurallarla hesaplanmış satır
+    db.conn.commit()
+    db.close()
+
+    db = DB(path)                                   # sürüm aynı: backfill çalışmaz
+    assert (db.get_job("a1")["semt"], db.get_job("a1")["kidem"]) == ("", "")
+    db.set_state("enrich_version", dbmod.ENRICH_VERSION - 1)
+    db.close()
+
+    db = DB(path)                                   # sürüm değişti: eski satırlar da yeniden hesaplanır
+    r = db.get_job("a1")
+    assert (r["semt"], r["kidem"]) == ("Maslak", "uzman")
+    assert db.get_state("enrich_version") == dbmod.ENRICH_VERSION
+    db.close()

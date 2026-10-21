@@ -1064,8 +1064,8 @@ function syncFilters() {
   $('#active').innerHTML = c.join('');
   $('#semtSec').hidden = !SEMT.length;
   $('#clrSemt').hidden = !state.semt.length;
-  $('#kidemSec').hidden = !((F && F.kidem) || state.kidem.length);
-  $('#istSec').hidden = !((F && F.istihdam) || state.istihdam.length);
+  $('#kidemSec').hidden = !((F && F.kidem && Object.keys(F.kidem).length) || state.kidem.length);
+  $('#istSec').hidden = !((F && F.istihdam && Object.keys(F.istihdam).length) || state.istihdam.length);
   $$('#semtList .pill').forEach(function (p) { p.hidden = p.classList.contains('zero') && !$('input', p).checked; });
   $('#yeniNote').hidden = !isNaN(LV_T);
   var nf = Object.keys(FAVS).length;

@@ -94,14 +94,43 @@ def test_focus_queries_cover_odak_groups_and_are_excluded_from_rotation():
 def test_focus_searched_first_every_run_and_cursor_only_moves_in_rotation():
     st, http = State(), Http()
     fq = lb.focus_queries()
-    per_run = 2 * len(fq)                               # odak payı tam sığsın (per_run // 2)
+    n = lb.FOCUS_PER_RUN
+    per_run = 2 * n
     list(lb.fetch(_src(per_run=per_run, pages=1), FetchContext(http=http, state=st, log=logging.getLogger("t"))))
-    assert _kws(http)[: len(fq)] == fq and st["cursor"] == len(fq)
-    http2 = Http()                                      # ikinci taramada odak yine başta, imleç kaldığı yerden
+    assert _kws(http)[:n] == fq[:n] and st["focus_cursor"] == n and st["cursor"] == n
+    http2 = Http()                                      # ikinci taramada sıradaki odak dilimi, dönüşüm kaldığı yerden
     list(lb.fetch(_src(per_run=per_run, pages=1), FetchContext(http=http2, state=st, log=logging.getLogger("t"))))
-    assert _kws(http2)[: len(fq)] == fq and st["cursor"] == 2 * len(fq)
-    assert not set(_kws(http2)[len(fq):]) & set(fq)     # dönüşümlü kısım odak sorgularını tekrarlamaz
+    assert _kws(http2)[:n] == fq[n:2 * n] and st["focus_cursor"] == 2 * n and st["cursor"] == 2 * n
+    assert not set(_kws(http2)[n:]) & set(fq)           # dönüşümlü kısım odak sorgularını tekrarlamaz
     assert len(http2.calls) == per_run                  # toplam sınır korunur
+
+
+def test_focus_list_rotates_fully_and_wraps():
+    st = State()
+    fq = lb.focus_queries()
+    n = lb.FOCUS_PER_RUN
+    seen = []
+    for _ in range(-(-len(fq) // n)):                   # birkaç taramada tüm odak grupları aranır (kesilen kalmaz)
+        http = Http()
+        list(lb.fetch(_src(per_run=20, pages=1), FetchContext(http=http, state=st, log=logging.getLogger("t"))))
+        seen += _kws(http)[:n]
+    assert set(fq) <= set(seen)
+    assert st["focus_cursor"] == (-(-len(fq) // n) * n) % len(fq)
+    http = Http()                                       # sarma: liste sonundan başa devam
+    st["focus_cursor"] = len(fq) - 2
+    list(lb.fetch(_src(per_run=20, pages=1), FetchContext(http=http, state=st, log=logging.getLogger("t"))))
+    assert _kws(http)[:4] == fq[-2:] + fq[:2]
+
+
+def test_small_per_run_still_reaches_all_focus_over_runs():
+    st = State()
+    fq = lb.focus_queries()
+    seen = set()
+    for _ in range(len(fq)):                            # per_run küçük: odak payı 1; yine de hepsi sırayla aranır
+        http = Http()
+        list(lb.fetch(_src(per_run=2, pages=1), FetchContext(http=http, state=st, log=logging.getLogger("t"))))
+        seen.add(_kws(http)[0])
+    assert seen == set(fq)
 
 
 def test_rate_limit_during_focus_keeps_cursor():
@@ -111,6 +140,7 @@ def test_rate_limit_during_focus_keeps_cursor():
     jobs = list(lb.fetch(_src(per_run=80, pages=1), FetchContext(http=http, state=st, log=logging.getLogger("t"))))
     assert len(jobs) == 3 and len(http.calls) == 4      # 4. odak sorgusunda 429 → dur
     assert st["cursor"] == 7                            # imleç bozulmadı
+    assert st["focus_cursor"] == 3                      # tamamlanan 3 odak sorgusu geçildi, 429 alan tekrar denenir
 
 
 def test_focus_share_capped_so_rotation_still_advances():

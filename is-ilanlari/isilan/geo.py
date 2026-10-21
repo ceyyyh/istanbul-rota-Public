@@ -661,6 +661,8 @@ PLACE_COORDS: dict[str, tuple[str, float, float]] = {
     "rumelifeneri": ("Sarıyer", 41.233, 29.110), "büyükdere": ("Sarıyer", 41.160, 29.050),
     "çayırbaşı": ("Sarıyer", 41.157, 29.045), "sarıyer merkez": ("Sarıyer", 41.167, 29.057),
     "spine tower": ("Sarıyer", 41.110, 29.021),
+    # yalın "huzur" ortak addır (_AMBIGUOUS): ilçesi Sarıyer olan ilanda "Huzur" da koordinat verir
+    "huzur": ("Sarıyer", 41.112, 29.027),
     # Beşiktaş / Şişli / Kağıthane iş merkezleri
     "levent": ("Beşiktaş", 41.080, 29.011), "4 levent": ("Beşiktaş", 41.085, 29.008),
     "etiler": ("Beşiktaş", 41.081, 29.033), "gayrettepe": ("Beşiktaş", 41.068, 29.008),

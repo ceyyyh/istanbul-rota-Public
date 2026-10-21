@@ -77,6 +77,11 @@ COLUMNS = ["uid", "source", "source_type", "external_id", "title", "company", "u
            "side", "posted_at", "employment_type", "work_model", "description", "salary", "category", "extra",
            "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search", "grup", "semt", "kidem", "istihdam", "maasli", "company_key"]
 
+# enrich.py (semt/kıdem/istihdam/maaş) ya da geo/bigco/classify kuralları değişince artırılır: açılışta
+# state tablosundaki sürümle karşılaştırılır, farklıysa tüm eski satırlar yeniden hesaplanır
+ENRICH_VERSION = 1
+_ENRICH_KEY = "enrich_version"
+
 # Sonradan eklenen sütunlar: eski veritabanlarına ALTER TABLE ile eklenir ve doldurulur
 _ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT", "grup": "TEXT",
                   "semt": "TEXT DEFAULT ''", "kidem": "TEXT DEFAULT ''", "istihdam": "TEXT DEFAULT ''",
@@ -141,7 +146,7 @@ class DB:
     def _migrate(self):
         have = {r[1] for r in self.conn.execute("PRAGMA table_info(jobs)")}
         missing = [c for c in _ADDED_COLUMNS if c not in have]
-        if not missing:
+        if not missing and self.get_state(_ENRICH_KEY) == ENRICH_VERSION:
             return
         with self.conn:
             for c in missing:
@@ -168,6 +173,7 @@ class DB:
         with self._lock, self.conn:
             self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=?, grup=?, "
                                   "semt=?, kidem=?, istihdam=?, maasli=?, company_key=? WHERE uid=?", upd)
+        self.set_state(_ENRICH_KEY, ENRICH_VERSION)
         return len(upd)
 
     # ---- yazma ----

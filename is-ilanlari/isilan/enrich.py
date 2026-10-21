@@ -11,6 +11,12 @@ _KIDEM_RULES: list[tuple[str, re.Pattern]] = [
     ("stajyer", re.compile(r"\b(stajyer\w*|staj|intern|interns|internship)\b")),
     ("yeni_mezun", re.compile(r"\b(yeni mezun\w*|graduate|graduates|management trainee\w*|mt programi?)\b")),
     ("junior", re.compile(r"\b(junior|jr|uzman yardimci\w*|assistant specialist|asistan uzman)\b")),
+    # Müdür/manager/direktör asistanı ve sekreteri yönetici değildir ('' döner); "Müdür Yardımcısı" ve
+    # "Assistant Manager" yönetici değil ama üst düzey bireysel rol sayılır → kidemli
+    ("", re.compile(r"\b(?:mudur\w*|manager\w*|direktor\w*|director\w*)\s+(?:asistan\w*|sekreter\w*|assistant|secretary)\b|"
+                    r"\bassistant to (?:the )?(?:general )?(?:manager|director)\b")),
+    ("kidemli", re.compile(r"\b(?:mudur\w*|manager\w*|direktor\w*|director\w*)\s+yardimci\w*|"
+                           r"\b(?:assistant|deputy) (?:general )?(?:manager|director)\b")),
     ("yonetici", re.compile(r"\b(mudur\w*|manager\w*|yonetici(?! (asistan|sekreter))\w*|direktor\w*|director\w*|"
                             r"head of|genel mudur\w*)\b")),
     ("kidemli", re.compile(r"\b(kidemli|senior|sr|lead(?! generation)|principal|bas uzman\w*)\b")),
@@ -47,7 +53,8 @@ def detect_kidem(title: str, description: str = "") -> str:
 
 # ---- istihdam ----
 _ISTIHDAM_RULES: list[tuple[str, re.Pattern]] = [
-    ("staj", re.compile(r"\b(intern\w*|stajyer\w*|staj|trainee)\b")),
+    # "trainee" staj değil: "Management Trainee" tam zamanlı bir programdır
+    ("staj", re.compile(r"\b(intern\w*|stajyer\w*|staj)\b")),
     ("proje", re.compile(r"\b(contract\w*|temporary|temp|sozlesmeli|proje\w*|donemsel|gecici|freelance|serbest|seasonal|mevsimlik)\b")),
     ("yari", re.compile(r"\b(part time|parttime|yari zamanli|yari|yarim gun)\b")),
     ("tam", re.compile(r"\b(full time|fulltime|tam zamanli|tam|permanent|surekli)\b")),
@@ -77,6 +84,12 @@ def normalize_istihdam(employment_type: str, title: str = "") -> str:
 _NONZERO_DIGIT = re.compile(r"[1-9]")
 # "maaş: 45.000 TL", "salary 60k" gibi açık ifadeler; yalnız "maaş" kelimesi yetmez
 _SALARY_DESC = re.compile(r"\b(?:maas\w*|ucret\w*|salary|compensation)\b[^0-9]{0,25}([1-9][0-9]*)( ?(?:k|bin|tl|try|usd|eur)\b)?")
+# Binlik ayırıcılı sayılar ("45.000", "60,000", "1 250 000"): fold noktalamayı boşluğa çevirip sayıyı böleceğinden
+# ayırıcılar fold'dan önce atılır
+_THOUSANDS = re.compile(r"(?<![\d.,])(\d{1,3})((?:[.,\u00a0 ]\d{3})+)(?!\d)")
+# Maaş olmayan "ücret" kullanımları: yemek/yol/servis ücreti, ücretli/ücretsiz izin vb.
+_NOT_SALARY = re.compile(r"\b(?:(?:yemek|yol|servis|ulasim|mesai|giris|basvuru|kargo) ucret\w*|ucretli|ucretsiz)\b")
+_YEAR = re.compile(r"(?:19[5-9]|20\d|21[0-1])\d$")
 
 
 def has_salary(salary: str, description: str = "") -> bool:
@@ -84,8 +97,13 @@ def has_salary(salary: str, description: str = "") -> bool:
     s = (salary or "").strip()
     if s:
         return bool(_NONZERO_DIGIT.search(s))
-    m = _SALARY_DESC.search(fold((description or "")[:1500]))
-    return bool(m and (len(m.group(1)) >= 4 or m.group(2)))
+    raw = _THOUSANDS.sub(lambda m: m.group(1) + re.sub(r"\D", "", m.group(2)), (description or "")[:1500])
+    text = _NOT_SALARY.sub(" ", fold(raw))
+    for m in _SALARY_DESC.finditer(text):
+        num, unit = m.group(1), m.group(2)
+        if unit or (len(num) >= 4 and not _YEAR.fullmatch(num)):  # birimsiz 2024 gibi yıllar maaş sayılmaz
+            return True
+    return False
 
 
 # ---- semt ----
@@ -120,13 +138,19 @@ _SEMT_RX: list[tuple[re.Pattern, str]] = [
 ]
 
 
-def _find_semt(text: str, district: str) -> str:
-    """Metindeki ilk (en erken geçen, eşitse en uzun) ilçeyle tutarlı semt."""
+_SEMT_RX_ALIAS = [
+    (re.compile(r"\b" + fold(ad) + r"\b"), _SEMT_ALIAS[ad]) for ad in _SEMT_ALIAS
+]
+
+
+def _find_semt(text: str, district: str, only_alias: bool = False) -> str:
+    """Metindeki ilk (en erken geçen, eşitse en uzun) ilçeyle tutarlı semt. only_alias: yalnız plaza/bina
+    takma adları aranır (serbest metinde "Levent Yılmaz", "Fulya Hanım" gibi kişi adları semt sayılmasın)."""
     f = fold(text)
     if not f:
         return ""
     best: tuple[int, int, str] | None = None
-    for rx, semt in _SEMT_RX:
+    for rx, semt in (_SEMT_RX_ALIAS if only_alias else _SEMT_RX):
         if district and district != _SEMT_ILCE[semt] and district not in _SEMT_EK_ILCE.get(semt, ()):
             continue
         m = rx.search(f)
@@ -139,14 +163,14 @@ def _find_semt(text: str, district: str) -> str:
 
 
 def detect_semt(location: str, district: str | None, title: str = "", description: str = "") -> str:
-    """Kanonik semt adı ya da ''. Önce konum, sonra başlık, sonra açıklamanın başı; semt yalnız ilanın
+    """Kanonik semt adı ya da ''. Önce konum, sonra başlık, sonra açıklamanın başı (yalnız plaza takma adları); semt yalnız ilanın
     ilçesiyle tutarlıysa (ilçe boş olabilir) atanır."""
     dist = district or ""
-    for text in (location or "", title or "", (description or "")[:300]):
+    for text in (location or "", title or ""):
         s = _find_semt(text, dist)
         if s:
             return s
-    return ""
+    return _find_semt((description or "")[:300], dist, only_alias=True)
 
 
 def enrich_fields(row: dict) -> dict:
