@@ -166,3 +166,23 @@ def test_norm_since():
     assert norm_since("2026-10-01T12:00:00 02:00") == "2026-10-01T10:00:00.000Z"  # '+' boşluğa dönüşmüş
     assert norm_since("2026-10-01") == "2026-10-01T00:00:00.000Z"
     assert norm_since("saçma") is None and norm_since(None) is None
+
+
+def test_levent_plazalari_sisli_ilcesinde_de_semt_alir():
+    # geo.py Kanyon/Metrocity/Torun Center'ı Şişli'ye atar; Levent semti Şişli ilçesinde de geçerli
+    from isilan import geo
+    assert detect_semt("Kanyon, İstanbul", "Şişli") == "Levent"
+    assert detect_semt("Metrocity Levent", "Şişli") == "Levent"
+    assert detect_semt("Levent", "Beşiktaş") == "Levent"
+    assert detect_semt("Torun Center", "Şişli") == "Esentepe"
+    assert detect_semt("Levent", "Kadıköy") == ""
+    assert detect_semt("Kanyon", geo.detect_district("Kanyon Levent")) == "Levent"
+
+
+def test_semt_tablosu_geo_ile_celismiyor():
+    # her semt/takma ad için geo.detect_district sonucu, semtin birincil ya da ek ilçelerinden biri olmalı
+    from isilan import enrich, geo
+    for ad in list(enrich._SEMT_ILCE) + list(enrich._SEMT_ALIAS):
+        canon = enrich._SEMT_ALIAS.get(ad, ad)
+        ok = {enrich._SEMT_ILCE[canon]} | enrich._SEMT_EK_ILCE.get(canon, set())
+        assert geo.detect_district(ad) in ok, ad

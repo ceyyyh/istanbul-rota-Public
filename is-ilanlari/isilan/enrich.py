@@ -101,6 +101,10 @@ _SEMT_ILCE = {
     "Kavacık": "Beykoz",
 }
 SEMTLER = [{"ad": ad, "ilce": ilce} for ad, ilce in _SEMT_ILCE.items()]
+# İki ilçeye yayılan semtler: SEMTLER'deki ilçe birincil, buradakiler de geçerli sayılır.
+# Levent iş bölgesi Beşiktaş ile Şişli'ye (Büyükdere Cd. Esentepe yakası: Kanyon, Metrocity) yayılır;
+# geo.py bu plazaları Şişli'ye atar. Zincirlikuyu'yu geo.py Şişli sayar.
+_SEMT_EK_ILCE = {"Levent": {"Şişli"}, "Zincirlikuyu": {"Şişli"}}
 
 # Plaza / bina takma adları → kanonik semt
 _SEMT_ALIAS = {
@@ -123,7 +127,7 @@ def _find_semt(text: str, district: str) -> str:
         return ""
     best: tuple[int, int, str] | None = None
     for rx, semt in _SEMT_RX:
-        if district and _SEMT_ILCE[semt] != district:
+        if district and district != _SEMT_ILCE[semt] and district not in _SEMT_EK_ILCE.get(semt, ()):
             continue
         m = rx.search(f)
         if not m:
