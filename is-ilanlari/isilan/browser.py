@@ -4,14 +4,20 @@
 sayfalar gerçek bir başsız Chromium ile yeniden denenir. Kaynak kodunun bundan
 haberi olmasına gerek yoktur: aynı `get/get_json` arayüzü kullanılır.
 
+Takılma koruması: tarayıcı işleri tek bir daemon iş parçacığında, her biri sert bir süre sınırıyla
+yürütülür. Sayfa yanıt vermezse (page.content()/evaluate() zaman aşımı tanımaz) tarayıcı o tarama için
+devre dışı bırakılır; kaynaklar bunu düz HTTP hatası (HttpError) gibi görür ve tarama sürer.
+
 Kurulum:  pip install playwright && python -m playwright install chromium
 """
 from __future__ import annotations
 
 import json
 import logging
+import queue
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, wait
 from pathlib import Path
 
 from .http import Http, HttpError, USER_AGENTS
@@ -19,6 +25,14 @@ from .http import Http, HttpError, USER_AGENTS
 log = logging.getLogger(__name__)
 
 _BLOCK_MARKERS = ("cf-chl", "just a moment", "attention required", "captcha", "access denied", "px-captcha")
+
+# Sayfa düzeyinde varsayılan zaman aşımı (ms): `timeout` alan tüm Playwright çağrıları için.
+# page.content()/evaluate() zaman aşımı kabul etmez; onlara karşı asıl koruma browser_get'teki sert süre sınırıdır.
+_PAGE_TIMEOUT_MS = 30000
+# Tek bir tarayıcı işinin (tarayıcıyı açma + sayfa) en uzun süresi (sn). Görünür modda kullanıcıya elle doğrulama
+# için ~90 sn daha tanındığından (bkz. _render) sınır orada daha geniştir.
+_TIMEOUT_HEADLESS = 90
+_TIMEOUT_VISIBLE = 240
 
 
 def looks_blocked(text: str) -> bool:
@@ -28,14 +42,26 @@ def looks_blocked(text: str) -> bool:
 
 class BrowserHttp(Http):
     """Http + Playwright yedeği. Playwright senkron API'si iş parçacığına bağlı olduğundan
-    tüm tarayıcı işleri tek bir özel iş parçacığında yürütülür."""
+    tüm tarayıcı işleri tek bir özel iş parçacığında yürütülür (daemon: takılırsa süreç çıkışını kilitlemez).
 
-    def __init__(self, *a, headless: bool = True, profile_dir: str | None = None, **kw):
+    Her iş `browser_timeout` sn ile sınırlıdır; aşılırsa tarayıcı bu tarama için devre dışı kalır ve
+    `browser_get` HttpError fırlatır. `close()` takılı bir tarayıcıyı en çok `close_timeout` sn bekler."""
+
+    def __init__(self, *a, headless: bool = True, profile_dir: str | None = None,
+                 browser_timeout: float | None = None, close_timeout: float = 20, **kw):
         super().__init__(*a, **kw)
         self.headless = headless
         # Kalıcı profil: çerezler saklanır; görünür modda bir kez elle geçilen doğrulama sonraki taramalarda da geçerli olur
         self.profile_dir = profile_dir
-        self._exec = ThreadPoolExecutor(max_workers=1, thread_name_prefix="browser")
+        self.browser_timeout = browser_timeout if browser_timeout is not None else (
+            _TIMEOUT_HEADLESS if headless else _TIMEOUT_VISIBLE)
+        self.close_timeout = close_timeout
+        self._q: queue.Queue = queue.Queue()           # tarayıcı iş parçacığına giden işler; None: kapanış işareti
+        self._thread: threading.Thread | None = None   # ilk tarayıcı isteğinde başlatılır
+        self._lock = threading.Lock()                  # iş gönderme ile close() birbirini ezmesin
+        self._turn = threading.Lock()                  # tek seferde tek iş: sırası gelmeyenler burada bekler
+        self._stopped = threading.Event()              # tarayıcı iş parçacığı çıktı (tarayıcı kapandı)
+        self.browser_disabled = False                  # takılma ya da close() sonrası: tarayıcı yedeği kapalı
         self._pw = self._browser = self._ctx = None
         self.browser_count = 0
 
@@ -54,6 +80,7 @@ class BrowserHttp(Http):
             else:
                 self._browser = self._pw.chromium.launch(headless=self.headless)
                 self._ctx = self._browser.new_context(locale="tr-TR", user_agent=USER_AGENTS[0])
+            self._ctx.set_default_timeout(_PAGE_TIMEOUT_MS)
 
     def _render(self, url: str, want_json: bool) -> str:
         self._ensure()
@@ -78,8 +105,61 @@ class BrowserHttp(Http):
         finally:
             page.close()
 
+    def _loop(self):
+        """Tarayıcı iş parçacığı: işleri sırayla yürütür; None gelince (close) tarayıcıyı kapatıp çıkar."""
+        try:
+            while True:
+                item = self._q.get()
+                if item is None:
+                    break
+                fut, url, want_json = item
+                try:
+                    fut.set_result(self._render(url, want_json))
+                except BaseException as e:  # noqa: BLE001 — hata, bekleyen browser_get'e olduğu gibi iletilir
+                    fut.set_exception(e)
+        finally:
+            self.browser_disabled = True  # bu iş parçacığı artık iş almaz
+            self._release()
+            self._stopped.set()
+
+    def _release(self):
+        """Tarayıcıyı kapatır (Playwright nesneleri yalnızca kendi iş parçacığında kapatılabilir)."""
+        for obj in (self._ctx, self._browser):
+            try:
+                obj and obj.close()
+            except Exception:  # noqa: BLE001
+                pass
+        if self._pw:
+            try:
+                self._pw.stop()
+            except Exception:  # noqa: BLE001
+                pass
+
+    def _submit(self, url: str, want_json: bool) -> Future:
+        with self._lock:
+            if self.browser_disabled:
+                raise HttpError(url, None, "tarayıcı devre dışı")
+            if self._thread is None:
+                th = threading.Thread(target=self._loop, name="browser", daemon=True)
+                th.start()
+                self._thread = th  # başlatılamazsa (RuntimeError) bir sonraki istek yeniden dener
+            fut: Future = Future()
+            self._q.put((fut, url, want_json))
+            return fut
+
     def browser_get(self, url: str, want_json: bool = False) -> str:
-        return self._exec.submit(self._render, url, want_json).result()
+        # Tek seferde tek iş: sıra bekleyen kaynaklar burada bekler; süre sınırı yalnızca sırası gelmiş işin
+        # çalışma süresine uygulanır (sağlıklı işlerin arkasında beklemek tarayıcıyı yanlışlıkla devre dışı
+        # bırakmasın). Bir iş takılırsa sıradakiler kilidi alır almaz bayrağı görüp beklemeden HttpError alır.
+        with self._turn:
+            fut = self._submit(url, want_json)
+            done, _ = wait([fut], timeout=self.browser_timeout)
+            if not done:
+                self.browser_disabled = True
+                log.warning("Tarayıcı %g sn içinde yanıt vermedi, bu tarama için devre dışı bırakıldı: %s",
+                            self.browser_timeout, url)
+                raise HttpError(url, None, f"tarayıcı zaman aşımı ({self.browser_timeout:g} sn)")
+        return fut.result()  # işin kendi hatası (ör. Playwright) varsa olduğu gibi fırlatılır
 
     def text(self, url: str, method: str = "GET", **kw) -> str:
         if kw.pop("no_browser", False):  # hızlı yan istekler (ör. ilçe için detay sayfası): tarayıcıya düşme
@@ -108,13 +188,12 @@ class BrowserHttp(Http):
         return json.loads(self.text(url, "GET", **kw))
 
     def close(self):
-        def _close():
-            for obj in (self._ctx, self._browser):
-                try:
-                    obj and obj.close()
-                except Exception:  # noqa: BLE001
-                    pass
-            if self._pw:
-                self._pw.stop()
-        self._exec.submit(_close).result()
-        self._exec.shutdown()
+        """Tarayıcıyı kapatır. Takılı iş parçacığını en çok `close_timeout` sn bekler, sonra (daemon olduğundan)
+        kendi haline bırakır; süreç yine de çıkabilir."""
+        with self._lock:
+            self.browser_disabled = True
+            if self._thread is None:  # tarayıcıya hiç düşülmedi: kapatılacak bir şey yok
+                return
+            self._q.put(None)
+        if not self._stopped.wait(self.close_timeout):
+            log.warning("Tarayıcı %g sn içinde kapanmadı, takılı iş parçacığı bırakılıyor", self.close_timeout)
