@@ -13,7 +13,7 @@ from ..base import Source
 log = logging.getLogger(__name__)
 
 MODULES = [
-    "kariyernet", "linkedin", "indeed", "glassdoor", "careerjet", "jooble",
+    "kariyernet", "linkedin", "linkedin_buyuk", "indeed", "glassdoor", "careerjet", "jooble",
     "yenibiris", "secretcv", "elemannet", "isbul", "isinolsun", "youthall",
     "techcareer", "iskur", "toptalent", "coderspace",
 ]

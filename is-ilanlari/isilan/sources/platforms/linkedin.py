@@ -149,16 +149,33 @@ def fetch(src: Source, ctx: FetchContext) -> Iterator[Job]:
     capped = yield from _fetch_query(src.params, ctx, seen)
     if capped and src.params.get("split_districts", True):
         ctx.log.info("linkedin: İstanbul geneli %s sonuç sınırına ulaştı, ilçe bazında aranıyor", MAX_RESULTS)
-        for q in _district_queries(src.params):
+        yield from _fetch_districts(src.params, ctx, seen)
+
+
+def _fetch_districts(p: dict, ctx: FetchContext, seen: set[str]) -> Iterator[Job]:
+    """İlçeleri sırayla arar. Süre ya da LinkedIn kısıtı yetmezse kalınan ilçe kaydedilir ve sonraki
+    tarama oradan devam eder: ilçeler birkaç taramaya yayılır, son ilçeler hiç atlanmaz."""
+    qs = _district_queries(p)
+    idx = int(ctx.state.get("district", 0)) % len(qs) if ctx.state is not None else 0
+    try:
+        for _ in range(len(qs)):
             if not ctx.time_left():
                 ctx.mark_partial("linkedin süre doldu (ilçe aramaları)")
                 return
             try:
-                yield from _fetch_query(q, ctx, seen)
+                yield from _fetch_query(qs[idx], ctx, seen)
             except HttpError as e:
-                ctx.log.warning("linkedin: %s araması alınamadı (%s)", q["location"], e.status)
+                ctx.log.warning("linkedin: %s araması alınamadı (%s)", qs[idx]["location"], e.status)
                 ctx.mark_partial("linkedin ilçe araması")
+                idx = (idx + 1) % len(qs)  # bu ilçe bu turda atlanır, sıra bir sonrakine geçer
                 return
+            if not ctx.time_left():  # ilçe yarıda kaldı: sıra değişmez, sonraki taramada baştan
+                ctx.mark_partial("linkedin süre doldu (ilçe aramaları)")
+                return
+            idx = (idx + 1) % len(qs)
+    finally:
+        if ctx.state is not None:
+            ctx.state.set("district", idx)
 
 
 def _fetch_query(p: dict, ctx: FetchContext, seen: set[str]):
@@ -213,5 +230,5 @@ def sources() -> list[Source]:
         label="LinkedIn",
         homepage="https://www.linkedin.com/jobs/search?location=Istanbul&geoId=" + GEO_ID_GREATER_ISTANBUL,
         fetcher=fetch,
-        params={"f_TPR": "r2592000", "timeout": 3600},  # son 30 gün; ilçe aramaları için uzun süre
+        params={"f_TPR": "r2592000", "timeout": 1500},  # son 30 gün; ilçe aramaları birkaç taramaya yayılır
     )]

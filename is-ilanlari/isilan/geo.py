@@ -44,6 +44,17 @@ Bilinçli kararlar / belirsizlikler
 - Kozyatağı -> Kadıköy, İçerenköy/Kayışdağı -> Ataşehir.
 - Finanskent / İstanbul Finans Merkezi -> Ümraniye (Finanskent Mah. Ümraniye'dedir).
 - Seyrantepe -> Kağıthane; Büyükdere -> Sarıyer (zayıf; "Büyükdere Caddesi" nötr).
+- Kanyon, Metrocity, Kristal Kule, Torun Center "Levent"te sayılır ama Büyükdere Caddesi'nin
+  Esentepe yakasındadır -> Şişli (Levent'in kendisi Beşiktaş). Aynı katmanda ilk geçen
+  kazandığı için "Kanyon, Levent" -> Şişli, "Levent, Kanyon" -> Beşiktaş çıkar.
+- Palladium (Ataşehir AVM'si) yalnız "Palladium AVM" / "Palladium Ataşehir" biçiminde sayılır.
+- İstinye Üniversitesi ve Koç Üniversitesi Hastanesi Topkapı'dadır (Zeytinburnu): adlarındaki
+  İstinye / Koç Üniversitesi onları Sarıyer'e bağlamaz (nötr).
+- Ortak adlar: Cumhuriyet, Hürriyet, Merkez, Sanayi, Hamidiye, Huzur, Pınar, Mehmet Akif Ersoy,
+  Kazım Karabekir, Yahya Kemal, Talatpaşa gibi mahalle adları birçok ilçede vardır (Fatih Sultan
+  Mehmet de öyle; o "Fatih"i yuttuğu için nötr tuzaktır). Hiçbir ilçeye tek başına bağlanmaz,
+  ALIASES'a eklenemez (``_AMBIGUOUS``); metinde ilçe adı da geçiyorsa açık ilçe adı kazanır
+  ("Huzur Mah., Kağıthane" -> Kağıthane). Koordinat (``locate``) için de ilçe bilgisi şarttır.
 - Aksaray ve Osmaniye hem il hem İstanbul semtidir (Fatih, Bakırköy): tek başına il
   sayılır (None), başka bir İstanbul işaretiyle birlikte semt sayılır.
 - Arnavutköy hem ilçe hem Beşiktaş'ta semttir: "Arnavutköy, Beşiktaş" -> Beşiktaş.
@@ -141,7 +152,8 @@ _ALIAS_SPEC: dict[str, tuple[str, str]] = {
     ),
     "Ataşehir": (
         "İçerenköy, Kayışdağı, Ferhatpaşa, Yenisahra, Yeni Sahra, Küçükbakkalköy, Esatpaşa, "
-        "Brandium, Watergarden, Metropol İstanbul, Acıbadem Üniversitesi, Batı Ataşehir",
+        "Brandium, Watergarden, Metropol İstanbul, Acıbadem Üniversitesi, Batı Ataşehir, "
+        "Palladium AVM, Palladium Ataşehir",
         "Aşıkveysel",
     ),
     "Avcılar": (
@@ -176,7 +188,7 @@ _ALIAS_SPEC: dict[str, tuple[str, str]] = {
         "Balmumcu, Dikilitaş, Akatlar, Kuruçeşme, Nispetiye, Nisbetiye, Levazım, Vişnezade, "
         "Abbasağa, Türkali, Cihannüma, Çırağan, Dolmabahçe, Barbaros Bulvarı, Akaretler, "
         "Serencebey, Akmerkez, Zorlu Center, Zorlu Plaza, Sabancı Center, İş Kuleleri, "
-        "Yapı Kredi Plaza, Boğaziçi Üniversitesi",
+        "Yapı Kredi Plaza, Boğaziçi Üniversitesi, Boğaziçi University",
         "Bebek, Ulus, Konaklar, Sinanpaşa, Muradiye, Yıldız Sarayı, Zorlu",
     ),
     "Beykoz": (
@@ -206,7 +218,7 @@ _ALIAS_SPEC: dict[str, tuple[str, str]] = {
     ),
     "Çekmeköy": (
         "Ömerli, Taşdelen, Alemdağ, Nişantepe, Koçullu, Sırapınar, Ekşioğlu, Çatalmeşe, "
-        "Kirazlıdere, Özyeğin Üniversitesi",
+        "Kirazlıdere, Özyeğin Üniversitesi, Özyeğin University",
         "Reşadiye, Soğukpınar, Hüseyinli, Aydınlar",
     ),
     "Esenler": (
@@ -281,9 +293,9 @@ _ALIAS_SPEC: dict[str, tuple[str, str]] = {
         "Rumeli Hisarı, Rumelikavağı, Rumeli Kavağı, Rumelifeneri, Rumeli Feneri, Baltalimanı, "
         "Kilyos, Zekeriyaköy, Bahçeköy, Kireçburnu, Uskumruköy, Garipçe, Darüşşafaka, "
         "Ferahevler, Hacıosman, Boyacıköy, Vadi İstanbul, Vadistanbul, İTÜ Ayazağa, "
-        "Arı Teknokent, İTÜ Arı Teknokent, Koç Üniversitesi, Maslak 1453",
+        "Arı Teknokent, İTÜ Arı Teknokent, Koç Üniversitesi, Koç University, Maslak 1453, Spine Tower",
         "Büyükdere, Yeniköy, Kumköy, Demirciköy, Çayırbaşı, Kocataş, Poligon, Reşitpaşa, "
-        "Gümüşdere, PTT Evleri",
+        "Gümüşdere, PTT Evleri, Derbent",
     ),
     "Silivri": (
         "Selimpaşa, Gümüşyaka, Değirmenköy, Kurfallı, Büyükçavuşlu, Danamandıra",
@@ -303,14 +315,15 @@ _ALIAS_SPEC: dict[str, tuple[str, str]] = {
     ),
     "Şişli": (
         "Mecidiyeköy, Esentepe, Nişantaşı, Teşvikiye, Osmanbey, Pangaltı, Harbiye, Feriköy, "
-        "Bomonti, Fulya, Halaskargazi, Kuştepe, İzzetpaşa, Elmadağ, Trump Towers",
+        "Bomonti, Fulya, Halaskargazi, Kuştepe, İzzetpaşa, Elmadağ, Trump Towers, Kanyon, Metrocity, "
+        "Kristal Kule, Torun Center",
         "Kurtuluş, Gülbahar, Mahmut Şevket Paşa, Meşrutiyet, Halide Edip Adıvar, Duatepe, "
         "Ergenekon, Maçka, Zincirlikuyu, Cevahir",
     ),
     "Tuzla": (
         "Aydınlı, Aydıntepe, Orhanlı, Tepeören, Akfırat, İTOSB, Tuzla OSB, Deri OSB, "
         "İstanbul Deri OSB, Anadolu Yakası OSB, AYOSB, Kimya Sanayicileri OSB, "
-        "Sabancı Üniversitesi, Tuzla Tersaneler",
+        "Sabancı Üniversitesi, Sabancı University, Tuzla Tersaneler",
         "İçmeler, Şifa, Evliya Çelebi, Postane",
     ),
     "Ümraniye": (
@@ -347,7 +360,20 @@ _NEUTRAL = [
     "Moda Tasarım", "Moda Tasarımı", "Moda Tasarımcı", "Moda Tasarımcısı", "Moda Sektörü",
     "Moda Evi", "Moda Markası", "Moda Perakende", "Moda Danışmanı",
     "Paşabahçe Mağazaları", "Paşabahçe Mağaza", "Galatasaray",
+    # Kampüsleri/hastaneleri adlarındaki semtte değil Topkapı'dadır (Zeytinburnu)
+    "İstinye Üniversitesi", "İstinye University", "Koç Üniversitesi Hastanesi", "Koç Üniversitesi Hastane",
+    "Koç University Hospital",
 ]
+
+# Birden çok ilçede mahalle adı olan (ya da hangi ilçede olduğundan emin olunamayan) adlar. Hiçbir ilçeye
+# tek başına bağlanmaz ve ALIASES'a eklenemez (_check_ambiguous). Metinde ilçe adı da geçiyorsa açık ilçe adı
+# kazanır ("Huzur Mah., Kağıthane" -> Kağıthane); koordinat için de ilçe bilgisi şarttır (bkz. locate).
+# "Fatih Sultan Mehmet" de böyledir ama içindeki "Fatih"i yuttuğu için _NEUTRAL'dadır.
+_AMBIGUOUS = (
+    "Cumhuriyet", "Hürriyet", "Merkez", "Sanayi", "Hamidiye", "Huzur", "Pınar", "Mehmet Akif Ersoy",
+    "Kazım Karabekir", "Yahya Kemal", "Talatpaşa",
+    "Çamlıtepe", "Cendere", "Kozdere",  # ilçesi doğrulanamayanlar
+)
 
 # İstanbul'un kendisi (çeşitli dillerde / yazımlarda) ve yaka ifadeleri.
 _ISTANBUL_WORDS = [
@@ -464,7 +490,15 @@ def _build() -> None:
         _put(f, _K_FOREIGN_SOFT, None)
 
 
+def _check_ambiguous() -> None:
+    """Ortak adlar sözlükte (takma ad, nötr tuzak ...) hiçbir biçimde bulunmamalı."""
+    for a in _AMBIGUOUS:
+        if fold(a) in _TABLE:
+            raise ValueError(f"ortak ad tek başına bir ilçeye bağlanamaz: {a!r}")
+
+
 _build()
+_check_ambiguous()
 _MAX_N = max(k.count(" ") + 1 for k in _TABLE)
 _FIRST_TOKENS = frozenset(k.split(" ", 1)[0] for k in _TABLE)
 _SHORT_TOKENS = 6
@@ -621,11 +655,14 @@ PLACE_COORDS: dict[str, tuple[str, float, float]] = {
     "istinye": ("Sarıyer", 41.113, 29.057), "emirgan": ("Sarıyer", 41.105, 29.056),
     "reşitpaşa": ("Sarıyer", 41.103, 29.045), "baltalimanı": ("Sarıyer", 41.095, 29.056),
     "rumelihisarı": ("Sarıyer", 41.085, 29.056), "maslak": ("Sarıyer", 41.110, 29.020),
-    "ayazağa": ("Sarıyer", 41.107, 29.012), "huzur": ("Sarıyer", 41.112, 29.027),
+    "ayazağa": ("Sarıyer", 41.107, 29.012), "huzur mahallesi": ("Sarıyer", 41.112, 29.027),
     "vadi istanbul": ("Sarıyer", 41.105, 28.990), "bahçeköy": ("Sarıyer", 41.175, 28.990),
     "zekeriyaköy": ("Sarıyer", 41.200, 29.030), "kumköy": ("Sarıyer", 41.250, 29.030),
     "rumelifeneri": ("Sarıyer", 41.233, 29.110), "büyükdere": ("Sarıyer", 41.160, 29.050),
     "çayırbaşı": ("Sarıyer", 41.157, 29.045), "sarıyer merkez": ("Sarıyer", 41.167, 29.057),
+    "spine tower": ("Sarıyer", 41.110, 29.021),
+    # yalın "huzur" ortak addır (_AMBIGUOUS): ilçesi Sarıyer olan ilanda "Huzur" da koordinat verir
+    "huzur": ("Sarıyer", 41.112, 29.027),
     # Beşiktaş / Şişli / Kağıthane iş merkezleri
     "levent": ("Beşiktaş", 41.080, 29.011), "4 levent": ("Beşiktaş", 41.085, 29.008),
     "etiler": ("Beşiktaş", 41.081, 29.033), "gayrettepe": ("Beşiktaş", 41.068, 29.008),
@@ -633,6 +670,9 @@ PLACE_COORDS: dict[str, tuple[str, float, float]] = {
     "bebek": ("Beşiktaş", 41.077, 29.043), "mecidiyeköy": ("Şişli", 41.067, 28.995),
     "esentepe": ("Şişli", 41.075, 29.005), "nişantaşı": ("Şişli", 41.050, 28.993),
     "seyrantepe": ("Kağıthane", 41.100, 28.990), "çağlayan": ("Kağıthane", 41.068, 28.980),
+    # Büyükdere Caddesi plazaları (Esentepe yakası; yaklaşık, birkaç yüz metre sapabilir)
+    "kanyon": ("Şişli", 41.078, 29.011), "metrocity": ("Şişli", 41.077, 29.010),
+    "kristal kule": ("Şişli", 41.080, 29.010), "torun center": ("Şişli", 41.075, 29.005),
     # Anadolu yakası iş merkezleri
     "kavacık": ("Beykoz", 41.090, 29.090), "kozyatağı": ("Kadıköy", 40.975, 29.098),
     "altunizade": ("Üsküdar", 41.022, 29.044), "dudullu": ("Ümraniye", 41.005, 29.155),
@@ -644,17 +684,39 @@ PLACE_COORDS: dict[str, tuple[str, float, float]] = {
     "istanbul havalimanı": ("Arnavutköy", 41.262, 28.742), "ataköy": ("Bakırköy", 40.980, 28.850),
 }
 
-_PLACE_IDX = sorted(((fold(k), v) for k, v in PLACE_COORDS.items()), key=lambda kv: -len(kv[0]))
+
+def _place_index() -> list[tuple[str, str, float, float, bool]]:
+    """(katlanmış ad, ilçe, enlem, boylam, tek_başına), uzun adlar önce. tek_başına: ad ALIASES'ta aynı
+    ilçeye bağlı olduğundan ilçesi bulunamayan metinde de yer belirler. Ortak adlar ("Huzur Mah.",
+    "Pınar Mah.") ALIASES'ta yoktur: yalnızca ilçesi başka yoldan bulunmuş ilanda koordinat verir."""
+    out: list[tuple[str, str, float, float, bool]] = []
+    for k, (pd, lat, lon) in PLACE_COORDS.items():
+        f = fold(k)
+        names = [f]
+        if f.endswith(" mahallesi"):  # "Pınar Mah." / "Pınar Mh." yazımları da aynı mahalledir
+            base = f[: -len(" mahallesi")]
+            names = [f"{base} {s}" for s in sorted(_MAH_SUFFIX)]
+        out.extend((n, pd, lat, lon, ALIASES.get(n) == pd) for n in names)
+    out.sort(key=lambda e: -len(e[0]))
+    return out
+
+
+_PLACE_IDX = _place_index()
+# detect_district gibi locate da nötr tuzakları yutar: "Büyükdere Cad." Büyükdere semtini,
+# "Bebek Bakıcısı" Bebek'i göstermez.
+_NEUTRAL_KEYS = sorted({fold(n) for n in _NEUTRAL}, key=len, reverse=True)
+_NEUTRAL_RX = re.compile(r"(?<= )(?:" + "|".join(re.escape(k) for k in _NEUTRAL_KEYS) + r")(?= )")
 
 ORIGINS: list[dict] = [{"name": "PTT Evleri (Sarıyer)", "lat": 41.142, "lon": 29.036}] + [
     {"name": d, "lat": c[0], "lon": c[1]} for d, c in DISTRICT_COORDS.items()]
 
 
 def locate(text: str, district: str | None) -> tuple[float, float] | None:
-    """Konum metninden yaklaşık koordinat: tanınan mahalle/semt (ilçeyle uyumluysa), yoksa ilçe merkezi."""
-    t = " " + fold(text or "") + " "
-    for key, (pd, lat, lon) in _PLACE_IDX:
-        if f" {key} " in t and (district is None or district == pd):
+    """Konum metninden yaklaşık koordinat: tanınan mahalle/semt (ilçeyle uyumluysa), yoksa ilçe merkezi.
+    İlçe bilinmiyorsa yalnız tek başına ilçe belirleyen adlar sayılır (ortak adlar sayılmaz)."""
+    t = _NEUTRAL_RX.sub("", " " + fold(text or "") + " ")
+    for key, pd, lat, lon, alone in _PLACE_IDX:
+        if f" {key} " in t and (district == pd or (district is None and alone)):
             return lat, lon
     if district and district in DISTRICT_COORDS:
         return DISTRICT_COORDS[district]

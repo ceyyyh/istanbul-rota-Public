@@ -4,12 +4,14 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import sqlite3
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .bigco import group_of
+from .enrich import enrich_fields
 from .text import fold
 
 DEFAULT_DB = Path(os.environ.get("ISILAN_DB", Path(__file__).resolve().parents[1] / "data" / "isilan.db"))
@@ -42,7 +44,12 @@ CREATE TABLE IF NOT EXISTS jobs (
     lat REAL,
     lon REAL,
     title_search TEXT,
-    grup TEXT
+    grup TEXT,
+    semt TEXT DEFAULT '',
+    kidem TEXT DEFAULT '',
+    istihdam TEXT DEFAULT '',
+    maasli INTEGER DEFAULT 0,
+    company_key TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_jobs_active ON jobs(active, district);
 CREATE INDEX IF NOT EXISTS ix_jobs_source ON jobs(source, active);
@@ -68,10 +75,17 @@ CREATE TABLE IF NOT EXISTS state (
 
 COLUMNS = ["uid", "source", "source_type", "external_id", "title", "company", "url", "location", "district",
            "side", "posted_at", "employment_type", "work_model", "description", "salary", "category", "extra",
-           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search", "grup"]
+           "dedupe_key", "first_seen", "last_seen", "active", "collar", "lat", "lon", "title_search", "grup", "semt", "kidem", "istihdam", "maasli", "company_key"]
+
+# enrich.py (semt/kıdem/istihdam/maaş) ya da geo/bigco/classify kuralları değişince artırılır: açılışta
+# state tablosundaki sürümle karşılaştırılır, farklıysa tüm eski satırlar yeniden hesaplanır
+ENRICH_VERSION = 1
+_ENRICH_KEY = "enrich_version"
 
 # Sonradan eklenen sütunlar: eski veritabanlarına ALTER TABLE ile eklenir ve doldurulur
-_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT", "grup": "TEXT"}
+_ADDED_COLUMNS = {"collar": "TEXT", "lat": "REAL", "lon": "REAL", "title_search": "TEXT", "grup": "TEXT",
+                  "semt": "TEXT DEFAULT ''", "kidem": "TEXT DEFAULT ''", "istihdam": "TEXT DEFAULT ''",
+                  "maasli": "INTEGER DEFAULT 0", "company_key": "TEXT"}
 
 # Aynı ilan birden çok kaynakta varsa hangisi "asıl" gösterilsin: önce şirketin kendi sayfası
 TYPE_PRIORITY = {"company": 0, "agency": 1, "platform": 2}
@@ -132,7 +146,7 @@ class DB:
     def _migrate(self):
         have = {r[1] for r in self.conn.execute("PRAGMA table_info(jobs)")}
         missing = [c for c in _ADDED_COLUMNS if c not in have]
-        if not missing:
+        if not missing and self.get_state(_ENRICH_KEY) == ENRICH_VERSION:
             return
         with self.conn:
             for c in missing:
@@ -146,15 +160,20 @@ class DB:
 
         from .bigco import group_of
 
-        rows = self.conn.execute("SELECT uid, title, category, source, source_type, location, district, company FROM jobs").fetchall()
+        rows = self.conn.execute("SELECT uid, title, category, source, source_type, location, district, company, "
+                                 "employment_type, salary, description FROM jobs").fetchall()
         upd = []
         for r in rows:
             c = locate(f"{r['location'] or ''} {r['title'] or ''}", r["district"])
+            e = enrich_fields(dict(r))
             upd.append((collar(r["title"] or "", r["category"] or "", r["source"], r["source_type"]),
                         c[0] if c else None, c[1] if c else None, fold(r["title"] or ""), group_of(r["company"] or ""),
+                        e["semt"], e["kidem"], e["istihdam"], e["maasli"], fold(r["company"] or ""),
                         r["uid"]))
         with self._lock, self.conn:
-            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=?, grup=? WHERE uid=?", upd)
+            self.conn.executemany("UPDATE jobs SET collar=?, lat=?, lon=?, title_search=?, grup=?, "
+                                  "semt=?, kidem=?, istihdam=?, maasli=?, company_key=? WHERE uid=?", upd)
+        self.set_state(_ENRICH_KEY, ENRICH_VERSION)
         return len(upd)
 
     # ---- yazma ----
@@ -170,6 +189,8 @@ class DB:
                 r["search"] = fold(" ".join(str(r.get(k) or "") for k in ("title", "company", "location", "district", "category", "description")))[:2000]
                 r["title_search"] = fold(r.get("title") or "")
                 r["grup"] = group_of(r.get("company") or "")
+                r["company_key"] = fold(r.get("company") or "")
+                r.update(enrich_fields(r))  # semt, kidem, istihdam, maasli: yeni ve güncellenen her ilan için tek yerde
                 r["last_seen"] = seen_at
                 r["active"] = 1
                 if cur:
@@ -184,6 +205,20 @@ class DB:
                     [r.get(c) for c in cols],
                 )
         return new, upd
+
+    def get_job(self, uid: str) -> dict | None:
+        """Tek ilan (tam açıklama ve extra dahil); yoksa None. Aynı ilanın diğer aktif kaynakları `duplicates`'ta."""
+        with self._lock:
+            row = self.conn.execute("SELECT * FROM jobs WHERE uid=?", (uid,)).fetchone()
+            if row is None:
+                return None
+            d = row_to_dict(row)
+            dups = []
+            if row["dedupe_key"]:
+                dups = self.conn.execute("SELECT source, source_type, url FROM jobs WHERE dedupe_key=? AND uid!=? AND active=1",
+                                         (row["dedupe_key"], uid)).fetchall()
+        d["duplicates"] = [{"source": x[0], "source_type": x[1], "url": x[2]} for x in dups]
+        return d
 
     def known_districts(self, uids: list[str]) -> dict[str, dict]:
         """Önceki taramalarda (ör. detay sayfasından) bulunmuş ilçe bilgisi; üzerine None yazılmasın diye."""
@@ -278,7 +313,9 @@ class DB:
               page: int = 1, per_page: int = 50, dedupe: bool = True, ignore: tuple[str, ...] = (),
               collars: list[str] | None = None, near: tuple[float, float] | None = None,
               max_km: float | None = None, kw: list[str] | None = None, exclude: list[str] | None = None,
-              buyuk: bool = False, grups: list[str] | None = None) -> dict:
+              buyuk: bool = False, grups: list[str] | None = None, semts: list[str] | None = None,
+              kidems: list[str] | None = None, istihdams: list[str] | None = None, company: str | None = None,
+              maasli: bool = False, yeni_since: str | None = None) -> dict:
         """Filtrelenmiş ve (isteğe bağlı) tekilleştirilmiş ilan listesi. `ignore`: faset sayımı için
         yok sayılacak filtre adları."""
         where, args = ["active=1"], []
@@ -325,6 +362,19 @@ class DB:
                 args.extend(grups)
             elif buyuk:
                 where.append("grup IS NOT NULL")
+        for col, vals, key in (("semt", semts, "semt"), ("kidem", kidems, "kidem"), ("istihdam", istihdams, "istihdam")):
+            if vals and key not in ignore:
+                where.append(f"{col} IN ({','.join('?' * len(vals))})")
+                args.extend(vals)
+        if company and "sirket" not in ignore and fold(company):
+            where.append("company_key=?")
+            args.append(fold(company))
+        if maasli and "maasli" not in ignore:
+            where.append("maasli=1")
+        since = norm_since(yeni_since)
+        if since and "yeni_since" not in ignore:
+            where.append("first_seen>=?")
+            args.append(since)
         dist_sql = None
         if near:
             # Kuş uçuşu uzaklığın karesi (km²), eşdikdörtgen yaklaşımı — sıralama ve süzme için yeterli
@@ -364,7 +414,7 @@ class DB:
         return {"total": total, "page": page, "per_page": per_page, "items": items, "_all": _LazyItems(self, reps)}
 
     # Hafif sütunlar: tekilleştirme ve faset sayımı için tüm satırları (açıklama vb. olmadan) okur
-    _LIGHT = "uid, dedupe_key, source, source_type, district, url, collar, grup"
+    _LIGHT = "uid, dedupe_key, source, source_type, district, url, collar, grup, semt, kidem, istihdam"
 
     def _version(self):
         """Veri değiştiğinde değişen anahtar: bu bağlantının yazmaları + başka bağlantıların
@@ -431,12 +481,28 @@ class _LazyItems(list):
 
     def __init__(self, db: "DB", reps: list[tuple]):
         super().__init__({"uid": r[0], "dedupe_key": r[1], "source": r[2], "source_type": r[3], "district": r[4],
-                          "url": r[5], "collar": r[6], "grup": r[7], "duplicates": [{"source": x[2], "source_type": x[3], "url": x[5]} for x in d]}
+                          "url": r[5], "collar": r[6], "grup": r[7], "semt": r[8] or "", "kidem": r[9] or "",
+                          "istihdam": r[10] or "", "duplicates": [{"source": x[2], "source_type": x[3], "url": x[5]} for x in d]}
                          for r, d in reps)
         self._db, self._reps = db, reps
 
     def full(self) -> list[dict]:
         return self._db._full_items(self._reps)
+
+
+def norm_since(v: str | None) -> str | None:
+    """ISO8601 zamanı (tarih ya da zaman damgası, 'Z' ya da ofsetli) first_seen biçimine (UTC, ms, 'Z') çevirir;
+    anlaşılmazsa None."""
+    if not v:
+        return None
+    try:
+        v = re.sub(r"(\d) (\d\d:\d\d)$", r"\1+\2", str(v).strip())  # query string'de "+" boşluğa dönüşür
+        dt = datetime.fromisoformat(v.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def _terms(values: list[str] | None) -> list[str]:
@@ -463,7 +529,9 @@ def _annotate(d: dict, near, kw_terms: list[str]):
 
 
 def row_to_dict(r: sqlite3.Row) -> dict:
-    d = {k: r[k] for k in r.keys() if k not in ("search",)}
+    d = {k: r[k] for k in r.keys() if k not in ("search", "company_key")}
+    d["semt"], d["kidem"], d["istihdam"] = d.get("semt") or "", d.get("kidem") or "", d.get("istihdam") or ""
+    d["maasli"] = d.get("maasli") or 0
     try:
         d["extra"] = json.loads(d.get("extra") or "{}")
     except json.JSONDecodeError:

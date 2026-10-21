@@ -26,3 +26,28 @@ def test_lookalikes_and_dealers_are_not_matched():
 def test_catalog_is_unique():
     names = [c["name"] for c in CATALOG]
     assert len(names) == len(set(names)) and len(names) > 150
+
+
+def test_focus_region_employers():
+    from isilan.bigco import GROUPS, ODAK
+    assert ODAK <= {n for n, _, _ in GROUPS}
+    assert group_of("Ericsson Telekomünikasyon A.Ş.") == "Ericsson"
+    assert group_of("AXA Sigorta") == "AXA Sigorta"
+    assert group_of("Zorlu Enerji") == "Zorlu Holding"
+    assert group_of("EY Türkiye") == "EY"
+    assert group_of("Turkcell İletişim Hizmetleri") == "Turkcell"
+    assert group_of("Akbank T.A.Ş.") == "Sabancı Holding"
+    assert group_of("Garanti BBVA Teknoloji") == "Garanti BBVA"
+
+
+def test_zorlu_yalin_takma_ad_yok():
+    for name in ("Zorlu Nakliyat Ltd", "Mehmet Zorlu İnşaat", "Zorlu"):
+        assert group_of(name) is None, name
+    for name in ("Zorlu Holding A.Ş.", "Zorlu Enerji", "Zorlu Gayrimenkul", "Zorlu Center"):
+        assert group_of(name) == "Zorlu Holding", name
+
+
+def test_focus_aliases_have_no_false_positives():
+    for name in ("Taxation Consulting", "Axa Plastik Ltd", "Zorluoğlu İnşaat", "Ericssonlar Kafe",
+                 "Seyahat Acentesi", "Googler Ltd", "KPMGX Danışmanlık", "Samsunspor Kulübü"):
+        assert group_of(name) is None, name

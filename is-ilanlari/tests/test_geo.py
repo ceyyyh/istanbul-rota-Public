@@ -6,11 +6,15 @@ import pytest
 from isilan import geo
 from isilan.geo import (
     ALIASES,
+    DISTRICT_COORDS,
     DISTRICT_SIDE,
     DISTRICTS,
+    PLACE_COORDS,
     PROVINCES,
     detect_district,
+    distance_km,
     is_istanbul,
+    locate,
     side_of,
 )
 from isilan.text import fold
@@ -300,3 +304,156 @@ def test_cache_is_bounded_and_consistent():
         assert detect_district("Maslak, Sarıyer/İstanbul") == "Sarıyer"
     info = geo._analyze.cache_info()
     assert info.hits >= 2 and info.maxsize is not None
+
+
+# ---------------------------------------------------------------------------
+# Odak bölge (Maslak, Levent, Esentepe, Kağıthane, Sarıyer): plazalar, ortak adlar, koordinatlar
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text, expected", [
+    ("Kanyon", "Şişli"),
+    ("Kanyon AVM, İstanbul", "Şişli"),
+    ("Metrocity AVM", "Şişli"),
+    ("Kristal Kule, Büyükdere Cad.", "Şişli"),
+    ("Torun Center", "Şişli"),
+    ("Spine Tower", "Sarıyer"),
+    ("Spine Tower, Büyükdere Cad. No:243", "Sarıyer"),
+    ("Palladium AVM", "Ataşehir"),
+    ("Palladium Ataşehir", "Ataşehir"),
+    ("Derbent, İstanbul", "Sarıyer"),
+    ("Koç University", "Sarıyer"),
+    ("Boğaziçi University", "Beşiktaş"),
+    ("Sabancı University", "Tuzla"),
+    ("Özyeğin University", "Çekmeköy"),
+])
+def test_focus_area_names(text, expected):
+    assert detect_district(text) == expected
+    assert is_istanbul(text)
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("Ferahevler Mah.", "Sarıyer"),
+    ("Baltalimanı, İstanbul", "Sarıyer"),
+    ("Emirgan", "Sarıyer"),
+    ("Rumelihisarı", "Sarıyer"),
+    ("Zekeriyaköy, İstanbul", "Sarıyer"),
+    ("Poligon", "Sarıyer"),
+    ("PTT Evleri", "Sarıyer"),
+    ("Ortabayır Mah.", "Kağıthane"),
+    ("Harmantepe", "Kağıthane"),
+    ("Emniyet Evleri", "Kağıthane"),
+    ("Çağlayan Adliyesi", "Kağıthane"),
+])
+def test_sariyer_and_kagithane_neighbourhoods(text, expected):
+    assert detect_district(text) == expected
+
+
+def test_plaza_written_before_levent_wins():
+    # Kanyon/Metrocity Levent'te sayılır ama Esentepe (Şişli) yakasındadır; Levent'in kendisi Beşiktaş
+    assert detect_district("Kanyon Ofis Blokları, Büyükdere Cad. No:185 Levent") == "Şişli"
+    assert detect_district("Kanyon, Levent") == "Şişli"
+    assert detect_district("Levent, İstanbul") == "Beşiktaş"
+    assert detect_district("Zorlu Center, Levent") == "Beşiktaş"   # önceki eşleşmeler bozulmadı
+
+
+def test_palladium_alone_is_not_a_district():
+    assert detect_district("Palladium") is None
+    assert not is_istanbul("Palladium Hotel Group Barcelona")
+
+
+def test_derbent_is_a_weak_alias():
+    long_text = "Derbent bölgesinde faaliyet gösteren firmamız için deneyimli satış temsilcisi arıyoruz"
+    assert detect_district(long_text) is None                       # genel kelime: bağlamsız uzun metinde sayılmaz
+    assert detect_district(long_text + " İstanbul") == "Sarıyer"
+    assert detect_district("Derbent, Konya") is None                # başka il
+
+
+def test_university_campuses_are_not_bound_to_the_name_district():
+    assert detect_district("İstinye Üniversitesi") is None          # kampüs Topkapı'da (Zeytinburnu)
+    assert detect_district("İstinye University") is None
+    assert detect_district("İstinye Üniversitesi, Topkapı") == "Zeytinburnu"
+    assert detect_district("Koç Üniversitesi Hastanesi") is None
+    assert detect_district("Koç University Hospital, Zeytinburnu") == "Zeytinburnu"
+    assert detect_district("Koç Üniversitesi") == "Sarıyer"          # ana kampüs
+    assert detect_district("İstinye Park AVM") == "Sarıyer"          # AVM adı etkilenmez
+
+
+SHARED_NAMES = ["Cumhuriyet", "Hürriyet", "Merkez", "Huzur", "Sanayi", "Hamidiye", "Pınar", "Mehmet Akif Ersoy"]
+
+
+def test_shared_names_are_registered_and_kept_out_of_the_tables():
+    for name in SHARED_NAMES + ["Kazım Karabekir", "Yahya Kemal", "Talatpaşa"]:
+        assert name in geo._AMBIGUOUS
+    for name in geo._AMBIGUOUS:
+        assert fold(name) not in ALIASES and fold(name) not in geo._TABLE, name
+
+
+def test_shared_name_cannot_be_added_as_alias(monkeypatch):
+    monkeypatch.setattr(geo, "_AMBIGUOUS", geo._AMBIGUOUS + ("Maslak",))
+    with pytest.raises(ValueError):
+        geo._check_ambiguous()
+
+
+@pytest.mark.parametrize("name", list(geo._AMBIGUOUS) + ["Fatih Sultan Mehmet"])
+def test_shared_names_alone_assign_no_district(name):
+    for text in (name, f"{name} Mah.", f"{name} Mahallesi", f"{name} Mah., İstanbul"):
+        assert detect_district(text) is None, text
+    assert not is_istanbul(f"{name} Mah.")
+
+
+@pytest.mark.parametrize("name", list(geo._AMBIGUOUS) + ["Fatih Sultan Mehmet"])
+@pytest.mark.parametrize("district", ["Kağıthane", "Sarıyer", "Şişli", "Esenyurt", "Ümraniye"])
+def test_shared_names_follow_the_district_in_the_text(name, district):
+    assert detect_district(f"{name} Mah., {district}") == district
+    assert detect_district(f"{district} / {name} Mahallesi") == district
+
+
+def test_shared_names_resolve_through_a_semt_name():
+    assert detect_district("Hamidiye Mah. Çağlayan") == "Kağıthane"
+    assert detect_district("Huzur Mahallesi, Maslak") == "Sarıyer"
+    assert detect_district("Merkez Mah., Seyrantepe, İstanbul") == "Kağıthane"
+
+
+def test_locate_shared_names_need_a_district():
+    for text in ("Huzur Mahallesi", "Huzur Mah.", "Pınar Mah.", "Pınar Mahallesi", "Kozdere"):
+        assert locate(text, None) is None, text                    # ilçesi bilinmeyen ilan koordinat almaz
+    assert locate("Huzur Mah.", "Sarıyer") == (41.112, 29.027)
+    assert locate("Pınar Mahallesi", "Sarıyer") == (41.136, 29.034)
+    assert locate("Pınar Mh.", "Sarıyer") == (41.136, 29.034)
+    assert locate("Kozdere", "Sarıyer") == (41.145, 29.040)
+    assert locate("Huzur", "Sarıyer") == (41.112, 29.027)          # yalın "huzur" da Sarıyer'de koordinat verir
+    assert locate("Huzur", None) is None and locate("Huzur", "Kağıthane") == DISTRICT_COORDS["Kağıthane"]
+    # başka ilçedeki aynı adlı mahalle Sarıyer'in noktasını almaz: ilçe merkezi
+    assert locate("Huzur Mah.", "Kağıthane") == DISTRICT_COORDS["Kağıthane"]
+    assert locate("Pınar Mah.", "Esenyurt") == DISTRICT_COORDS["Esenyurt"]
+    # tek başına ilçe belirleyen adlar ilçesiz metinde de yer belirler
+    assert locate("Maslak", None) == PLACE_COORDS["maslak"][1:]
+
+
+def test_locate_ignores_neutral_traps():
+    # "Büyükdere Caddesi" Maslak/Levent/Şişli boyunca uzanır: Büyükdere semtini göstermez
+    assert locate("Büyükdere Cad. No:100 Maslak", "Sarıyer") == PLACE_COORDS["maslak"][1:]
+    assert locate("Büyükdere Mah.", "Sarıyer") == PLACE_COORDS["büyükdere"][1:]
+    assert locate("Bebek Bakıcısı, İstanbul", None) is None
+
+
+def test_locate_plazas_are_near_their_semt():
+    for text, district, semt in [("Kanyon", "Şişli", "levent"), ("Metrocity", "Şişli", "levent"),
+                                 ("Spine Tower", "Sarıyer", "maslak"), ("Torun Center", "Şişli", "esentepe")]:
+        pt = locate(text, detect_district(text))
+        assert pt is not None and distance_km(pt, PLACE_COORDS[semt][1:]) < 0.6, text
+        assert PLACE_COORDS[text.lower()][0] == district
+
+
+def test_place_coords_are_consistent_with_the_alias_table():
+    """Koordinatı olan her ad ya tek başına aynı ilçeyi veriyor (ALIASES), ya ortak ad ya da ilçe adıyla başlıyor."""
+    shared = {fold(a) for a in geo._AMBIGUOUS}
+    districts = {fold(d) for d in DISTRICTS}
+    for key, (d, lat, lon) in PLACE_COORDS.items():
+        f = fold(key)
+        if f in ALIASES:
+            assert ALIASES[f] == d, key
+        else:
+            assert f.removesuffix(" mahallesi") in shared or f.split()[0] in districts, key
+        assert distance_km(DISTRICT_COORDS[d], (lat, lon)) < 15, key
+

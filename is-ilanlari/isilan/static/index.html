@@ -206,6 +206,64 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 @media (prefers-color-scheme:dark){.alert{background:#3a1717;color:#ffb4b4;border-color:#5c2626}}
 .backdrop{position:fixed;inset:0;background:rgba(10,12,18,.45);z-index:40}
 
+
+/* skip link + özet şeridi */
+.skip{position:absolute;left:-999px;top:8px;background:var(--accent);color:var(--accent-fg);padding:8px 14px;border-radius:9px;z-index:100;text-decoration:none;font-weight:600}
+.skip:focus{left:8px}
+.strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding-top:16px}
+.strip .stat{min-width:0;overflow-wrap:anywhere}
+.strip .stat b.sm{font-size:16px;line-height:1.4;padding:2px 0}
+.strip .stat b.sm time{font-weight:700}
+
+/* semt / kıdem / istihdam çipleri */
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{position:relative;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;line-height:1.3;max-width:100%}
+.pill:hover{background:var(--surface2)}
+.pill input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.pill:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text);font-weight:600}
+.pill:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.pill.zero:not(:has(input:checked)){color:var(--muted);opacity:.75}
+.pill .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* kart eklentileri */
+.card{cursor:pointer}
+.card:hover{border-color:var(--accent)}
+.colink{background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;font-weight:500;text-align:left;overflow-wrap:anywhere}
+.colink:hover{color:var(--accent-text);text-decoration:underline}
+.b.new{background:var(--accent);color:var(--accent-fg);font-weight:700}
+.b.gone{background:var(--agen-bg);color:var(--agen-fg);font-weight:600}
+.b.semt{background:var(--surface2);color:var(--text)}
+.cact{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.btn.star.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-text)}
+.btn.star span{font-size:15px;line-height:1}
+
+/* kayıtlı aramalar paneli */
+.saved ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.saved li{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border)}
+.saved li .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.saved .row{display:flex;gap:8px;flex-wrap:wrap}
+.saved .row .inp{flex:1;min-width:140px;width:auto}
+
+/* ilan detay paneli */
+.dbd{position:fixed;inset:0;background:rgba(10,12,18,.5);z-index:60}
+.dpanel{position:fixed;top:0;right:0;bottom:0;width:min(620px,100vw);background:var(--surface);z-index:70;display:flex;flex-direction:column;border-left:1px solid var(--border);box-shadow:-8px 0 32px rgba(0,0,0,.18)}
+.dpanel:focus{outline:none}
+.dph{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.dph .nm{flex:1;min-width:0;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dpb{flex:1;overflow:auto;padding:16px;overscroll-behavior:contain;min-width:0}
+.dpf{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.dpf .btn{text-decoration:none}
+.dt{font-size:20px;line-height:1.3;margin:0 0 4px;overflow-wrap:anywhere}
+.dco{margin:0 0 4px;color:var(--muted);font-weight:500;overflow-wrap:anywhere}
+.dpb .bs{margin:12px 0}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin:16px 0}
+.dl>div{min-width:0}
+.dl dt{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.dl dd{margin:2px 0 0;overflow-wrap:anywhere}
+.dpb h3{font-size:14px;margin:18px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ddesc{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;line-height:1.6}
+.dpb ul.dsrc{margin:0;padding-left:18px}
+
 @media (max-width:899px){
   .layout{grid-template-columns:minmax(0,1fr);padding-top:14px}
   .sidebar{position:fixed;top:0;bottom:0;left:0;width:min(92vw,380px);max-height:none;border-radius:0 14px 14px 0;z-index:50;transform:translateX(-105%);visibility:hidden;transition:transform .22s ease,visibility 0s .22s;display:flex;flex-direction:column;overflow:hidden;border-left:0}
@@ -241,10 +299,19 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
   #crawlBtn{padding:9px}
   #crawlBtn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 }
+@media (max-width:520px){
+  .dl{grid-template-columns:1fr}
+  .strip{gap:8px}
+  .strip .stat{padding:6px 10px;font-size:12px}
+  .strip .stat b{font-size:17px}
+  .dpf .btn{flex:1}
+  .cact .btn{flex:1}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<a class="skip" href="#list">Ana içeriğe geç</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
@@ -283,6 +350,7 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 
 <main>
 <section id="p-ilanlar" role="tabpanel" aria-labelledby="tab-ilanlar">
+  <div class="wrap strip" id="strip" role="group" aria-label="Özet"></div>
   <div class="wrap layout">
     <aside class="sidebar" id="filters" aria-label="Filtreler">
       <div class="dhead"><h2>Filtreler</h2><button class="btn sm" id="closeF" type="button" aria-label="Filtreleri kapat">Kapat</button></div>
@@ -332,6 +400,10 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
             <p class="note" id="unkNote">En az bir ilçe seçtiğinizde kullanılabilir. İlçe seçilmemişken tüm ilanlar (ilçesi belirsizler dahil) listelenir.</p>
           </div>
         </fieldset>
+        <fieldset class="fsec" id="semtSec" hidden>
+          <legend class="ft"><span>Semt</span><button class="link" type="button" id="clrSemt" hidden>Temizle</button></legend>
+          <div class="pills" id="semtList"></div>
+        </fieldset>
         <fieldset class="fsec">
           <legend class="ft">Kaynak türü</legend>
           <div id="stList"></div>
@@ -341,6 +413,14 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
           <div class="srch" id="sqWrap" hidden><svg class="i"><use href="#i-search"/></svg><input class="inp" id="sq" type="search" placeholder="Kaynak ara…" aria-label="Kaynak ara" autocomplete="off"></div>
           <div class="slist" id="srcList"></div>
         </fieldset>
+        <fieldset class="fsec" id="kidemSec" hidden>
+          <legend class="ft">Kıdem</legend>
+          <div class="pills" id="kdList"></div>
+        </fieldset>
+        <fieldset class="fsec" id="istSec" hidden>
+          <legend class="ft">İstihdam türü</legend>
+          <div class="pills" id="ihList"></div>
+        </fieldset>
         <fieldset class="fsec">
           <legend class="ft">Çalışma modeli</legend>
           <div id="wmList"></div>
@@ -348,6 +428,12 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
         <fieldset class="fsec">
           <legend class="ft">Yayın tarihi</legend>
           <div id="dayList"></div>
+        </fieldset>
+        <fieldset class="fsec">
+          <legend class="ft">Diğer</legend>
+          <label class="chk"><input type="checkbox" data-f="maasli"><span class="nm">Yalnız maaşlı ilanlar</span></label>
+          <label class="chk" id="yeniLbl"><input type="checkbox" data-f="yeni"><span class="nm">Son ziyaretimden beri yeni</span></label>
+          <p class="note" id="yeniNote" hidden>Bu tarayıcıda daha önce bir ziyaretiniz kayıtlı değil; bir sonraki ziyaretinizde kullanılabilir.</p>
         </fieldset>
       </div>
       <div class="dfoot"><button class="btn" type="button" id="clearAll2">Temizle</button><button class="btn primary" type="button" id="applyF">Sonuçları göster</button></div>
@@ -357,14 +443,18 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
       <div class="qv" role="group" aria-label="Hızlı görünümler">
         <button type="button" class="qbtn" data-qv="all" aria-pressed="false">Tümü</button>
         <button type="button" class="qbtn" data-qv="beyaz" aria-pressed="false">Beyaz yaka</button>
+        <button type="button" class="qbtn" data-qv="odak" aria-pressed="false" title="Sarıyer, Kağıthane, Beşiktaş ve Şişli ilçeleri; semt çipleriyle daraltabilirsiniz">Maslak · Levent · Kağıthane</button>
         <button type="button" class="qbtn" data-qv="ptt" aria-pressed="false" title="PTT Evleri (Sarıyer) çevresinde 10 km, en yakın önce">PTT Evleri'ne yakın</button>
         <button type="button" class="qbtn" data-qv="buyuk" aria-pressed="false" title="Holding ve büyük şirket gruplarının ilanları">Büyük şirketler</button>
         <button type="button" class="qbtn" data-qv="fit" aria-pressed="false">Bana uygun</button>
+        <button type="button" class="qbtn" data-qv="fav" aria-pressed="false" aria-label="Favoriler"><span aria-hidden="true">★</span> Favoriler <span class="cnt" id="favCnt"></span></button>
         <button type="button" class="link" data-prof="edit">Profili düzenle</button>
       </div>
       <div class="rhead">
         <h2 id="resCount" aria-live="polite">İlanlar</h2>
         <button class="btn fbtn" type="button" id="openF" aria-controls="filters" aria-expanded="false"><svg class="i"><use href="#i-filter"/></svg>Filtreler <span class="badge" id="fCount" hidden></span></button>
+        <button class="btn sm" type="button" id="savedBtn" aria-controls="saved" aria-expanded="false">Kayıtlı aramalar <span class="cnt" id="savedCnt"></span></button>
+        <button class="btn sm" type="button" id="csvBtn" aria-label="Filtrelenen ilanları CSV olarak indir">CSV indir</button>
         <label class="sr" for="sort">Sıralama</label>
         <select class="sel" id="sort">
           <option value="new">En yeni</option>
@@ -388,6 +478,12 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
         </div>
         <div class="pfoot"><button class="btn primary" type="button" id="profSave">Kaydet ve uygula</button><button class="btn" type="button" id="profDel">Profili sil</button></div>
       </section>
+      <section class="prof saved" id="saved" hidden aria-labelledby="savedT">
+        <div class="phead"><h3 id="savedT">Kayıtlı aramalar</h3><button class="btn sm" type="button" id="savedClose">Kapat</button></div>
+        <label class="fl" for="svName">Geçerli filtreleri şu adla kaydet</label>
+        <div class="row"><input class="inp" id="svName" type="text" maxlength="60" placeholder="ör. Maslak finans, uzaktan" autocomplete="off"><button class="btn primary" type="button" id="svSave">Aramayı kaydet</button></div>
+        <ul id="svList" aria-label="Kayıtlı aramalar"></ul>
+      </section>
       <div id="active" class="chips" aria-label="Etkin filtreler"></div>
       <div id="jobsErr"></div>
       <div id="list" class="list"></div>
@@ -404,6 +500,12 @@ button.b:hover{box-shadow:inset 0 0 0 1px var(--accent)}
 </section>
 </main>
 <div class="backdrop" id="backdrop" hidden></div>
+<div class="dbd" id="dBackdrop" hidden></div>
+<aside class="dpanel" id="dpanel" role="dialog" aria-modal="true" aria-labelledby="dTitle" tabindex="-1" hidden>
+  <div class="dph"><button class="btn sm" type="button" id="dClose" aria-label="Detayı kapat">&larr; Kapat</button><span class="nm">İlan detayı</span></div>
+  <div class="dpb" id="dBody"></div>
+  <div class="dpf" id="dFoot"></div>
+</aside>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -441,6 +543,28 @@ function fmtKm(d) { return Number(d).toLocaleString('tr-TR', {minimumFractionDig
 function uniq(a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); }
 function icon(n) { return '<svg class="i" aria-hidden="true"><use href="#i-' + n + '"/></svg>'; }
 
+var FAV_KEY = 'isilan_favoriler', SAVED_KEY = 'isilan_aramalar', VISIT_KEY = 'isilan_son_ziyaret', SESS_KEY = 'isilan_oturum_onceki';
+/* ---------- depolama (localStorage erişilemezse bellekte tutulur) ---------- */
+var MEM = {};
+function lsGet(k) {
+  try { var v = localStorage.getItem(k); if (v != null) return v; } catch (e) { /* depolama yok */ }
+  return Object.prototype.hasOwnProperty.call(MEM, k) ? MEM[k] : null;
+}
+function lsSet(k, v) { MEM[k] = v; try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function lsDel(k) { delete MEM[k]; try { localStorage.removeItem(k); } catch (e) { /* depolama yok */ } }
+/* Son ziyaret: aynı sekme oturumunda sabit kalır (yenilemede kaybolmaz); yeni oturumda önceki değer okunup şimdiki yazılır. */
+var LV_T = NaN;
+(function () {
+  var prev = null, seen = false;
+  try { var o = sessionStorage.getItem(SESS_KEY); if (o != null) { prev = o; seen = true; } } catch (e) { /* oturum depolaması yok */ }
+  if (!seen) {
+    prev = lsGet(VISIT_KEY) || '';
+    try { sessionStorage.setItem(SESS_KEY, prev); } catch (e) { /* oturum depolaması yok */ }
+    lsSet(VISIT_KEY, new Date().toISOString());
+  }
+  LV_T = prev ? Date.parse(prev) : NaN;
+})();
+
 var SIDES = {
   avrupa: 'Arnavutköy Avcılar Bağcılar Bahçelievler Bakırköy Başakşehir Bayrampaşa Beşiktaş Beylikdüzü Beyoğlu Büyükçekmece Çatalca Esenler Esenyurt Eyüpsultan Fatih Gaziosmanpaşa Güngören Kağıthane Küçükçekmece Sarıyer Silivri Sultangazi Şişli Zeytinburnu'.split(' '),
   anadolu: 'Adalar Ataşehir Beykoz Çekmeköy Kadıköy Kartal Maltepe Pendik Sancaktepe Sultanbeyli Şile Tuzla Ümraniye Üsküdar'.split(' ')
@@ -453,12 +577,15 @@ var ST_SHORT = {platform: 'Platform', company: 'Şirket sayfası', agency: 'İK 
 var WM = {remote: 'Uzaktan', hybrid: 'Hibrit', onsite: 'Ofiste'};
 var DAYS = [['', 'Tümü'], ['1', 'Son 24 saat'], ['3', 'Son 3 gün'], ['7', 'Son 7 gün'], ['30', 'Son 30 gün']];
 var STATUS = {ok: 'Sorunsuz', partial: 'Kısmen', error: 'Hata', empty: 'İlan yok', 'null': 'Henüz taranmadı'};
-var LISTS = ['ilce', 'source_type', 'source', 'work_model', 'is_tipi', 'grup'];
+var LISTS = ['ilce', 'source_type', 'source', 'work_model', 'is_tipi', 'grup', 'semt', 'kidem', 'istihdam'];
 var COLLAR = {beyaz: 'Beyaz yaka', mavi: 'Mavi yaka', belirsiz: 'Belirsiz'};
 var KMS = ['3', '5', '10', '15', '25'];
 var SORTS = ['new', 'old', 'company', 'near', 'fit'];
 var ORIGIN0 = {name: 'PTT Evleri (Sarıyer)', lat: 41.142, lon: 29.036};
 var PROF_KEY = 'isilan_profil';
+var KIDEM = {stajyer: 'Stajyer', yeni_mezun: 'Yeni mezun', junior: 'Junior', uzman: 'Uzman', kidemli: 'Kıdemli', yonetici: 'Yönetici'};
+var ISTIHDAM = {tam: 'Tam zamanlı', yari: 'Yarı zamanlı', staj: 'Staj', proje: 'Proje / sözleşmeli'};
+var ODAK = ['Sarıyer', 'Kağıthane', 'Beşiktaş', 'Şişli'];
 
 /* ---------- time helpers ---------- */
 var DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
@@ -508,6 +635,7 @@ function L(v) { return Array.isArray(v) ? v : String(v == null ? '' : v).split('
 function collarOf(j) { return j.collar === 'beyaz' || j.collar === 'mavi' ? j.collar : 'belirsiz'; }
 function terms(v) { var o = []; L(v).forEach(function (t) { t = fold(t); if (t && o.indexOf(t) < 0) o.push(t); }); return o; }
 /* Sunucudaki "search" sütunu: fold(başlık şirket konum ilçe kategori açıklama), 2000 karakter */
+function cfold(j) { return j.__c != null ? j.__c : (j.__c = fold(j.company)); }
 function hay(j) { return j.__s != null ? j.__s : (j.__s = fold([j.title, j.company, j.location, j.district, j.category, j.description].map(function (x) { return x == null ? '' : x; }).join(' ')).slice(0, 2000)); }
 /* Sunucuyla aynı: süzme/sıralama için eşdikdörtgen yaklaşımıyla uzaklığın karesi (km²) */
 function d2(j, n) {
@@ -531,6 +659,7 @@ function pred(p, ign) {
   var gr = L(p.grup), buyuk = String(p.buyuk) === '1' || gr.length > 0;
   var yaka = p.yaka || '', unk = String(p.ilce_bilinmiyor) === '1', X = ctx(p);
   var toks = fold(p.q).split(' ').filter(Boolean);
+  var sm = L(p.semt), kd = L(p.kidem), ih = L(p.istihdam), sk = p.sirket ? fold(p.sirket) : '', ms = String(p.maasli) === '1', ys = p.yeni_since ? Date.parse(p.yeni_since) : NaN;
   var cut = +p.days ? new Date(Date.now() - (+p.days) * 864e5).toISOString().slice(0, 10) : '';
   return function (j) {
     if (!ign.district && il.length && (j.district ? il.indexOf(j.district) < 0 : !unk)) return false;
@@ -542,6 +671,12 @@ function pred(p, ign) {
     if (!ign.collar && ct.length && ct.indexOf(collarOf(j)) < 0) return false;
     if (!ign.grup && buyuk && j.grup == null) return false;
     if (!ign.grup && gr.length && gr.indexOf(j.grup) < 0) return false;
+    if (!ign.semt && sm.length && sm.indexOf(j.semt) < 0) return false;
+    if (!ign.kidem && kd.length && kd.indexOf(j.kidem) < 0) return false;
+    if (!ign.istihdam && ih.length && ih.indexOf(j.istihdam) < 0) return false;
+    if (sk && cfold(j) !== sk) return false;
+    if (ms && +j.maasli !== 1) return false;
+    if (!isNaN(ys) && !(parseT(j.first_seen) >= ys)) return false;
     if (X.max) { var d = d2(j, X.near); if (d == null || d > X.max * X.max) return false; }
     var h = (toks.length || X.kw.length || X.ex.length) ? hay(j) : '', i;
     for (i = 0; i < toks.length; i++) if (h.indexOf(toks[i]) < 0) return false;
@@ -583,6 +718,10 @@ function sFacets(p) {
   J.filter(pred(p, {grup: 1})).forEach(function (j) { if (j.grup != null) { bt++; gc[j.grup] = (gc[j.grup] || 0) + 1; } });
   var gruplar = Object.keys(gc).map(function (n) { return {name: n, sektor: (gm[n] || {}).sektor || '', count: gc[n]}; })
     .sort(function (a, b) { return (b.count - a.count) || coll.compare(a.name, b.name); });
+  var smc = {}, kdc = {}, ihc = {};
+  J.filter(pred(p, {semt: 1})).forEach(function (j) { if (j.semt) smc[j.semt] = (smc[j.semt] || 0) + 1; });
+  J.filter(pred(p, {kidem: 1})).forEach(function (j) { if (j.kidem) kdc[j.kidem] = (kdc[j.kidem] || 0) + 1; });
+  J.filter(pred(p, {istihdam: 1})).forEach(function (j) { if (j.istihdam) ihc[j.istihdam] = (ihc[j.istihdam] || 0) + 1; });
   var districts = [];
   Object.keys(SIDES).forEach(function (s) { SIDES[s].forEach(function (n) { districts.push({name: n, side: s, count: dc[n] || 0}); }); });
   return {
@@ -590,7 +729,7 @@ function sFacets(p) {
     source_types: Object.keys(ST_LABEL).map(function (n) { return {name: n, label: ST_LABEL[n], count: tc[n] || 0}; }),
     sources: Object.keys(src).map(function (k) { src[k].count = sc[k]; return src[k]; }).sort(function (a, b) { return b.count - a.count; }),
     collars: Object.keys(COLLAR).map(function (n) { return {name: n, label: COLLAR[n], count: cc[n]}; }),
-    gruplar: gruplar, buyuk_total: bt,
+    gruplar: gruplar, buyuk_total: bt, semt: smc, kidem: kdc, istihdam: ihc,
     origins: DATA.origins && DATA.origins.length ? DATA.origins : [ORIGIN0]
   };
 }
@@ -617,7 +756,8 @@ var api = DATA ? staticApi : serverApi;
 
 /* ---------- state + URL ---------- */
 var state = {q: '', ilce: [], ilce_bilinmiyor: false, yaka: '', source_type: [], source: [], work_model: [], days: '', sort: 'new', tab: 'ilanlar',
-  is_tipi: [], grup: [], buyuk: false, near: '', max_km: '', kw: [], haric: []};
+  is_tipi: [], grup: [], buyuk: false, near: '', max_km: '', kw: [], haric: [],
+  semt: [], kidem: [], istihdam: [], sirket: '', maasli: false, yeni: false, fav: false};
 /* near: '' = varsayılan başlangıç noktası (origins[0]). Uzaklık yalnızca mesafe sınırı ya da yakınlık sıralaması varken gönderilir. */
 function origins() { return (F && F.origins && F.origins.length && F.origins) || (TOT && TOT.origins && TOT.origins.length && TOT.origins) || (DATA && DATA.origins && DATA.origins.length && DATA.origins) || [ORIGIN0]; }
 function defNear() { return nearStr(origins()[0]); }
@@ -628,8 +768,8 @@ function originName() {
   var n = curNear(), o = origins().filter(function (x) { return sameNear(nearStr(x), n); })[0];
   return o ? o.name : 'seçili nokta';
 }
-function readURL() {
-  var u = new URLSearchParams(location.search);
+function readURL(search) {
+  var u = new URLSearchParams(search == null ? location.search : search);
   state.q = u.get('q') || '';
   LISTS.forEach(function (k) { state[k] = uniq(L(u.get(k))); });
   state.ilce_bilinmiyor = u.get('ilce_bilinmiyor') === '1';
@@ -642,9 +782,14 @@ function readURL() {
   state.max_km = KMS.indexOf(u.get('max_km')) >= 0 ? u.get('max_km') : '';
   state.kw = uniq(L(u.get('kw')));
   state.haric = uniq(L(u.get('haric')));
+  state.sirket = (u.get('sirket') || '').trim();
+  state.maasli = u.get('maasli') === '1';
+  state.yeni = u.get('yeni') === '1' && !isNaN(LV_T);
+  state.fav = u.get('fav') === '1';
   state.tab = u.get('tab') === 'kaynaklar' ? 'kaynaklar' : 'ilanlar';
 }
-function writeURL() {
+/* save=true: kayıtlı arama için (sekme ve favori görünümü olmadan) */
+function buildQS(save) {
   var u = new URLSearchParams();
   if (state.q.trim()) u.set('q', state.q.trim());
   LISTS.forEach(function (k) { if (state[k].length) u.set(k, state[k].join(',')); });
@@ -657,8 +802,15 @@ function writeURL() {
   if (state.kw.length) u.set('kw', state.kw.join(','));
   if (state.haric.length) u.set('haric', state.haric.join(','));
   if (state.sort !== 'new') u.set('sort', state.sort);
-  if (state.tab !== 'ilanlar') u.set('tab', state.tab);
-  var s = u.toString().replace(/%2C/gi, ',');
+  if (state.sirket) u.set('sirket', state.sirket);
+  if (state.maasli) u.set('maasli', '1');
+  if (state.yeni) u.set('yeni', '1');
+  if (!save && state.fav) u.set('fav', '1');
+  if (!save && state.tab !== 'ilanlar') u.set('tab', state.tab);
+  return u.toString().replace(/%2C/gi, ',');
+}
+function writeURL() {
+  var s = buildQS(false);
   try { history.replaceState(null, '', (s ? '?' + s : location.pathname) + location.hash); } catch (e) { /* file:// vb. */ }
 }
 function filterParams() {
@@ -672,6 +824,9 @@ function filterParams() {
   if (nearActive()) { p.near = curNear(); if (state.max_km) p.max_km = state.max_km; }
   if (state.kw.length) p.kw = state.kw.join(',');
   if (state.haric.length) p.haric = state.haric.join(',');
+  if (state.sirket) p.sirket = state.sirket;
+  if (state.maasli) p.maasli = 1;
+  if (state.yeni && !isNaN(LV_T)) p.yeni_since = new Date(LV_T).toISOString();
   return p;
 }
 function jobParams(page) {
@@ -683,6 +838,28 @@ function jobParams(page) {
 /* ---------- facets & filter panel ---------- */
 var F = null;      // geçerli filtrelere göre faset sayıları (/api/facets?<filtreler>)
 var TOT = null;    // filtresiz /api/facets (başlıktaki toplam ve son tarama)
+var SEMT = [], semtKeys = '';
+function pill(f, v, label) {
+  return '<label class="pill"><input type="checkbox" data-f="' + f + '" value="' + esc(v) + '"><span class="nm">' + esc(label) + '</span><span class="cnt"></span></label>';
+}
+function buildSemt() {
+  var seen = {}, names = [], order = {};
+  ((DATA && DATA.semtler) || []).forEach(function (x, i) { if (x && x.ad && order[x.ad] == null) order[x.ad] = i; });
+  function add(n) { if (n && !seen[n]) { seen[n] = 1; names.push(n); } }
+  Object.keys(order).forEach(add);
+  [TOT && TOT.semt, F && F.semt].forEach(function (m) { Object.keys(m || {}).forEach(add); });
+  state.semt.forEach(add);
+  var tm = (TOT && TOT.semt) || {};
+  names.sort(function (a, b) {
+    var x = order[a] == null ? 1e9 : order[a], y = order[b] == null ? 1e9 : order[b];
+    return (x - y) || ((tm[b] || 0) - (tm[a] || 0)) || coll.compare(a, b);
+  });
+  var k = names.join('|');
+  SEMT = names;
+  if (k === semtKeys) return;
+  semtKeys = k;
+  $('#semtList').innerHTML = names.map(function (n) { return pill('semt', n, n); }).join('');
+}
 var SRC = {};      // görülen tüm kaynaklar: ad -> {name,label,source_type}
 var srcKeys = '';
 function srcLabel(n) { return SRC[n] ? SRC[n].label : n; }
@@ -702,6 +879,8 @@ function buildFilters() {
   $('#stList').innerHTML = Object.keys(ST_LABEL).map(function (t) { return chk('source_type', t, ST_LABEL[t], 1); }).join('');
   $('#ctList').innerHTML = Object.keys(COLLAR).map(function (k) { return chk('is_tipi', k, COLLAR[k], 1); }).join('');
   $('#wmList').innerHTML = Object.keys(WM).map(function (k) { return chk('work_model', k, WM[k]); }).join('');
+  $('#kdList').innerHTML = Object.keys(KIDEM).map(function (k) { return pill('kidem', k, KIDEM[k]); }).join('');
+  $('#ihList').innerHTML = Object.keys(ISTIHDAM).map(function (k) { return pill('istihdam', k, ISTIHDAM[k]); }).join('');
   $('#dayList').innerHTML = DAYS.map(function (d) {
     return '<label class="chk"><input type="radio" name="days" data-f="days" value="' + d[0] + '"><span class="nm">' + d[1] + '</span></label>';
   }).join('');
@@ -744,7 +923,7 @@ function filterGroups() {
   $('#grNone').hidden = any || !$$('#grList > div').length;
 }
 function setCnt(input, n) {
-  var l = input.closest('.chk');
+  var l = input.closest('.chk, .pill');
   $('.cnt', l).textContent = fmt(n);
   l.classList.toggle('zero', !n);
 }
@@ -773,6 +952,11 @@ function updateCounts() {
   var cc = {};
   (F.collars || []).forEach(function (c) { cc[c.name] = c.count || 0; });
   $$('input[data-f="is_tipi"]').forEach(function (i) { setCnt(i, cc[i.value] || 0); });
+  buildSemt();
+  [['semt', F.semt], ['kidem', F.kidem], ['istihdam', F.istihdam]].forEach(function (x) {
+    var m = x[1] || {};
+    $$('input[data-f="' + x[0] + '"]').forEach(function (i) { setCnt(i, m[i.value] || 0); });
+  });
   buildOrigins();
 }
 var originKeys = '';
@@ -806,12 +990,14 @@ function filterSources() {
 function activeCount() {
   return state.ilce.length + state.source_type.length + state.source.length + state.work_model.length + state.is_tipi.length +
     (state.max_km ? 1 : 0) + (state.kw.length ? 1 : 0) + (state.haric.length ? 1 : 0) +
-    (state.buyuk ? 1 : 0) + state.grup.length + (state.yaka ? 1 : 0) + (state.days ? 1 : 0) + (state.q.trim() ? 1 : 0) + (state.ilce_bilinmiyor && state.ilce.length ? 1 : 0);
+    (state.buyuk ? 1 : 0) + state.grup.length + (state.yaka ? 1 : 0) + (state.days ? 1 : 0) + (state.q.trim() ? 1 : 0) + (state.ilce_bilinmiyor && state.ilce.length ? 1 : 0) +
+    state.semt.length + state.kidem.length + state.istihdam.length + (state.sirket ? 1 : 0) + (state.maasli ? 1 : 0) + (state.yeni ? 1 : 0) + (state.fav ? 1 : 0);
 }
 function chip(k, v, label, cls) {
   return '<button type="button" class="chip' + (cls ? ' ' + cls : '') + '" data-k="' + k + '" data-v="' + esc(v) + '" aria-label="' + esc(label) + ' filtresini kaldır"><span>' + esc(label) + '</span><span class="x" aria-hidden="true">×</span></button>';
 }
 function syncFilters() {
+  buildSemt();
   $$('input[data-f]').forEach(function (i) {
     var f = i.dataset.f;
     if (LISTS.indexOf(f) >= 0) i.checked = state[f].indexOf(i.value) >= 0;
@@ -820,6 +1006,8 @@ function syncFilters() {
     else if (f === 'days') i.checked = i.value === state.days;
     else if (f === 'unk') i.checked = state.ilce_bilinmiyor;
     else if (f === 'nearsort') i.checked = state.sort === 'near';
+    else if (f === 'maasli') i.checked = state.maasli;
+    else if (f === 'yeni') { i.checked = state.yeni; i.disabled = isNaN(LV_T); }
   });
   var fo = $('#sort option[value="fit"]'); fo.hidden = fo.disabled = !state.kw.length && state.sort !== 'fit';
   if ($('#maxKm').value !== state.max_km) $('#maxKm').value = state.max_km;
@@ -858,6 +1046,13 @@ function syncFilters() {
   state.is_tipi.forEach(function (t) { c.push(chip('is_tipi', t, COLLAR[t] || t, 'd')); });
   if (state.buyuk) c.push(chip('buyuk', '', 'Büyük şirketler', 'd'));
   state.grup.forEach(function (g) { c.push(chip('grup', g, g, 'd')); });
+  if (state.fav) c.push(chip('fav', '', 'Favoriler', 'd'));
+  state.semt.forEach(function (x) { c.push(chip('semt', x, 'Semt: ' + x, 'd')); });
+  state.kidem.forEach(function (x) { c.push(chip('kidem', x, KIDEM[x] || x, 'd')); });
+  state.istihdam.forEach(function (x) { c.push(chip('istihdam', x, ISTIHDAM[x] || x, 'd')); });
+  if (state.sirket) c.push(chip('sirket', '', 'Şirket: ' + state.sirket, 'd'));
+  if (state.maasli) c.push(chip('maasli', '', 'Yalnız maaşlı', 'd'));
+  if (state.yeni) c.push(chip('yeni', '', 'Son ziyaretimden beri yeni', 'd'));
   if (state.max_km) c.push(chip('max_km', '', '≤ ' + state.max_km + ' km · ' + originName(), 'd'));
   if (state.kw.length) c.push(chip('kw', '', 'Uygun: ' + state.kw.join(', ')));
   if (state.haric.length) c.push(chip('haric', '', 'Hariç: ' + state.haric.join(', ')));
@@ -867,22 +1062,32 @@ function syncFilters() {
   if (state.days) c.push(chip('days', '', DAYS.filter(function (d) { return d[0] === state.days; })[0][1]));
   if (c.length > 1) c.push('<button type="button" class="link" data-k="all">Tümünü temizle</button>');
   $('#active').innerHTML = c.join('');
+  $('#semtSec').hidden = !SEMT.length;
+  $('#clrSemt').hidden = !state.semt.length;
+  $('#kidemSec').hidden = !((F && F.kidem && Object.keys(F.kidem).length) || state.kidem.length);
+  $('#istSec').hidden = !((F && F.istihdam && Object.keys(F.istihdam).length) || state.istihdam.length);
+  $$('#semtList .pill').forEach(function (p) { p.hidden = p.classList.contains('zero') && !$('input', p).checked; });
+  $('#yeniNote').hidden = !isNaN(LV_T);
+  var nf = Object.keys(FAVS).length;
+  $('#favCnt').textContent = nf ? String(nf) : '';
+  $('#savedCnt').textContent = SAVED.length ? String(SAVED.length) : '';
   var n = activeCount();
   $('#fCount').hidden = !n;
   $('#fCount').textContent = n;
 }
-function clearAll() {
+function clearAll() { resetAll(); changed(); }
+function resetAll() {
+  state.semt = []; state.kidem = []; state.istihdam = []; state.sirket = ''; state.maasli = false; state.yeni = false; state.fav = false;
   state.q = ''; state.ilce = []; state.ilce_bilinmiyor = false; state.yaka = '';
   state.source_type = []; state.source = []; state.work_model = []; state.days = '';
   state.is_tipi = []; state.max_km = ''; state.kw = []; state.haric = []; state.buyuk = false; state.grup = [];
   if (state.sort === 'fit') state.sort = 'new';
   $('#q').value = '';
-  changed();
 }
 /* ---------- hızlı görünümler + "Bana uygun" profili ---------- */
 function loadProf() {
   try {
-    var p = JSON.parse(localStorage.getItem(PROF_KEY) || 'null');
+    var p = JSON.parse(lsGet(PROF_KEY) || 'null');
     if (!p && window.__ISILAN_PROFIL__) p = window.__ISILAN_PROFIL__;  /* build-site --profil ile gömülen hazır profil */
     if (p && typeof p === 'object') return {kw: uniq(L(p.kw)), haric: uniq(L(p.haric)), beyaz: !!p.beyaz, km: KMS.indexOf(String(p.km || '')) >= 0 ? String(p.km) : ''};
   } catch (e) {
@@ -896,7 +1101,9 @@ function hasProf() { return !!PROF && !!(PROF.kw.length || PROF.haric.length || 
 function sameSet(a, b) { return a.length === b.length && a.every(function (x) { return b.indexOf(x) >= 0; }); }
 function curView() {
   var s = state, ns = s.sort === 'near' || s.sort === 'fit';
+  if (s.fav) return 'fav';
   if (!activeCount() && !ns) return 'all';
+  if (sameSet(s.ilce, ODAK) && activeCount() - s.ilce.length - s.semt.length === 0 && !ns) return 'odak';
   var nb = !s.buyuk && !s.grup.length;
   if (s.buyuk && !s.grup.length && activeCount() === 1 && !ns) return 'buyuk';
   if (nb && sameSet(s.is_tipi, ['beyaz']) && !s.max_km && !s.kw.length && !s.haric.length && !ns) return 'beyaz';
@@ -907,10 +1114,13 @@ function curView() {
 }
 function applyView(v) {
   if (v === 'fit' && !hasProf()) return openProf(true);
+  if (v === 'fav') { state.fav = true; return changed(); }
+  state.fav = false;
   state.is_tipi = []; state.max_km = ''; state.near = ''; state.kw = []; state.haric = []; state.buyuk = false; state.grup = [];
   if (state.sort === 'near' || state.sort === 'fit') state.sort = 'new';
   if (v === 'all') return clearAll();
-  if (v === 'beyaz') state.is_tipi = ['beyaz'];
+  if (v === 'odak') { resetAll(); state.ilce = ODAK.slice(); }
+  else if (v === 'beyaz') state.is_tipi = ['beyaz'];
   else if (v === 'buyuk') state.buyuk = true;
   else if (v === 'ptt') { state.sort = 'near'; state.max_km = '10'; }
   else if (v === 'fit') {
@@ -934,14 +1144,14 @@ function saveProf() {
   var P = {kw: sp($('#pKw').value), haric: sp($('#pEx').value), beyaz: $('#pWhite').checked, km: $('#pKm').value};
   if (!(P.kw.length || P.haric.length || P.beyaz || P.km)) { $('#profHint').hidden = false; $('#pKw').focus(); return; }
   PROF = P;
-  try { localStorage.setItem(PROF_KEY, JSON.stringify(P)); } catch (e) { toast('Profil yalnızca bu oturum için kullanılacak (tarayıcı depolaması kapalı)'); }
+  if (!lsSet(PROF_KEY, JSON.stringify(P))) toast('Profil yalnızca bu oturum için kullanılacak (tarayıcı depolaması kapalı)');
   $('#prof').hidden = true;
   applyView('fit');
 }
 function delProf() {
   var was = curView() === 'fit';
   PROF = null;
-  try { localStorage.removeItem(PROF_KEY); } catch (e) { /* depolama yok */ }
+  lsDel(PROF_KEY);
   $('#pKw').value = ''; $('#pEx').value = ''; $('#pWhite').checked = false; $('#pKm').value = '';
   if (was) applyView('all'); else syncFilters();
 }
@@ -951,6 +1161,7 @@ function removeFilter(k, v) {
   else if (k === 'q') { state.q = ''; $('#q').value = ''; }
   else if (k === 'unk') state.ilce_bilinmiyor = false;
   else if (k === 'buyuk') state.buyuk = false;
+  else if (k === 'maasli' || k === 'yeni' || k === 'fav') state[k] = false;
   else if (k === 'kw' || k === 'haric') { state[k] = []; if (k === 'kw' && state.sort === 'fit') state.sort = 'new'; }
   else state[k] = '';
   changed();
@@ -959,7 +1170,73 @@ function changed() { syncFilters(); writeURL(); loadJobs(1); loadFacets(); }
 
 /* ---------- jobs ---------- */
 var reqId = 0, shown = 0, total = 0, page = 1;
-function card(j) {
+/* ---------- favoriler ---------- */
+var ITEMS = {};
+function loadFavs() {
+  try { var o = JSON.parse(lsGet(FAV_KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; }
+}
+var FAVS = loadFavs();
+function favList() { return Object.keys(FAVS).map(function (k) { return FAVS[k]; }).filter(function (f) { return f && f.j; }).sort(function (a, b) { return (b.t || 0) - (a.t || 0); }); }
+function favSummary(j) {
+  var o = {};
+  ['uid', 'title', 'company', 'district', 'semt', 'kidem', 'istihdam', 'maasli', 'work_model', 'employment_type', 'salary', 'category', 'source', 'source_label', 'source_type', 'url', 'posted_at', 'first_seen', 'collar'].forEach(function (k) { if (j[k] != null) o[k] = j[k]; });
+  o.description = String(j.description || '').slice(0, 240);
+  return o;
+}
+function starInner(on) { return '<span aria-hidden="true">' + (on ? '★' : '☆') + '</span> ' + (on ? 'Favorilerde' : 'Favorilere ekle'); }
+function starBtn(j) {
+  var on = !!FAVS[j.uid];
+  return '<button type="button" class="btn sm star' + (on ? ' on' : '') + '" data-act="fav" data-uid="' + esc(j.uid) + '" aria-pressed="' + on + '" aria-label="Favori: ' + esc(j.title || 'ilan') + '">' + starInner(on) + '</button>';
+}
+function refreshStars(uid) {
+  var on = !!FAVS[uid];
+  $$('[data-act="fav"]').forEach(function (b) {
+    if (b.dataset.uid !== uid) return;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.innerHTML = starInner(on);
+  });
+}
+function toggleFav(uid, j) {
+  if (FAVS[uid]) delete FAVS[uid];
+  else {
+    j = j || ITEMS[uid]; if (!j) return;
+    FAVS[uid] = {t: Date.now(), j: favSummary(j)};
+  }
+  if (!lsSet(FAV_KEY, JSON.stringify(FAVS))) toast('Favoriler yalnızca bu oturum için tutuluyor (tarayıcı depolaması kapalı)');
+  refreshStars(uid);
+  $('#favCnt').textContent = Object.keys(FAVS).length ? String(Object.keys(FAVS).length) : '';
+  if (state.fav) renderFavs();
+}
+/* Tek ilanı bul: statik modda DATA.jobs, sunucuda /api/job; yoksa null (404). */
+function lookupJob(uid) {
+  if (DATA) return Promise.resolve(DATA.jobs.filter(function (j) { return j.uid === uid; })[0] || null);
+  return serverApi('/api/job', {uid: uid}).catch(function (e) { if (/404/.test(e.message)) return null; throw e; });
+}
+function renderFavs() {
+  var id = ++reqId, list = $('#list'), favs = favList();
+  $('#jobsErr').innerHTML = '';
+  $('#more').hidden = true;
+  $('#resCount').innerHTML = fmt(favs.length) + ' favori';
+  $('#applyF').textContent = fmt(favs.length) + ' favoriyi göster';
+  if (!favs.length) {
+    list.removeAttribute('aria-busy');
+    list.innerHTML = '<div class="empty"><h3>Henüz favori yok</h3><p>İlan kartlarındaki “Favorilere ekle” düğmesiyle ilanları burada biriktirebilirsiniz.</p><button type="button" class="btn" data-k="fav">Tüm ilanlara dön</button></div>';
+    return;
+  }
+  list.setAttribute('aria-busy', 'true');
+  Promise.all(favs.map(function (f) {
+    return lookupJob(f.j.uid).then(function (j) { return j ? {j: Object.assign({}, f.j, j), gone: false} : {j: f.j, gone: true}; },
+      function () { return {j: f.j, gone: false}; });
+  })).then(function (rs) {
+    if (id !== reqId) return;
+    list.removeAttribute('aria-busy');
+    rs.forEach(function (r) { ITEMS[r.j.uid] = r.j; });
+    list.innerHTML = rs.map(function (r) { return card(r.j, {gone: r.gone}); }).join('');
+  });
+}
+function isNew(j) { return !isNaN(LV_T) && parseT(j.first_seen) > LV_T; }
+
+function card(j, o) {
+  o = o || {};
   var dups = (j.duplicates || []).filter(function (d) { return d && d.url; });
   var side = sideOf(j);
   var when = j.posted_at || j.first_seen;
@@ -967,30 +1244,34 @@ function card(j) {
   var dist = j.district
     ? '<button type="button" class="b dist" data-dist="' + esc(j.district) + '" title="Yalnızca ' + esc(j.district) + ' ilanlarını göster">' + icon('pin') + esc(j.district) + (side ? '<span class="sd ' + side + '" aria-hidden="true"></span><span class="sr">(' + SIDE_LABEL[side] + ')</span>' : '') + '</button>'
     : '<span class="b nodist">' + icon('pin') + 'İlçe belirsiz</span>';
-  var loc = j.location && norm(j.location) !== norm(j.district) ? '<span class="loc">' + esc(j.location) + '</span>' : '';
+  var semt = j.semt ? '<span class="b semt" title="Semt">' + esc(j.semt) + '</span>' : '';
+  var loc = j.location && norm(j.location) !== norm(j.district) && norm(j.location) !== norm(j.semt) ? '<span class="loc">' + esc(j.location) + '</span>' : '';
   var id = 'd' + esc(j.uid);
   var agency = j.extra && typeof j.extra.agency === 'string' ? j.extra.agency : '';
   var km = j.distance_km != null && isFinite(j.distance_km) ? '<span class="b km" title="' + esc(originName()) + ' noktasına kuş uçuşu yaklaşık uzaklık">≈ ' + fmtKm(j.distance_km) + ' km</span>' : '';
   var gp = j.grup ? '<button type="button" class="b grp" data-grup="' + esc(j.grup) + '" title="Yalnızca ' + esc(j.grup) + ' ilanlarını göster">' + icon('building') + esc(j.grup) + '</button>' : '';
   var cl = j.collar === 'beyaz' || j.collar === 'mavi' ? '<span class="b cl">' + COLLAR[j.collar] + '</span>' : '';
+  var kd = KIDEM[j.kidem] ? '<span class="b" title="Kıdem">' + KIDEM[j.kidem] + '</span>' : '';
+  var ih = ISTIHDAM[j.istihdam] ? '<span class="b" title="İstihdam türü">' + ISTIHDAM[j.istihdam] + '</span>' : (j.employment_type ? '<span class="b">' + esc(j.employment_type) + '</span>' : '');
+  var sal = j.salary ? '<span class="b sal">' + esc(j.salary) + '</span>' : (+j.maasli === 1 ? '<span class="b sal">Maaş belirtilmiş</span>' : '');
   var mt = j.match && j.match.terms && j.match.terms.length
     ? '<div class="mt"><span class="sc" title="Profilinizdeki ' + fmt(terms(state.kw).length) + ' kelimeden ' + fmt(j.match.score) + ' tanesi eşleşti">Uygunluk ' + fmt(j.match.score) + '/' + fmt(terms(state.kw).length || j.match.score) + '</span>' +
-      j.match.terms.map(function (t) { var o = state.kw.filter(function (k) { return fold(k) === t; })[0]; return '<mark>' + esc(o || t) + '</mark>'; }).join('') + '</div>' : '';
-  return '<article class="card"><div class="ctop"><h3><a href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(j.title || '(başlıksız ilan)') + '</a></h3>' +
+      j.match.terms.map(function (t) { var o2 = state.kw.filter(function (k) { return fold(k) === t; })[0]; return '<mark>' + esc(o2 || t) + '</mark>'; }).join('') + '</div>' : '';
+  return '<article class="card" data-uid="' + esc(j.uid) + '"><div class="ctop"><h3><a href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(j.title || '(başlıksız ilan)') + '</a></h3>' +
     (when ? '<time class="date" datetime="' + esc(when) + '" title="' + esc(whenTitle) + '">' + relTime(when) + '</time>' : '') + '</div>' +
-    (j.company || agency ? '<div class="co">' + esc(j.company) + (agency && agency !== j.company ? '<span class="via">' + (j.company ? ' · ' : '') + esc(agency) + ' aracılığıyla</span>' : '') + '</div>' : '') +
-    '<div class="bs">' + dist + km +
+    (j.company || agency ? '<div class="co">' + (j.company ? '<button type="button" class="colink" data-act="sirket" data-val="' + esc(j.company) + '" title="Yalnızca ' + esc(j.company) + ' ilanlarını göster">' + esc(j.company) + '</button>' : '') + (agency && agency !== j.company ? '<span class="via">' + (j.company ? ' · ' : '') + esc(agency) + ' aracılığıyla</span>' : '') + '</div>' : '') +
+    '<div class="bs">' + (o.gone ? '<span class="b gone">Yayından kalktı</span>' : '') + (isNew(j) ? '<span class="b new">Yeni</span>' : '') + dist + semt + km +
     '<span class="b ' + esc(j.source_type) + '" title="' + esc(ST_SHORT[j.source_type] || '') + '">' + esc(j.source_label || j.source) + '</span>' +
-    (WM[j.work_model] ? '<span class="b">' + WM[j.work_model] + '</span>' : '') +
-    (j.employment_type ? '<span class="b">' + esc(j.employment_type) + '</span>' : '') +
+    (WM[j.work_model] ? '<span class="b">' + WM[j.work_model] + '</span>' : '') + kd + ih +
     (j.category ? '<span class="b">' + esc(j.category) + '</span>' : '') +
-    gp + cl + (j.salary ? '<span class="b sal">' + esc(j.salary) + '</span>' : '') + loc + '</div>' + mt +
+    gp + cl + sal + loc + '</div>' + mt +
     (j.description ? '<p class="desc">' + esc(j.description) + '</p>' : '') +
     (dups.length ? '<div class="dup"><button type="button" class="link" aria-expanded="false" aria-controls="' + id + '">+' + dups.length + ' kaynakta daha</button><ul id="' + id + '" hidden>' +
       dups.map(function (d) {
         return '<li><a href="' + esc(safeUrl(d.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(d.source_label || d.source || d.url) + '</a>' +
           (ST_SHORT[d.source_type] ? ' <span class="b ' + d.source_type + '">' + ST_SHORT[d.source_type] + '</span>' : '') + '</li>';
       }).join('') + '</ul></div>' : '') +
+    '<div class="cact">' + starBtn(j) + '<button type="button" class="btn sm" data-act="detay" data-uid="' + esc(j.uid) + '" aria-label="Detay: ' + esc(j.title || 'ilan') + '">Detay</button></div>' +
     '</article>';
 }
 function emptyHTML() {
@@ -1002,6 +1283,7 @@ function emptyHTML() {
     '</p><button type="button" class="btn" data-k="all">Filtreleri temizle</button></div>';
 }
 function loadJobs(p) {
+  if (state.fav) return renderFavs();
   var id = ++reqId, list = $('#list');
   list.setAttribute('aria-busy', 'true');
   if (p === 1 && !list.children.length) list.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
@@ -1011,6 +1293,7 @@ function loadJobs(p) {
     $('#jobsErr').innerHTML = '';
     total = r.total || 0; page = r.page || p;
     var items = r.items || [];
+    items.forEach(function (j) { ITEMS[j.uid] = j; });
     var html = items.map(card).join('');
     if (p === 1) { list.innerHTML = html || emptyHTML(); shown = items.length; }
     else { list.insertAdjacentHTML('beforeend', html); shown += items.length; }
@@ -1032,10 +1315,17 @@ function loadJobs(p) {
 }
 
 /* ---------- header / facets ---------- */
+var NEW24 = null;
 function renderMeta() {
   var lc = TOT && TOT.last_crawl;
   $('#meta').innerHTML = '<b>' + fmt(TOT ? TOT.total : 0) + '</b> ilan · ' +
     (lc ? (DATA ? 'Güncelleme: ' : 'Son tarama: ') + '<time datetime="' + esc(lc) + '" title="' + esc(fullDate(lc)) + '">' + relTime(lc) + '</time>' : 'Henüz tarama yapılmadı');
+  $('#strip').innerHTML = '<div class="stat"><b>' + (TOT ? fmt(TOT.total) : '—') + '</b>aktif ilan</div>' +
+    '<div class="stat"><b>' + (NEW24 == null ? '—' : fmt(NEW24)) + '</b>son 24 saatte yeni</div>' +
+    '<div class="stat"><b class="sm">' + (lc ? '<time datetime="' + esc(lc) + '" title="' + esc(fullDate(lc)) + '">' + relTime(lc) + '</time>' : (TOT ? 'yok' : '—')) + '</b>' + (DATA ? 'son güncelleme' : 'son tarama') + '</div>';
+}
+function loadNew24() {
+  return api('/api/jobs', {days: '1', per_page: 1}).then(function (r) { NEW24 = r.total || 0; renderMeta(); }).catch(function () { /* şerit '—' kalır */ });
 }
 var facId = 0;
 function loadFacets() {
@@ -1050,7 +1340,7 @@ function loadFacets() {
   }).catch(function (e) { if (id === facId) toast('Filtre sayıları alınamadı: ' + e.message); });
 }
 function loadTotals() {
-  return api('/api/facets').then(function (f) { TOT = f; renderMeta(); })
+  return api('/api/facets').then(function (f) { TOT = f; renderMeta(); loadNew24(); })
     .catch(function (e) { $('#meta').textContent = 'Sunucuya ulaşılamadı (' + e.message + ')'; });
 }
 
@@ -1167,12 +1457,15 @@ function drawer(open) {
 $('#filters').addEventListener('change', function (e) {
   var t = e.target, f = t.dataset.f;
   if (!f) return;
+  state.fav = false;
   if (f === 'group') {
     var vis = $$('.dgroup[data-side="' + t.value + '"] li:not([hidden]) input').map(function (i) { return i.value; });
     state.ilce = t.checked ? uniq(state.ilce.concat(vis)) : state.ilce.filter(function (x) { return vis.indexOf(x) < 0; });
   } else if (LISTS.indexOf(f) >= 0) {
     state[f] = t.checked ? uniq(state[f].concat([t.value])) : state[f].filter(function (x) { return x !== t.value; });
   } else if (f === 'unk') state.ilce_bilinmiyor = t.checked;
+  else if (f === 'maasli') state.maasli = t.checked;
+  else if (f === 'yeni') state.yeni = t.checked;
   else if (f === 'buyuk') state.buyuk = t.checked;
   else if (f === 'yaka') {
     state.yaka = t.value;
@@ -1186,10 +1479,10 @@ $('#filters').addEventListener('change', function (e) {
 var qT = 0;
 $('#q').addEventListener('input', function () {
   clearTimeout(qT);
-  qT = setTimeout(function () { if (state.q !== $('#q').value) { state.q = $('#q').value; changed(); } }, 300);
+  qT = setTimeout(function () { if (state.q !== $('#q').value) { state.q = $('#q').value; state.fav = false; changed(); } }, 300);
 });
 $('#q').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { clearTimeout(qT); state.q = $('#q').value; changed(); }
+  if (e.key === 'Enter') { clearTimeout(qT); state.q = $('#q').value; state.fav = false; changed(); }
 });
 $('#dq').addEventListener('input', filterDistricts);
 $('#sq').addEventListener('input', filterSources);
@@ -1213,13 +1506,13 @@ document.addEventListener('click', function (e) {
   var d = e.target.closest('[data-dist]');
   if (d) {
     var n = d.dataset.dist;
-    if (state.ilce.indexOf(n) < 0) { state.ilce = state.ilce.concat([n]); if (state.yaka && SIDE_OF[n] !== state.yaka) state.yaka = ''; changed(); }
+    if (state.ilce.indexOf(n) < 0 || state.fav) { state.fav = false; if (state.ilce.indexOf(n) < 0) { state.ilce = state.ilce.concat([n]); if (state.yaka && SIDE_OF[n] !== state.yaka) state.yaka = ''; } changed(); }
     window.scrollTo({top: 0, behavior: 'smooth'});
     return;
   }
   var g = e.target.closest('[data-grup]');
   if (g) {
-    if (state.grup.indexOf(g.dataset.grup) < 0) { state.grup = state.grup.concat([g.dataset.grup]); changed(); }
+    if (state.grup.indexOf(g.dataset.grup) < 0 || state.fav) { state.fav = false; if (state.grup.indexOf(g.dataset.grup) < 0) state.grup = state.grup.concat([g.dataset.grup]); changed(); }
     window.scrollTo({top: 0, behavior: 'smooth'});
     return;
   }
@@ -1246,8 +1539,272 @@ $('#openF').addEventListener('click', function () { drawer(true); });
 $('#closeF').addEventListener('click', function () { drawer(false); });
 $('#applyF').addEventListener('click', function () { drawer(false); });
 $('#backdrop').addEventListener('click', function () { drawer(false); });
-document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('#filters').classList.contains('open')) drawer(false); });
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  if (!$('#dpanel').hidden) closeDetail();
+  else if ($('#filters').classList.contains('open')) drawer(false);
+});
 matchMedia('(min-width: 900px)').addEventListener('change', function (m) { if (m.matches && $('#filters').classList.contains('open')) drawer(false); });
+
+
+/* ---------- ilan detay paneli ---------- */
+var dUid = null, dPushed = false, dLast = null, dTok = 0, DETC = {};
+function hashUid() {
+  var m = /^#ilan=(.+)$/.exec(location.hash);
+  if (!m) return '';
+  try { return decodeURIComponent(m[1]); } catch (e) { return ''; }
+}
+function detChunk(uid) {
+  var pre = String(uid).slice(0, 2), dir = String(DATA.detay_dir);
+  if (!/\/$/.test(dir)) dir += '/';
+  if (!DETC[pre]) {
+    DETC[pre] = fetch(new URL(dir + pre + '.json', location.href)).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).catch(function (e) { delete DETC[pre]; throw e; });
+  }
+  return DETC[pre];
+}
+/* Tam açıklama: sunucuda /api/job, statikte detay parçası. Dönen biçim: {job, full} */
+function fetchFull(uid) {
+  if (DATA) {
+    if (!DATA.detay_dir) return Promise.reject(new Error('detay yok'));
+    return detChunk(uid).then(function (m) { if (!m || !m[uid]) throw new Error('detay yok'); return {job: null, full: fullOf(m[uid])}; });
+  }
+  return serverApi('/api/job', {uid: uid}).then(function (r) { return {job: r, full: fullOf(r)}; });
+}
+function fullOf(r) {
+  var x = r.extra && typeof r.extra === 'object' ? r.extra : {};
+  return {description: r.description, apply: r.apply_url || r.apply_link || x.apply_url || x.apply_link || '', valid: r.validThrough || x.validThrough || '', first: r.first_seen, last: r.last_seen};
+}
+function dateText(s) { return s ? (fullDate(s) || String(s)) : ''; }
+function renderDetail(j, full, mode) {
+  var side = sideOf(j), agency = j.extra && typeof j.extra.agency === 'string' ? j.extra.agency : '';
+  var dups = (j.duplicates || []).filter(function (d) { return d && d.url; });
+  var rows = [];
+  function row(k, v) { if (v) rows.push('<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'); }
+  row('Konum', esc(j.location && norm(j.location) !== norm(j.district) ? j.location : ''));
+  row('Kaynak', esc(j.source_label || j.source) + (ST_SHORT[j.source_type] ? ' <span class="muted">(' + ST_SHORT[j.source_type] + ')</span>' : ''));
+  row('Çalışma şekli', WM[j.work_model] || '');
+  row('İstihdam', esc(ISTIHDAM[j.istihdam] || j.employment_type || ''));
+  row('Kıdem', KIDEM[j.kidem] || '');
+  row('Maaş', esc(j.salary || (+j.maasli === 1 ? 'Belirtilmiş' : '')));
+  row('Kategori', esc(j.category || ''));
+  row('Yayın tarihi', esc(dateText(j.posted_at)));
+  row('İlk görülme', esc(dateText((full && full.first) || j.first_seen)));
+  row('Son görülme', esc(dateText((full && full.last) || j.last_seen)));
+  row('Son başvuru', esc(dateText(full && full.valid)));
+  var h = '<h2 id="dTitle" class="dt">' + esc(j.title || '(başlıksız ilan)') + '</h2>';
+  h += '<p class="dco">' + (j.company ? '<button type="button" class="colink" data-act="sirket" data-val="' + esc(j.company) + '" title="Yalnızca ' + esc(j.company) + ' ilanlarını göster">' + esc(j.company) + '</button>' : '') +
+    (agency && agency !== j.company ? (j.company ? ' · ' : '') + esc(agency) + ' aracılığıyla' : '') + '</p>';
+  h += '<div class="bs">' + (isNew(j) ? '<span class="b new">Yeni</span>' : '') +
+    (j.district ? '<span class="b dist">' + icon('pin') + esc(j.district) + (side ? '<span class="sd ' + side + '" aria-hidden="true"></span><span class="sr">(' + SIDE_LABEL[side] + ')</span>' : '') + '</span>' : '<span class="b nodist">' + icon('pin') + 'İlçe belirsiz</span>') +
+    (j.semt ? '<span class="b semt">' + esc(j.semt) + '</span>' : '') + (KIDEM[j.kidem] ? '<span class="b">' + KIDEM[j.kidem] + '</span>' : '') + '</div>';
+  h += '<dl class="dl">' + rows.join('') + '</dl>';
+  if (dups.length) {
+    h += '<h3>Diğer kaynaklar</h3><ul class="dsrc">' + dups.map(function (d) {
+      return '<li><a href="' + esc(safeUrl(d.url)) + '" target="_blank" rel="noopener noreferrer">' + esc(d.source_label || d.source || d.url) + '</a></li>';
+    }).join('') + '</ul>';
+  }
+  h += '<h3>Açıklama</h3><div class="ddesc" id="dDesc"></div><p class="note" id="dNote"></p>';
+  $('#dBody').innerHTML = h;
+  var desc = full && full.description ? full.description : j.description;
+  $('#dDesc').textContent = desc || (mode === 'loading' ? 'Açıklama yükleniyor…' : 'Açıklama bulunamadı.');
+  $('#dNote').textContent = mode === 'short' ? 'Tam açıklama alınamadı; kısa açıklama gösteriliyor.' : '';
+  $('#dNote').hidden = mode !== 'short';
+  var apply = full && full.apply && safeUrl(full.apply) !== '#' && full.apply !== j.url ? full.apply : '';
+  $('#dFoot').innerHTML = '<a class="btn primary" href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener noreferrer">İlana git ' + icon('ext') + '</a>' +
+    (apply ? '<a class="btn" href="' + esc(safeUrl(apply)) + '" target="_blank" rel="noopener noreferrer">Başvur ' + icon('ext') + '</a>' : '') +
+    starBtn(j) + '<button type="button" class="btn" data-act="share" data-uid="' + esc(j.uid) + '">Paylaş</button>';
+}
+function showDetail(uid, hint) {
+  var tok = ++dTok, wasOpen = !$('#dpanel').hidden;
+  dUid = uid;
+  if (!wasOpen) {
+    dLast = document.activeElement;
+    $('#dpanel').hidden = false; $('#dBackdrop').hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  var j = hint || ITEMS[uid] || (DATA && DATA.jobs.filter(function (x) { return x.uid === uid; })[0]) || (FAVS[uid] && FAVS[uid].j) || null;
+  $('#dBody').scrollTop = 0;
+  if (j) { j.uid = j.uid || uid; ITEMS[uid] = ITEMS[uid] || j; renderDetail(j, null, 'loading'); }
+  else $('#dBody').innerHTML = '<h2 id="dTitle" class="dt">Yükleniyor…</h2>';
+  $('#dFoot').innerHTML = j ? $('#dFoot').innerHTML : '';
+  fetchFull(uid).then(function (r) {
+    if (tok !== dTok) return;
+    var m = Object.assign({}, j || {}, r.job || {});
+    m.uid = uid;
+    if (r.job) ITEMS[uid] = Object.assign({}, ITEMS[uid] || {}, r.job);
+    renderDetail(m, r.full, 'ok');
+  }).catch(function () {
+    if (tok !== dTok) return;
+    if (j) renderDetail(j, null, 'short');
+    else { $('#dBody').innerHTML = '<h2 id="dTitle" class="dt">İlan bulunamadı</h2><p>Bu ilan artık yayında olmayabilir.</p>'; $('#dFoot').innerHTML = ''; }
+  });
+  if (!wasOpen) setTimeout(function () { $('#dClose').focus(); }, 30);
+}
+function openDetail(uid, hint) {
+  if (hashUid() !== uid) {
+    try { history.pushState(null, '', '#ilan=' + encodeURIComponent(uid)); dPushed = true; } catch (e) { /* file:// vb. */ }
+  }
+  showDetail(uid, hint);
+}
+function hideDetail() {
+  dTok++; dUid = null; dPushed = false;
+  if ($('#dpanel').hidden) return;
+  $('#dpanel').hidden = true; $('#dBackdrop').hidden = true;
+  if (!$('#filters').classList.contains('open')) document.body.style.overflow = '';
+  if (dLast && document.body.contains(dLast)) { try { dLast.focus(); } catch (e) { /* odak yok */ } }
+  dLast = null;
+}
+/* Kapat düğmesi / Esc: kendi eklediğimiz geçmiş kaydını geri al, yoksa hash'i sil. */
+function closeDetail() {
+  if ($('#dpanel').hidden) return;
+  if (dPushed) { dPushed = false; history.back(); }
+  else { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// vb. */ } hideDetail(); }
+}
+/* Filtre uygulanacaksa geri tuşuyla yarışmamak için geçmiş girdisini yerinde sil. */
+function closeDetailNow() {
+  dPushed = false;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* file:// vb. */ }
+  hideDetail();
+}
+function shareJob(uid) {
+  var j = ITEMS[uid] || {}, url = location.href.split('#')[0].split('?')[0] + '#ilan=' + encodeURIComponent(uid);
+  if (navigator.share) { navigator.share({title: j.title || 'İlan', text: (j.company ? j.company + ' · ' : '') + (j.title || ''), url: url}).catch(function () { /* iptal */ }); return; }
+  function fallback() {
+    var t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    var ok = false; try { ok = document.execCommand('copy'); } catch (e) { /* kopyalanamadı */ }
+    document.body.removeChild(t);
+    toast(ok ? 'Bağlantı kopyalandı' : 'Bağlantı: ' + url);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast('Bağlantı kopyalandı'); }, fallback);
+  else fallback();
+}
+function setSirket(name) {
+  if (!$('#dpanel').hidden) closeDetailNow();
+  state.fav = false; state.sirket = name;
+  changed();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ---------- kayıtlı aramalar ---------- */
+function loadSaved() {
+  try {
+    var a = JSON.parse(lsGet(SAVED_KEY) || '[]');
+    return Array.isArray(a) ? a.filter(function (x) { return x && typeof x.ad === 'string' && typeof x.qs === 'string'; }) : [];
+  } catch (e) { return []; }
+}
+var SAVED = loadSaved();
+function persistSaved() {
+  if (!lsSet(SAVED_KEY, JSON.stringify(SAVED))) toast('Kayıtlı aramalar yalnızca bu oturum için tutuluyor (tarayıcı depolaması kapalı)');
+  renderSaved();
+}
+function renderSaved() {
+  $('#savedCnt').textContent = SAVED.length ? String(SAVED.length) : '';
+  $('#svList').innerHTML = SAVED.length ? SAVED.map(function (x, i) {
+    return '<li><span class="nm">' + esc(x.ad) + '</span><button type="button" class="btn sm" data-act="sv-apply" data-i="' + i + '" aria-label="' + esc(x.ad) + ' aramasını uygula">Uygula</button>' +
+      '<button type="button" class="btn sm" data-act="sv-del" data-i="' + i + '" aria-label="' + esc(x.ad) + ' aramasını sil">Sil</button></li>';
+  }).join('') : '<li class="muted">Henüz kayıtlı arama yok.</li>';
+}
+function toggleSaved(open) {
+  $('#saved').hidden = !open;
+  $('#savedBtn').setAttribute('aria-expanded', String(open));
+  if (open) { renderSaved(); $('#svName').focus(); }
+}
+function saveSearch() {
+  var qs = buildQS(true);
+  if (!qs) { toast('Kaydedilecek bir filtre yok'); return; }
+  var ad = $('#svName').value.trim() || ('Arama ' + (SAVED.length + 1));
+  SAVED.push({ad: ad.slice(0, 60), qs: qs, t: Date.now()});
+  $('#svName').value = '';
+  persistSaved();
+  toast('Arama kaydedildi');
+}
+function applySaved(i) {
+  var x = SAVED[i]; if (!x) return;
+  readURL(x.qs);
+  state.tab = 'ilanlar'; state.fav = false;
+  $('#q').value = state.q;
+  setTab('ilanlar', false);
+  toggleSaved(false);
+  changed();
+}
+
+/* ---------- CSV ---------- */
+function csvCell(v) {
+  var s = String(v == null ? '' : v).replace(/\r?\n/g, ' ');
+  if (/^[=+\-@\t]/.test(s)) s = "'" + s;   /* Excel formül enjeksiyonuna karşı */
+  return /[;"\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function fetchAllJobs() {
+  if (state.fav) return Promise.resolve(favList().map(function (f) { return f.j; }));
+  var out = [];
+  function step(p) {
+    var q = filterParams(); q.sort = state.sort; q.page = p; q.per_page = 200;
+    return api('/api/jobs', q).then(function (r) {
+      var it = r.items || [];
+      out = out.concat(it);
+      return it.length && out.length < (r.total || 0) && p < 200 ? step(p + 1) : out;
+    });
+  }
+  return step(1);
+}
+function downloadCSV() {
+  var b = $('#csvBtn'); b.disabled = true; toast('CSV hazırlanıyor…');
+  fetchAllJobs().then(function (items) {
+    var head = ['Başlık', 'Şirket', 'İlçe', 'Semt', 'Kıdem', 'İstihdam', 'Çalışma şekli', 'Maaş', 'Kaynak', 'Yayın tarihi', 'Bağlantı'];
+    var rows = [head.join(';')].concat(items.map(function (j) {
+      return [j.title, j.company, j.district, j.semt, KIDEM[j.kidem] || '', ISTIHDAM[j.istihdam] || j.employment_type || '', WM[j.work_model] || '', j.salary || '',
+        j.source_label || j.source, (j.posted_at || j.first_seen || '').slice(0, 10), j.url].map(csvCell).join(';');
+    }));
+    var blob = new Blob(['﻿' + rows.join('\r\n') + '\r\n'], {type: 'text/csv;charset=utf-8'});
+    var a = document.createElement('a'), u = URL.createObjectURL(blob);
+    a.href = u; a.download = 'ilanlar-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(u); }, 2000);
+    toast(fmt(items.length) + ' ilan CSV olarak indirildi');
+  }).catch(function (e) { toast('CSV hazırlanamadı: ' + e.message); }).then(function () { b.disabled = false; });
+}
+
+/* ---------- olaylar: detay, favori, kayıtlı arama, CSV ---------- */
+document.addEventListener('click', function (e) {
+  var a = e.target.closest('[data-act]');
+  if (a) {
+    var act = a.dataset.act;
+    if (act === 'detay') return openDetail(a.dataset.uid);
+    if (act === 'fav') return toggleFav(a.dataset.uid);
+    if (act === 'share') return shareJob(a.dataset.uid);
+    if (act === 'sirket') return setSirket(a.dataset.val);
+    if (act === 'sv-apply') return applySaved(+a.dataset.i);
+    if (act === 'sv-del') { SAVED.splice(+a.dataset.i, 1); return persistSaved(); }
+    return;
+  }
+  var cd = e.target.closest('.card');
+  if (cd && cd.dataset.uid && !e.target.closest('a,button,input,select,label,textarea,summary,.dup')) openDetail(cd.dataset.uid);
+}, true);
+$('#dClose').addEventListener('click', closeDetail);
+$('#dBackdrop').addEventListener('click', closeDetail);
+window.addEventListener('hashchange', function () {
+  var u = hashUid();
+  if (u) { if (u !== dUid || $('#dpanel').hidden) showDetail(u); }
+  else hideDetail();
+});
+$('#dpanel').addEventListener('keydown', function (e) {
+  if (e.key !== 'Tab') return;
+  var f = $$('a[href],button:not([disabled]),input,select,textarea,[tabindex="0"]', $('#dpanel')).filter(function (x) { return x.offsetParent !== null; });
+  if (!f.length) return;
+  var first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && (document.activeElement === first || document.activeElement === $('#dpanel'))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
+$('#clrSemt').addEventListener('click', function () { state.semt = []; changed(); });
+$('#savedBtn').addEventListener('click', function () { toggleSaved($('#saved').hidden); });
+$('#savedClose').addEventListener('click', function () { toggleSaved(false); $('#savedBtn').focus(); });
+$('#svSave').addEventListener('click', saveSearch);
+$('#svName').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveSearch(); });
+$('#csvBtn').addEventListener('click', downloadCSV);
 
 /* ---------- init ---------- */
 readURL();
@@ -1258,7 +1815,9 @@ else { $('#crawlBtn').hidden = false; pollCrawl(); }
 setTab(state.tab, false);
 buildFilters();
 syncFilters();
+renderMeta(); renderSaved();
 loadTotals(); loadFacets(); loadJobs(1);
+if (hashUid()) showDetail(hashUid());
 setInterval(function () { if (TOT) renderMeta(); }, 60000);
 })();
 </script>

@@ -24,7 +24,7 @@ from .geo import DISTRICTS
 from .text import fold
 
 CSV_COLS = ["title", "company", "district", "side", "location", "source", "source_type", "posted_at",
-            "first_seen", "work_model", "employment_type", "salary", "url"]
+            "first_seen", "work_model", "employment_type", "salary", "url", "semt", "kidem", "istihdam", "maasli"]
 
 
 def _match_districts(values: list[str] | None) -> list[str] | None:
@@ -147,8 +147,18 @@ def cmd_build_site(a):
     db = DB(a.db)
     items = db.query(page=1, per_page=10**9)["items"]
     jobs = []
+    detay_dir = Path(a.out).parent / "detay"
+    detay: dict[str, dict] = {}  # uid'nin ilk 2 karakteri → {uid: ayrıntı}
     for it in items:
         it = decorate(it)
+        ex = it.get("extra") or {}
+        detay.setdefault(it["uid"][:2], {})[it["uid"]] = {
+            "description": (it.get("description") or "")[:5000],
+            "apply_url": ex.get("apply_url") or ex.get("apply_link") or "",
+            "validThrough": ex.get("validThrough") or "",
+            "first_seen": it.get("first_seen") or "",
+            "last_seen": it.get("last_seen") or "",
+        }
         it["description"] = (it.get("description") or "")[: a.desc_len]
         agency = (it.get("extra") or {}).get("agency")
         it["extra"] = {"agency": agency} if agency else {}
@@ -158,8 +168,10 @@ def cmd_build_site(a):
 
     from .bigco import CATALOG
 
+    from .enrich import SEMTLER
+
     data = {"generated_at": now_iso(), "jobs": jobs, "sources": sources_health(db), "origins": ORIGINS,
-            "gruplar": CATALOG}
+            "gruplar": CATALOG, "detay_dir": "detay/", "semtler": SEMTLER}
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":"), default=str).replace("</", "<\\/")
     tpl = (Path(__file__).resolve().parent / "static" / "index.html").read_text(encoding="utf-8")
     marker = "<script>/*__ISILAN_DATA__*/</script>"
@@ -173,6 +185,11 @@ def cmd_build_site(a):
     out = Path(a.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
+    detay_dir.mkdir(parents=True, exist_ok=True)
+    for old in detay_dir.glob("??.json"):  # önceki derlemeden kalan parçalar
+        old.unlink()
+    for prefix, part in detay.items():
+        (detay_dir / f"{prefix}.json").write_text(json.dumps(part, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"{len(jobs)} ilan → {out} ({out.stat().st_size / 1e6:.1f} MB)")
 
 
