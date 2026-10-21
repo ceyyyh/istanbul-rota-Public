@@ -139,3 +139,11 @@ def test_truncated_run_keeps_unseen_jobs(tmp_path):
     assert res["removed"] == 0 and db.query()["total"] == 5
     res = run_source(src, db, Dummy(), CrawlOptions(max_pages=100))  # eksiksiz → 3 ilan kalktı
     assert res["removed"] == 3 and db.query()["total"] == 2
+
+
+def test_pipeline_yeni_alanlari_doldurur(tmp_path):
+    db = DB(tmp_path / "e.db")
+    job = _job(1, title="Junior Analist", location="Maslak, Sarıyer", employment_type="PART_TIME", salary="40.000 TL")
+    crawl(db, [Source(name="test", source_type=PLATFORM, label="T", fetcher=lambda s, c: iter([job]))])
+    it = db.query()["items"][0]
+    assert (it["semt"], it["kidem"], it["istihdam"], it["maasli"]) == ("Maslak", "junior", "yari", 1)
