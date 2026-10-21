@@ -71,6 +71,12 @@ def parse_filters(qs: dict[str, list[str]]) -> dict:
         "exclude": lst("haric"),
         "buyuk": one("buyuk") in ("1", "true", "evet"),
         "grups": lst("grup"),
+        "semts": lst("semt"),
+        "kidems": lst("kidem"),
+        "istihdams": lst("istihdam"),
+        "company": one("sirket"),
+        "maasli": one("maasli") in ("1", "true", "evet"),
+        "yeni_since": one("yeni_since"),
     }
 
 
@@ -118,6 +124,13 @@ def facets(db: DB, f: dict) -> dict:
     for it in items(("grup",)):
         if it.get("grup"):
             g_counts[it["grup"]] = g_counts.get(it["grup"], 0) + 1
+    def count_by(key):
+        out: dict[str, int] = {}
+        for it in items((key,)):
+            if it.get(key):
+                out[it[key]] = out.get(it[key], 0) + 1
+        return dict(sorted(out.items(), key=lambda kv: (-kv[1], kv[0])))
+
     meta = source_meta()
     srcs = [{"name": n, "label": label_of(n), "source_type": meta.get(n, {}).get("source_type", ""), "count": c}
             for n, c in sorted(s_counts.items(), key=lambda kv: -kv[1])]
@@ -135,6 +148,9 @@ def facets(db: DB, f: dict) -> dict:
         "gruplar": [{"name": n, "sektor": SECTOR_OF.get(n, ""), "count": c}
                     for n, c in sorted(g_counts.items(), key=lambda kv: -kv[1])],
         "buyuk_total": sum(g_counts.values()),
+        "semt": count_by("semt"),
+        "kidem": count_by("kidem"),
+        "istihdam": count_by("istihdam"),
     }
 
 
@@ -211,6 +227,12 @@ def make_handler(app: App):
                     res.pop("_all")
                     res["items"] = [decorate(i) for i in res["items"]]
                     self._json(res)
+                elif u.path == "/api/job":
+                    job = app.db.get_job((qs.get("uid") or [""])[0])
+                    if job is None:
+                        self._json({"error": "ilan bulunamadı"}, 404)
+                    else:
+                        self._json(decorate(job))
                 elif u.path == "/api/facets":
                     self._json(facets(app.db, parse_filters(qs)))
                 elif u.path == "/api/sources":
