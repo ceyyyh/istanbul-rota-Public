@@ -52,7 +52,18 @@ jobs:
           CAREERJET_API_KEY: ${{ secrets.CAREERJET_API_KEY }}
         run: |
           # Kariyer.net kendi yavaş/devam eden iş akışında (kariyernet.yml) taranır; istek hakkı orada harcansın
-          python -m isilan crawl --browser --max-pages 200 --timeout 1500 --workers 8 --haric kariyernet
+          #
+          # Tarama takılırsa iş 170 dk sınırında iptal edilir ve yayın adımları hiç çalışmaz. Bu yüzden tarama GNU
+          # timeout ile 110 dk'ya sınırlanır (SIGTERM; kapanmazsa 60 sn sonra SIGKILL). Süre dolması (124) ya da
+          # SIGKILL (137) uyarı sayılır ve adım başarılı kabul edilir: toplanan ilanlarla site üretilip yayınlanır.
+          # Başka sıfır olmayan çıkış kodları yine hata verir.
+          rc=0
+          timeout -k 60 110m python -m isilan crawl --browser --max-pages 200 --timeout 1500 --workers 8 --haric kariyernet || rc=$?
+          if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            echo "::warning::Tarama zaman sınırına takıldı (çıkış kodu $rc); toplanan ilanlarla devam ediliyor"
+          elif [ "$rc" -ne 0 ]; then
+            exit "$rc"
+          fi
           python -m isilan sources | tail -n 60
 
       - name: Siteyi üret
