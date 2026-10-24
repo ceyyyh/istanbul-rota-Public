@@ -1,1 +1,2 @@
-flights
+flights[mcp]==0.9.0
+click

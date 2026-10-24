@@ -1,107 +1,140 @@
-"""İstanbul çıkışlı uçuş arama: IST ve SAW'dan aynı anda arar, fiyata göre birleştirir.
+"""İstanbul çıkışlı uçuş arama: IST ve SAW tek aramada birlikte sorgulanır, fiyata göre sıralanır.
 
 Kullanım:
     python ucus.py LHR 2026-12-05
-    python ucus.py AYT 2026-12-05 --kalkis IST --aktarmasiz --ilk 5
-    python ucus.py LHR 2026-12-05 --kalkis "IST,SAW" --sinif BUSINESS
+    python ucus.py LHR 2026-12-05 --donus 2026-12-12
+    python ucus.py AYT 2026-12-05 --kalkis SAW --aktarmasiz --ilk 5
+    python ucus.py JFK 2026-12-05 --sinif BUSINESS --para EUR --md   # Markdown tablo
 """
 
 import argparse
 import sys
 from dataclasses import dataclass
 
-ISTANBUL = ("IST", "SAW")
+ISTANBUL = "IST,SAW"
 SINIFLAR = ("ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST")
 
 
 @dataclass
 class Sonuc:
-    kalkis: str
-    fiyat: float
+    fiyat: float | None
+    para: str
     sure_dk: int
     aktarma: int
     bacaklar: list  # [(havayolu, sefer, nereden, ne zaman, nereye, ne zaman)]
 
 
 def birlestir(sonuclar, ilk):
-    """Tüm havalimanlarından gelen sonuçları fiyata, eşitlikte süreye göre sıralar."""
-    return sorted(sonuclar, key=lambda s: (s.fiyat, s.sure_dk))[:ilk]
+    """Fiyata, eşitlikte süreye göre sıralar; fiyatı bilinmeyenler sona kalır."""
+    return sorted(sonuclar, key=lambda s: (s.fiyat is None, s.fiyat or 0, s.sure_dk))[:ilk]
 
 
 def sure_yaz(dk):
     return f"{dk // 60}s {dk % 60:02d}dk"
 
 
-def yazdir(sonuclar, para):
+def fiyat_yaz(s):
+    return "fiyat yok" if s.fiyat is None else f"{s.fiyat:,.0f} {s.para}".replace(",", ".")
+
+
+def aktarma_yaz(n):
+    return "aktarmasız" if n == 0 else f"{n} aktarma"
+
+
+def bacak_yaz(b):
+    havayolu, sefer, nereden, kalkis, nereye, varis = b
+    return f"{havayolu} {sefer}: {nereden} {kalkis:%d.%m %H:%M} → {nereye} {varis:%d.%m %H:%M}"
+
+
+def yazdir(sonuclar):
     if not sonuclar:
         print("Uçuş bulunamadı.")
         return
     for i, s in enumerate(sonuclar, 1):
-        aktarma = "aktarmasız" if s.aktarma == 0 else f"{s.aktarma} aktarma"
-        print(f"{i}. {s.fiyat:.0f} {para} · {sure_yaz(s.sure_dk)} · {aktarma} · {s.kalkis} çıkış")
-        for havayolu, sefer, nereden, kalkis, nereye, varis in s.bacaklar:
-            print(f"     {havayolu} {sefer}: {nereden} {kalkis:%d.%m %H:%M} → {nereye} {varis:%d.%m %H:%M}")
+        print(f"{i}. {fiyat_yaz(s)} · {sure_yaz(s.sure_dk)} · {aktarma_yaz(s.aktarma)}")
+        for b in s.bacaklar:
+            print(f"     {bacak_yaz(b)}")
 
 
-def ara(kalkis, varis, tarih, sinif, aktarmasiz, yolcu):
-    """fli kütüphanesiyle tek havalimanından tek yön arama yapar."""
-    from fli.models import (
-        Airport, FlightSearchFilters, FlightSegment, MaxStops, PassengerInfo, SeatType, SortBy,
-    )
+def markdown(sonuclar, baslik):
+    """GitHub iş özeti için telefonda rahat okunan Markdown tablo."""
+    satirlar = [f"### {baslik}", ""]
+    if not sonuclar:
+        return "\n".join(satirlar + ["Uçuş bulunamadı."])
+    satirlar += ["| # | Fiyat | Süre | Aktarma | Uçuşlar |", "|---|---|---|---|---|"]
+    for i, s in enumerate(sonuclar, 1):
+        ucuslar = "<br>".join(bacak_yaz(b) for b in s.bacaklar)
+        satirlar.append(f"| {i} | **{fiyat_yaz(s)}** | {sure_yaz(s.sure_dk)} | {aktarma_yaz(s.aktarma)} | {ucuslar} |")
+    return "\n".join(satirlar)
+
+
+def _bacaklar(ucus):
+    return [
+        (b.airline.name.lstrip("_"), b.flight_number, b.departure_airport.name, b.departure_datetime,
+         b.arrival_airport.name, b.arrival_datetime)
+        for b in ucus.legs
+    ]
+
+
+def ara(kalkis, varis, tarih, donus=None, sinif="ECONOMY", aktarma="ANY", yolcu=1, para="TRY", ilk=10):
+    """fli ile arama yapar. kalkis/varis virgülle birden çok havalimanı olabilir (ör. "IST,SAW")."""
+    from fli.core import build_flight_segments, parse_cabin_class, parse_max_stops, resolve_airport
+    from fli.models import FlightSearchFilters, PassengerInfo, SortBy
     from fli.search import SearchFlights
 
+    kodlar = lambda metin: [resolve_airport(k.strip()) for k in metin.split(",") if k.strip()]
+    bolumler, yolculuk = build_flight_segments(kodlar(kalkis), kodlar(varis), tarih, donus)
     filtre = FlightSearchFilters(
+        trip_type=yolculuk,
         passenger_info=PassengerInfo(adults=yolcu),
-        flight_segments=[
-            FlightSegment(
-                departure_airport=[[Airport[kalkis], 0]],
-                arrival_airport=[[Airport[varis], 0]],
-                travel_date=tarih,
-            )
-        ],
-        seat_type=SeatType[sinif],
-        stops=MaxStops.NON_STOP if aktarmasiz else MaxStops.ANY,
+        flight_segments=bolumler,
+        seat_type=parse_cabin_class(sinif),
+        stops=parse_max_stops(aktarma),
         sort_by=SortBy.CHEAPEST,
     )
-    ucuslar = SearchFlights().search(filtre) or []
-    return [
-        Sonuc(
-            kalkis=kalkis,
-            fiyat=u.price,
-            sure_dk=u.duration,
-            aktarma=u.stops,
-            bacaklar=[
-                (b.airline.value, b.flight_number, b.departure_airport.name, b.departure_datetime,
-                 b.arrival_airport.name, b.arrival_datetime)
-                for b in u.legs
-            ],
-        )
-        for u in ucuslar
-    ]
+    # Gidiş-dönüşte her gidiş seçeneği için ayrı istek atılır; Google'ın 429 sınırına takılmamak için az tut.
+    genislet = min(ilk, 5) if donus else ilk
+    ucuslar = SearchFlights().search(filtre, top_n=genislet, currency=para) or []
+    sonuclar = []
+    for u in ucuslar:
+        # Gidiş-dönüşte (gidiş, dönüş) çifti gelir; toplam fiyat gidiş kaydındadır.
+        gidis, *donusler = u if isinstance(u, tuple) else (u,)
+        sonuclar.append(Sonuc(
+            fiyat=gidis.price,
+            para=gidis.currency or para,
+            sure_dk=gidis.duration + sum(d.duration for d in donusler),
+            aktarma=max([gidis.stops] + [d.stops for d in donusler]),
+            bacaklar=_bacaklar(gidis) + [b for d in donusler for b in _bacaklar(d)],
+        ))
+    return sonuclar
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="İstanbul (IST + SAW) çıkışlı uçuş arama")
-    p.add_argument("varis", help="Varış havalimanı kodu, ör. LHR")
+    p.add_argument("varis", help="Varış havalimanı kodu, ör. LHR (virgülle birden çok: LHR,LGW)")
     p.add_argument("tarih", help="Gidiş tarihi, YYYY-AA-GG")
-    p.add_argument("--kalkis", default=",".join(ISTANBUL), help="Virgülle kalkış kodları (varsayılan IST,SAW)")
+    p.add_argument("--donus", help="Dönüş tarihi, YYYY-AA-GG (verilirse gidiş-dönüş aranır)")
+    p.add_argument("--kalkis", default=ISTANBUL, help="Kalkış kodları (varsayılan IST,SAW)")
     p.add_argument("--sinif", default="ECONOMY", choices=SINIFLAR)
     p.add_argument("--aktarmasiz", action="store_true", help="Sadece direkt uçuşlar")
     p.add_argument("--yolcu", type=int, default=1)
+    p.add_argument("--para", default="TRY", help="Para birimi (TRY, EUR, USD...)")
     p.add_argument("--ilk", type=int, default=10, help="Gösterilecek sonuç sayısı")
+    p.add_argument("--md", action="store_true", help="Markdown tablo olarak yaz")
     a = p.parse_args(argv)
 
-    varis = a.varis.upper()
-    tum = []
-    for kod in [k.strip().upper() for k in a.kalkis.split(",") if k.strip()]:
-        try:
-            tum += ara(kod, varis, a.tarih, a.sinif, a.aktarmasiz, a.yolcu)
-        except KeyError as e:
-            print(f"Bilinmeyen havalimanı kodu: {e}", file=sys.stderr)
-            return 2
-        except Exception as e:  # ağ / Google Flights hatası: diğer havalimanıyla devam et
-            print(f"{kod} araması başarısız: {e}", file=sys.stderr)
-    yazdir(birlestir(tum, a.ilk), "USD")
+    try:
+        sonuclar = ara(a.kalkis.upper(), a.varis.upper(), a.tarih, a.donus, a.sinif,
+                       "NON_STOP" if a.aktarmasiz else "ANY", a.yolcu, a.para.upper(), a.ilk)
+    except Exception as e:  # geçersiz kod/tarih ya da Google Flights hatası
+        print(f"Arama başarısız: {e}", file=sys.stderr)
+        return 1
+    sonuclar = birlestir(sonuclar, a.ilk)
+    if a.md:
+        yon = f"{a.tarih} → {a.donus}" if a.donus else a.tarih
+        print(markdown(sonuclar, f"{a.kalkis.upper()} → {a.varis.upper()} · {yon}"))
+    else:
+        yazdir(sonuclar)
     return 0
 
 

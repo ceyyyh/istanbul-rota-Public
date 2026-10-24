@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "fli": {
-      "command": "uvx",
-      "args": ["--from", "flights", "fli-mcp"]
+      "command": "bash",
+      "args": ["ucus-ara/mcp.sh"],
+      "env": { "FLI_MCP_DEFAULT_CURRENCY": "TRY" }
     }
   }
 }

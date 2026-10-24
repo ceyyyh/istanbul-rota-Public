@@ -1,0 +1,82 @@
+# Telefondan uçuş arama: GitHub uygulaması → Actions → ucus-ara → "Run workflow".
+# Varış kodunu ve tarihi yaz; birkaç dakika içinde sonuç tablosu çalıştırmanın özet (Summary) sayfasında görünür.
+name: ucus-ara
+
+on:
+  workflow_dispatch:
+    inputs:
+      varis:
+        description: "Varış havalimanı (ör. LHR, AYT, ESB; birden çok: LHR,LGW)"
+        required: true
+      tarih:
+        description: "Gidiş tarihi (YYYY-AA-GG)"
+        required: true
+      donus:
+        description: "Dönüş tarihi (YYYY-AA-GG, boş = tek yön)"
+        required: false
+        default: ""
+      kalkis:
+        description: "Kalkış havalimanları"
+        required: false
+        default: "IST,SAW"
+      aktarmasiz:
+        description: "Sadece direkt uçuşlar"
+        type: boolean
+        default: false
+      sinif:
+        description: "Kabin"
+        type: choice
+        options: [ECONOMY, PREMIUM_ECONOMY, BUSINESS, FIRST]
+        default: ECONOMY
+      yolcu:
+        description: "Yetişkin yolcu sayısı"
+        required: false
+        default: "1"
+      para:
+        description: "Para birimi"
+        required: false
+        default: "TRY"
+  pull_request:
+    paths: ["ucus-ara/**", ".github/workflows/ucus-ara.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  ara:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ucus-ara
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kurulum
+        run: ./kur.sh && .venv/bin/pip install -q pytest
+
+      - name: Testler
+        if: github.event_name == 'pull_request'
+        run: .venv/bin/pytest -q tests
+
+      - name: Uçuş ara
+        env:
+          VARIS: ${{ inputs.varis || 'LHR' }}
+          TARIH: ${{ inputs.tarih }}
+          DONUS: ${{ inputs.donus }}
+          KALKIS: ${{ inputs.kalkis || 'IST,SAW' }}
+          AKTARMASIZ: ${{ inputs.aktarmasiz }}
+          SINIF: ${{ inputs.sinif || 'ECONOMY' }}
+          YOLCU: ${{ inputs.yolcu || '1' }}
+          PARA: ${{ inputs.para || 'TRY' }}
+        run: |
+          # PR'da elle girdi yok: 30 gün sonrası için deneme araması yapılır.
+          [ -n "$TARIH" ] || TARIH=$(date -d '+30 days' +%F)
+          args=("$VARIS" "$TARIH" --kalkis "$KALKIS" --sinif "$SINIF" --yolcu "$YOLCU" --para "$PARA" --md)
+          [ -n "$DONUS" ] && args+=(--donus "$DONUS")
+          [ "$AKTARMASIZ" = true ] && args+=(--aktarmasiz)
+          .venv/bin/python ucus.py "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"

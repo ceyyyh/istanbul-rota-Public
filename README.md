@@ -13,5 +13,6 @@ Kurulum ve kullanım: [is-ilanlari/README.md](is-ilanlari/README.md) — kısaca
 
 ## Uçuş Ara (`ucus-ara/`)
 
-IST ve SAW çıkışlı uçuşları Google Flights'tan (Fli kütüphanesi) arayıp fiyata göre sıralar; ayrıca Claude için
-Fli MCP sunucusu `.mcp.json` ile tanımlı. Ayrıntı: [ucus-ara/README.md](ucus-ara/README.md) — kısaca `cd ucus-ara && ./baslat.sh LHR 2026-12-05`
+IST ve SAW çıkışlı uçuşları Google Flights'tan (Fli kütüphanesi) arayıp TL fiyata göre sıralar.
+Telefondan: GitHub uygulaması → Actions → **ucus-ara** → Run workflow; ya da Claude Code oturumunda
+`.mcp.json` ile gelen Fli MCP sunucusuna sor. Ayrıntı: [ucus-ara/README.md](ucus-ara/README.md)
