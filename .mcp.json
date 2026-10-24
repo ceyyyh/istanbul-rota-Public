@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "fli": {
+      "command": "bash",
+      "args": ["ucus-ara/mcp.sh"],
+      "env": { "FLI_MCP_DEFAULT_CURRENCY": "TRY" }
+    }
+  }
+}
