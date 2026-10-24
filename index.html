@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İstanbul Rota</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --text: #1b2330;
+  --muted: #5b6676;
+  --border: #d9dee6;
+  --accent: #0b6bcb;
+  --accent-text: #ffffff;
+  --warn-bg: #fff4d6;
+  --warn-text: #6a4a00;
+  --err-bg: #fde8e8;
+  --err-text: #8a1c1c;
+  --route-best: #0b6bcb;
+  --route-alt: #7d8aa0;
+  --gutter: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c;
+    --panel: #1b222d;
+    --text: #e8ecf2;
+    --muted: #9aa6b8;
+    --border: #2f3947;
+    --accent: #5aa8ff;
+    --accent-text: #08121f;
+    --warn-bg: #3b3115;
+    --warn-text: #f2d78a;
+    --err-bg: #3d1d1d;
+    --err-text: #ffb3b3;
+    --route-best: #5aa8ff;
+    --route-alt: #8794aa;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c;
+  --panel: #1b222d;
+  --text: #e8ecf2;
+  --muted: #9aa6b8;
+  --border: #2f3947;
+  --accent: #5aa8ff;
+  --accent-text: #08121f;
+  --warn-bg: #3b3115;
+  --warn-text: #f2d78a;
+  --err-bg: #3d1d1d;
+  --err-text: #ffb3b3;
+  --route-best: #5aa8ff;
+  --route-alt: #8794aa;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+#app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(180px, 1fr) auto;
+  grid-template-areas: "search" "map" "result";
+}
+#search { grid-area: search; }
+#map { grid-area: map; min-height: 0; background: var(--bg); }
+#result { grid-area: result; }
+
+.panel {
+  background: var(--panel);
+  padding: 12px var(--gutter);
+  border-bottom: 1px solid var(--border);
+}
+#result { border-top: 1px solid var(--border); border-bottom: 0; max-height: 42vh; overflow-y: auto; }
+#result:empty { display: none; }
+
+h1 { font-size: 17px; margin: 0 0 8px; }
+
+.field { display: flex; gap: 8px; margin-bottom: 8px; align-items: stretch; }
+.field input[type="text"] {
+  flex: 1 1 auto; min-width: 0;
+  font: inherit; font-size: 16px; /* iOS yakınlaştırmasını önler */
+  padding: 9px 10px;
+  color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+button {
+  font: inherit; cursor: pointer;
+  padding: 9px 12px;
+  color: var(--text); background: var(--panel);
+  border: 1px solid var(--border); border-radius: 8px;
+  min-height: 40px;
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button[disabled] { opacity: .55; cursor: default; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.modes { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.modes button { border: 0; border-radius: 0; background: transparent; }
+.modes button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+
+.msg { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; font-size: 14px; overflow-wrap: anywhere; }
+.msg:empty { display: none; }
+.msg.warn { background: var(--warn-bg); color: var(--warn-text); }
+.msg.err { background: var(--err-bg); color: var(--err-text); }
+.msg.info { background: var(--bg); color: var(--muted); }
+
+.candidates { list-style: none; margin: 0 0 8px; padding: 0; max-height: 28vh; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+.candidates:empty { display: none; }
+.candidates li button {
+  display: block; width: 100%; text-align: left; border: 0; border-radius: 0;
+  border-bottom: 1px solid var(--border); overflow-wrap: anywhere;
+}
+.candidates li:last-child button { border-bottom: 0; }
+
+.summary { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-bottom: 8px; }
+.summary .big { font-size: 20px; font-weight: 700; }
+.summary .sub { color: var(--muted); }
+.alts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.alts button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.badge { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: 4px; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; }
+ol.steps li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--border); }
+ol.steps .txt { overflow-wrap: anywhere; }
+ol.steps .dist { color: var(--muted); white-space: nowrap; }
+
+.popup-actions { display: flex; flex-direction: column; gap: 6px; min-width: 150px; }
+.popup-title { margin: 0 0 6px; font-size: 13px; color: #333; overflow-wrap: anywhere; max-width: 220px; }
+.popup-actions button { color: #1b2330; background: #fff; border-color: #c9d0da; }
+
+@media (min-width: 900px) {
+  #app {
+    grid-template-columns: 400px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "search map" "result map";
+  }
+  #result { max-height: none; }
+  #search { border-bottom: 1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="search" class="panel" aria-label="Konum arama">
+    <h1>İstanbul Rota <span style="font-weight:400;color:var(--muted);font-size:13px">Avrupa yakası</span></h1>
+
+    <form class="field" id="form-from" autocomplete="off">
+      <input type="text" id="in-from" placeholder="Başlangıç" aria-label="Başlangıç" enterkeyhint="search">
+      <button type="submit" class="primary">Ara</button>
+      <button type="button" id="btn-locate" title="Konumumu başlangıç yap">Konumum</button>
+    </form>
+    <ul class="candidates" id="cand-from"></ul>
+
+    <form class="field" id="form-to" autocomplete="off">
+      <input type="text" id="in-to" placeholder="Varış" aria-label="Varış" enterkeyhint="search">
+      <button type="submit" class="primary">Ara</button>
+      <button type="button" id="btn-swap" title="Başlangıç ve varışı değiştir" aria-label="Başlangıç ve varışı değiştir">⇅</button>
+    </form>
+    <ul class="candidates" id="cand-to"></ul>
+
+    <div class="toolbar">
+      <div class="modes" role="group" aria-label="Ulaşım modu">
+        <button type="button" data-mode="car" aria-pressed="true">Araba</button>
+        <button type="button" data-mode="foot" aria-pressed="false">Yaya</button>
+        <button type="button" data-mode="bike" aria-pressed="false">Bisiklet</button>
+      </div>
+      <button type="button" class="primary" id="btn-route">Rota bul</button>
+    </div>
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  </section>
+
+  <main id="map" aria-label="Harita"></main>
+
+  <section id="result" class="panel" aria-label="Rota özeti"></section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* İstanbul Rota - saf mantık (DOM'suz). Tarayıcıda global `MapsCore`, Node'da module.exports. */
+(function (root, factory) {
+  'use strict';
+  var api = factory();
+  if (typeof module === 'object' && module && module.exports) {
+    module.exports = api;
+  } else {
+    root.MapsCore = api;
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
+  var ROUTE_BASE = 'https://routing.openstreetmap.de';
+  var VIEWBOX = '28.0,41.6,29.15,40.85';
+
+  var MODES = {
+    car: { profile: 'routed-car', label: 'Araba' },
+    foot: { profile: 'routed-foot', label: 'Yaya' },
+    bike: { profile: 'routed-bike', label: 'Bisiklet' }
+  };
+
+  var NOT_SUPPORTED_MESSAGE = 'Şimdilik sadece Avrupa yakası destekleniyor';
+
+  // ---------- Koordinat doğrulama ----------
+
+  function validateCoord(lat, lon) {
+    if (typeof lat !== 'number' || typeof lon !== 'number' || !isFinite(lat) || !isFinite(lon)) {
+      throw new TypeError('Geçersiz koordinat: enlem ve boylam sayı olmalı');
+    }
+    if (lat < -90 || lat > 90) {
+      throw new RangeError('Geçersiz enlem: ' + lat);
+    }
+    if (lon < -180 || lon > 180) {
+      throw new RangeError('Geçersiz boylam: ' + lon);
+    }
+  }
+
+  function fmtCoord(n) {
+    return String(Number(n.toFixed(6)));
+  }
+
+  // ---------- Avrupa yakası poligonu (kaba) ----------
+  // [enlem, boylam]; Rumelifeneri'nden başlar, Boğaz kıyısı güneye, Marmara kıyısı batıya,
+  // batı sınırı ~28.0, Karadeniz kıyısı doğuya doğru kapanır.
+  var EUROPE_POLYGON = [
+    [41.2355, 29.12], // Rumelifeneri
+    [41.21, 29.105], // Garipçe
+    [41.16, 29.08], // Rumelikavağı / Sarıyer
+    [41.12, 29.074], // Yeniköy-Tarabya hattı
+    [41.1, 29.061], // Yeniköy güneyi (Kanlıca karşısı)
+    [41.0855, 29.0585], // Rumeli Hisarı
+    [41.08, 29.0565],
+    [41.0735, 29.0525], // Bebek
+    [41.06, 29.046], // Arnavutköy
+    [41.0475, 29.0295], // Ortaköy
+    [41.041, 29.0075], // Beşiktaş
+    [41.0345, 28.996], // Kabataş
+    [41.025, 28.984], // Karaköy
+    [41.0165, 28.987], // Sarayburnu
+    [41.004, 28.982], // Ahırkapı
+    [40.999, 28.965], // Kumkapı kıyısı
+    [40.995, 28.94], // Yenikapı
+    [40.975, 28.9], // Zeytinburnu
+    [40.955, 28.87], // Bakırköy kıyısı
+    [40.95, 28.82], // Yeşilköy
+    [40.97, 28.78], // Florya
+    [40.965, 28.72], // Avcılar
+    [40.955, 28.64], // Beylikdüzü
+    [40.955, 28.6], // Gürpınar kıyısı
+    [40.99, 28.575], // Büyükçekmece körfezi
+    [41.0, 28.53], // Mimarsinan kıyısı
+    [41.01, 28.47], // Kumburgaz kıyısı
+    [41.035, 28.37], // Selimpaşa / Çanta
+    [41.055, 28.25], // Silivri
+    [41.06, 28.1],
+    [41.075, 28.0], // batı sınırı
+    [41.6, 28.0], // il sınırının kuzeybatı ucu
+    [41.6, 28.55], // Karadeniz kıyısı (Yalıköy/Karacaköy açıkları)
+    [41.37, 28.65],
+    [41.35, 28.67], // Karaburun
+    [41.3, 28.85],
+    [41.25, 29.03] // Kilyos
+  ];
+
+  function pointInPolygon(lat, lon, poly) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var yi = poly[i][0], xi = poly[i][1];
+      var yj = poly[j][0], xj = poly[j][1];
+      var crosses = (yi > lat) !== (yj > lat) &&
+        lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi;
+      if (crosses) inside = !inside;
+    }
+    return inside;
+  }
+
+  function isInEuropeanSide(lat, lon) {
+    validateCoord(lat, lon);
+    return pointInPolygon(lat, lon, EUROPE_POLYGON);
+  }
+
+  // ---------- URL üreticiler ----------
+
+  function buildSearchUrl(q) {
+    if (typeof q !== 'string') throw new TypeError('Arama metni gerekli');
+    var text = q.replace(/\s+/g, ' ').trim();
+    if (!text) throw new Error('Arama metni boş olamaz');
+    return NOMINATIM_BASE + '/search?q=' + encodeURIComponent(text) +
+      '&format=jsonv2&limit=5&accept-language=tr&countrycodes=tr' +
+      '&viewbox=' + VIEWBOX + '&bounded=1';
+  }
+
+  function buildReverseUrl(lat, lon) {
+    validateCoord(lat, lon);
+    return NOMINATIM_BASE + '/reverse?lat=' + encodeURIComponent(fmtCoord(lat)) +
+      '&lon=' + encodeURIComponent(fmtCoord(lon)) +
+      '&format=jsonv2&zoom=18&accept-language=tr';
+  }
+
+  function buildRouteUrl(mode, from, to) {
+    if (typeof mode !== 'string' || !Object.prototype.hasOwnProperty.call(MODES, mode)) {
+      throw new Error('Bilinmeyen ulaşım modu: ' + String(mode));
+    }
+    if (!from || !to) throw new TypeError('Başlangıç ve varış gerekli');
+    validateCoord(from.lat, from.lon);
+    validateCoord(to.lat, to.lon);
+    // OSRM sırası: boylam,enlem
+    var coords = fmtCoord(from.lon) + ',' + fmtCoord(from.lat) + ';' +
+      fmtCoord(to.lon) + ',' + fmtCoord(to.lat);
+    return ROUTE_BASE + '/' + MODES[mode].profile + '/route/v1/driving/' + coords +
+      '?alternatives=true&steps=true&geometries=geojson&overview=full';
+  }
+
+  // ---------- Rota seçimi ----------
+
+  function pickBestRoute(routes) {
+    if (!Array.isArray(routes) || routes.length === 0) return null;
+    var best = null;
+    for (var i = 0; i < routes.length; i++) {
+      var r = routes[i];
+      if (!r || typeof r.duration !== 'number' || isNaN(r.duration)) continue;
+      if (best === null) { best = r; continue; }
+      if (r.duration < best.duration) {
+        best = r;
+      } else if (r.duration === best.duration) {
+        var d = typeof r.distance === 'number' ? r.distance : Infinity;
+        var bd = typeof best.distance === 'number' ? best.distance : Infinity;
+        if (d < bd) best = r;
+      }
+    }
+    return best;
+  }
+
+  // OSRM yanıtını doğrular; hata durumunda anlaşılır Türkçe mesajla fırlatır.
+  function parseRouteResponse(data) {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Rota servisinden geçersiz yanıt alındı.');
+    }
+    if (data.code !== 'Ok') {
+      if (data.code === 'NoRoute') {
+        throw new Error('Bu iki nokta arasında rota bulunamadı.');
+      }
+      if (data.code === 'NoSegment') {
+        throw new Error('Noktalardan biri yola yakın değil; başka bir nokta seçin.');
+      }
+      throw new Error('Rota hesaplanamadı (' + String(data.code) + ').');
+    }
+    if (!Array.isArray(data.routes) || data.routes.length === 0) {
+      throw new Error('Rota bulunamadı.');
+    }
+    return data.routes;
+  }
+
+  // ---------- Biçimlendirme ----------
+
+  function formatDuration(seconds) {
+    if (typeof seconds !== 'number' || !isFinite(seconds) || seconds < 0) {
+      throw new RangeError('Geçersiz süre');
+    }
+    if (seconds < 60) return "1 dk'dan az";
+    var totalMin = Math.round(seconds / 60);
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+    if (h === 0) return m + ' dk';
+    if (m === 0) return h + ' sa';
+    return h + ' sa ' + m + ' dk';
+  }
+
+  function formatDistance(meters) {
+    if (typeof meters !== 'number' || !isFinite(meters) || meters < 0) {
+      throw new RangeError('Geçersiz mesafe');
+    }
+    var rounded = Math.round(meters);
+    if (rounded < 1000) return rounded + ' m';
+    return (Math.round(meters / 100) / 10).toFixed(1).replace('.', ',') + ' km';
+  }
+
+  // ---------- Adım adım tarif ----------
+
+  var DIR = {
+    left: 'sola',
+    right: 'sağa',
+    'slight left': 'hafif sola',
+    'slight right': 'hafif sağa',
+    'sharp left': 'keskin sola',
+    'sharp right': 'keskin sağa'
+  };
+
+  function cap(s) {
+    return s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1);
+  }
+
+  function dirOf(mod) {
+    return typeof mod === 'string' && Object.prototype.hasOwnProperty.call(DIR, mod) ? DIR[mod] : null;
+  }
+
+  function baseInstruction(type, mod, exit) {
+    var dir = dirOf(mod);
+    switch (type) {
+      case 'depart':
+        return 'Yola çık';
+      case 'arrive':
+        return 'Varış noktasına ulaştın';
+      case 'turn':
+        if (mod === 'uturn') return 'U dönüşü yap';
+        if (mod === 'straight') return 'Düz devam et';
+        return dir ? cap(dir) + ' dön' : 'Dön';
+      case 'new name':
+        return 'Devam et';
+      case 'continue':
+        if (mod === 'uturn') return 'U dönüşü yap';
+        if (mod === 'straight') return 'Düz devam et';
+        return dir ? cap(dir) + ' doğru devam et' : 'Devam et';
+      case 'merge':
+        if (dir) return cap(dir) + ' doğru yola katıl';
+        return 'Yola katıl';
+      case 'on ramp':
+        return dir ? cap(dir) + ' bağlantı yoluna gir' : 'Bağlantı yoluna gir';
+      case 'off ramp':
+        return dir ? cap(dir) + ' çıkış yoluna gir' : 'Çıkış yoluna gir';
+      case 'fork':
+        if (mod === 'left' || mod === 'slight left' || mod === 'sharp left') return 'Çatalda sola git';
+        if (mod === 'right' || mod === 'slight right' || mod === 'sharp right') return 'Çatalda sağa git';
+        return 'Çatalda düz devam et';
+      case 'end of road':
+        if (mod === 'left' || mod === 'slight left' || mod === 'sharp left') return 'Yolun sonunda sola dön';
+        if (mod === 'right' || mod === 'slight right' || mod === 'sharp right') return 'Yolun sonunda sağa dön';
+        return 'Yolun sonunda dön';
+      case 'roundabout':
+      case 'rotary':
+        if (typeof exit === 'number' && isFinite(exit) && exit >= 1 && Math.floor(exit) === exit) {
+          return 'Dönel kavşağa gir, ' + exit + '. çıkıştan çık';
+        }
+        return 'Dönel kavşağa gir';
+      case 'roundabout turn':
+        return dir ? cap(dir) + ' dön' : 'Kavşakta dön';
+      case 'exit roundabout':
+      case 'exit rotary':
+        return 'Dönel kavşaktan çık';
+      default:
+        return 'Devam et';
+    }
+  }
+
+  function instructionFor(step) {
+    var m = step && typeof step === 'object' ? step.maneuver : null;
+    var text;
+    if (m && typeof m === 'object') {
+      text = baseInstruction(m.type, m.modifier, m.exit);
+    } else {
+      text = 'Devam et';
+    }
+    var name = step && typeof step.name === 'string' ? step.name.trim() : '';
+    return name ? text + ' — ' + name : text;
+  }
+
+  // ---------- Nominatim yardımcıları ----------
+
+  // Nominatim sonucunu {lat, lon, label} biçimine çevirir; geçersizse null.
+  function normalizePlace(item) {
+    if (!item || typeof item !== 'object') return null;
+    var lat = parseFloat(item.lat);
+    var lon = parseFloat(item.lon);
+    if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+    var full = typeof item.display_name === 'string' ? item.display_name : '';
+    var parts = full.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    var label = parts.slice(0, 3).join(', ');
+    if (!label && typeof item.name === 'string') label = item.name;
+    return { lat: lat, lon: lon, label: label, fullLabel: full || label };
+  }
+
+  // ---------- Hız sınırlı kuyruk ----------
+
+  // fn çağrıları sıraya girer; ardışık çağrıların başlangıçları arasında en az minIntervalMs olur.
+  // opts.shouldSkip(...args) true dönerse çağrı gönderilmez (kuyrukta bayatlamış istek);
+  // promise, skipped=true işaretli bir Error ile reddedilir ve aralık tüketilmez.
+  function createRateLimitedQueue(fn, minIntervalMs, opts) {
+    opts = opts || {};
+    var now = opts.now || function () { return Date.now(); };
+    var sleep = opts.sleep || function (ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    };
+    var shouldSkip = opts.shouldSkip || null;
+    var lastStart = null;
+    var tail = Promise.resolve();
+
+    function skipError() {
+      var e = new Error('İstek atlandı (güncelliğini yitirdi).');
+      e.skipped = true;
+      return e;
+    }
+
+    return function enqueue() {
+      var args = arguments;
+      var self = this;
+      var run = tail.then(function () {
+        if (shouldSkip && shouldSkip.apply(self, args)) throw skipError();
+        var wait = lastStart === null ? 0 : lastStart + minIntervalMs - now();
+        var pre = wait > 0 ? Promise.resolve(sleep(wait)) : Promise.resolve();
+        return pre.then(function () {
+          if (shouldSkip && shouldSkip.apply(self, args)) throw skipError();
+          lastStart = now();
+          return fn.apply(self, args);
+        });
+      });
+      // Hata zinciri bozmasın
+      tail = run.then(function () {}, function () {});
+      return run;
+    };
+  }
+
+  // ---------- Sıra (sequence) denetimi ----------
+  // Eski (geçersiz kalmış) yanıtları yok saymak için: next() yeni kimlik verir,
+  // isCurrent(id) yalnızca son verilen kimlik için true döner.
+  function createSeqGuard() {
+    var current = 0;
+    return {
+      next: function () { return ++current; },
+      invalidate: function () { return ++current; },
+      isCurrent: function (id) { return id === current; },
+      get value() { return current; }
+    };
+  }
+
+  // ---------- Cache ----------
+
+  function createCache(maxEntries) {
+    var max = typeof maxEntries === 'number' && maxEntries > 0 ? maxEntries : 200;
+    var map = new Map();
+    return {
+      has: function (k) { return map.has(k); },
+      get: function (k) {
+        if (!map.has(k)) return undefined;
+        var v = map.get(k);
+        map.delete(k); // son kullanılan sona
+        map.set(k, v);
+        return v;
+      },
+      set: function (k, v) {
+        if (map.has(k)) map.delete(k);
+        map.set(k, v);
+        while (map.size > max) {
+          map.delete(map.keys().next().value);
+        }
+      },
+      delete: function (k) { return map.delete(k); },
+      clear: function () { map.clear(); },
+      get size() { return map.size; }
+    };
+  }
+
+  // Aynı anahtar için tekrar istek atmaz (uçuştaki istek de paylaşılır);
+  // reddedilen istekler cache'ten silinir ki tekrar denenebilsin.
+  // cached(key, isStale, ...): isStale() true ise çağıran artık sonucu istemiyor.
+  // Paylaşılan istek BAŞKA bir çağıranın bayatlığı yüzünden atlandıysa (err.skipped),
+  // bu çağıran hâlâ güncelse istek yeniden başlatılır; değilse skipped ile reddedilir.
+  function createCachedFetcher(fetchFn, cache) {
+    function cached(key, isStale) {
+      var self = this;
+      var args = arguments;
+      var p;
+      if (cache.has(key)) {
+        p = cache.get(key);
+      } else {
+        try {
+          p = Promise.resolve(fetchFn.apply(self, args));
+        } catch (e) {
+          p = Promise.reject(e);
+        }
+        cache.set(key, p);
+        p.catch(function () {
+          if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+        });
+      }
+      return p.catch(function (err) {
+        if (err && err.skipped && !(typeof isStale === 'function' && isStale())) {
+          if (cache.has(key) && cache.get(key) === p) cache.delete(key);
+          return cached.apply(self, args);
+        }
+        throw err;
+      });
+    }
+    return cached;
+  }
+
+  // ---------- Zaman aşımlı fetch ----------
+
+  function fetchJson(url, opts) {
+    opts = opts || {};
+    var timeoutMs = opts.timeoutMs || 15000;
+    var fetchImpl = opts.fetchImpl || (typeof fetch === 'function' ? fetch : null);
+    if (!fetchImpl) return Promise.reject(new Error('Bu tarayıcı ağ isteklerini desteklemiyor.'));
+    var controller = typeof AbortController === 'function' ? new AbortController() : null;
+    var timedOut = false;
+    var timer;
+    var TIMEOUT_MSG = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
+
+    // AbortController olsa da olmasa da zaman aşımı doğrudan reject eder.
+    var timeoutPromise = new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        timedOut = true;
+        reject(new Error(TIMEOUT_MSG));
+        if (controller) controller.abort();
+      }, timeoutMs);
+    });
+
+    var req = Promise.resolve()
+      .then(function () {
+        return fetchImpl(url, { signal: controller ? controller.signal : undefined, headers: { Accept: 'application/json' } });
+      })
+      .then(function (res) {
+        if (!res.ok) {
+          // OSRM hata gövdesi (ör. NoRoute) JSON olabilir; varsa yine de ayrıştırmayı dene.
+          return res.json().then(function (body) { return body; }, function () {
+            throw new Error('Sunucu hatası (' + res.status + ')');
+          }).then(function (body) {
+            if (body && typeof body === 'object' && body.code) return body;
+            throw new Error('Sunucu hatası (' + res.status + ')');
+          });
+        }
+        return res.json();
+      })
+      .catch(function (err) {
+        if (err && err.name === 'AbortError') {
+          throw new Error(timedOut ? TIMEOUT_MSG : 'İstek iptal edildi.');
+        }
+        if (err instanceof SyntaxError) {
+          throw new Error('Sunucudan geçersiz yanıt');
+        }
+        if (err instanceof TypeError) {
+          throw new Error('Ağ hatası: sunucuya ulaşılamadı. Bağlantınızı kontrol edin.');
+        }
+        throw err;
+      });
+
+    return Promise.race([req, timeoutPromise]).then(
+      function (v) { clearTimeout(timer); return v; },
+      function (e) { clearTimeout(timer); throw e; }
+    );
+  }
+
+  return {
+    MODES: MODES,
+    NOT_SUPPORTED_MESSAGE: NOT_SUPPORTED_MESSAGE,
+    EUROPE_POLYGON: EUROPE_POLYGON,
+    validateCoord: validateCoord,
+    isInEuropeanSide: isInEuropeanSide,
+    buildSearchUrl: buildSearchUrl,
+    buildReverseUrl: buildReverseUrl,
+    buildRouteUrl: buildRouteUrl,
+    pickBestRoute: pickBestRoute,
+    parseRouteResponse: parseRouteResponse,
+    formatDuration: formatDuration,
+    formatDistance: formatDistance,
+    instructionFor: instructionFor,
+    normalizePlace: normalizePlace,
+    createRateLimitedQueue: createRateLimitedQueue,
+    createCache: createCache,
+    createCachedFetcher: createCachedFetcher,
+    createSeqGuard: createSeqGuard,
+    fetchJson: fetchJson
+  };
+});
+
+</script>
+<script>
+/* İstanbul Rota - DOM/Leaflet bağlama. Kullanıcı girdisi her zaman textContent ile yazılır. */
+(function () {
+  'use strict';
+
+  var C = window.MapsCore;
+  var NOMINATIM_MIN_INTERVAL_MS = 1100;
+
+  // ---------- Yardımcılar ----------
+  function $(id) { return document.getElementById(id); }
+
+  function el(tag, props, children) {
+    var node = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach(function (k) {
+        if (k === 'text') node.textContent = props[k];
+        else if (k === 'class') node.className = props[k];
+        else node.setAttribute(k, props[k]);
+      });
+    }
+    (children || []).forEach(function (c) {
+      node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return node;
+  }
+
+  function cssVar(name, fallback) {
+    try {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  var msgEl = $('msg');
+  function setMsg(text, kind) {
+    msgEl.textContent = text || '';
+    msgEl.className = 'msg' + (text && kind ? ' ' + kind : '');
+  }
+
+  function coordLabel(lat, lon) {
+    return lat.toFixed(5) + ', ' + lon.toFixed(5);
+  }
+
+  // ---------- Nominatim: tek kuyruk + bellek cache ----------
+  // Kuyrukta beklerken bayatlayan istekler (yeni arama/rota başladı) hiç gönderilmez.
+  var nominatimQueue = C.createRateLimitedQueue(function (url) {
+    return C.fetchJson(url, { timeoutMs: 15000 });
+  }, NOMINATIM_MIN_INTERVAL_MS, {
+    shouldSkip: function (url, isStale) { return typeof isStale === 'function' && isStale(); }
+  });
+  var nominatimGet = C.createCachedFetcher(function (url, isStale) {
+    return nominatimQueue(url, isStale);
+  }, C.createCache(200));
+
+  // ---------- Harita ----------
+  if (typeof L === 'undefined') {
+    setMsg('Harita kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.', 'err');
+    return;
+  }
+  var map = L.map('map', { zoomControl: true }).setView([41.04, 28.98], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap katkıcıları'
+  }).addTo(map);
+
+  var markerLayer = L.layerGroup().addTo(map);
+  var routeLayer = L.layerGroup().addTo(map);
+  var popup = L.popup({ closeButton: true });
+
+  // ---------- Durum ----------
+  var state = {
+    from: null, // {lat, lon, label}
+    to: null,
+    mode: 'car',
+    routes: [],
+    best: -1,
+    selected: -1
+  };
+  var routeGuard = C.createSeqGuard();
+  var markers = { from: null, to: null };
+  var searchGuard = { from: C.createSeqGuard(), to: C.createSeqGuard() };
+  var inputs = { from: $('in-from'), to: $('in-to') };
+  var candLists = { from: $('cand-from'), to: $('cand-to') };
+  var resultEl = $('result');
+
+  function refreshMapSize() {
+    setTimeout(function () { map.invalidateSize(); }, 0);
+  }
+
+  // ---------- Noktalar ----------
+  function updateMarker(which) {
+    if (markers[which]) { markerLayer.removeLayer(markers[which]); markers[which] = null; }
+    var p = state[which];
+    if (!p) return;
+    var color = which === 'from' ? '#1a9850' : '#d73027';
+    var m = L.circleMarker([p.lat, p.lon], {
+      radius: 9, color: '#ffffff', weight: 3, fillColor: color, fillOpacity: 1
+    });
+    m.bindTooltip(which === 'from' ? 'Başlangıç' : 'Varış', { permanent: false });
+    m.addTo(markerLayer);
+    markers[which] = m;
+  }
+
+  function clearRoute() {
+    routeGuard.invalidate();
+    state.routes = [];
+    state.best = -1;
+    state.selected = -1;
+    routeLayer.clearLayers();
+    resultEl.textContent = '';
+    refreshMapSize();
+  }
+
+  function setPoint(which, place) {
+    var inside;
+    try {
+      inside = C.isInEuropeanSide(place.lat, place.lon);
+    } catch (e) {
+      setMsg('Geçersiz koordinat.', 'err');
+      return false;
+    }
+    if (!inside) {
+      setMsg(C.NOT_SUPPORTED_MESSAGE, 'warn');
+      return false;
+    }
+    state[which] = { lat: place.lat, lon: place.lon, label: place.label };
+    inputs[which].value = place.label;
+    candLists[which].textContent = '';
+    updateMarker(which);
+    setMsg('', '');
+    clearRoute();
+    if (state.from && state.to) {
+      findRoute();
+    } else {
+      map.setView([place.lat, place.lon], Math.max(map.getZoom(), 14));
+    }
+    return true;
+  }
+
+  // Koordinattan etiket bul (kuyruktan, cache'li)
+  function boxOf(point) {
+    return state.from === point ? 'from' : (state.to === point ? 'to' : null);
+  }
+
+  // point: state'te saklanan nesne. Bayatlık nesne kimliğine göre; swap'ta nesne
+  // diğer kutuya geçse de etiket o an bulunduğu kutuya yazılır.
+  function reverseLabel(point) {
+    if (!point) return;
+    var url;
+    try { url = C.buildReverseUrl(point.lat, point.lon); } catch (e) { return; }
+    nominatimGet(url, function () { return boxOf(point) === null; }).then(function (data) {
+      var p = data && C.normalizePlace(data);
+      var box = boxOf(point);
+      if (!p || !p.label || !box) return;
+      point.label = p.label;
+      inputs[box].value = p.label;
+    }).catch(function () { /* etiket isteğe bağlı; koordinat etiketi kalır */ });
+  }
+
+  // ---------- Arama (yalnızca Enter / Ara) ----------
+  function doSearch(which) {
+    var q = inputs[which].value.trim();
+    var list = candLists[which];
+    list.textContent = '';
+    if (!q) { setMsg('Aramak için bir yer adı yazın.', 'warn'); return; }
+    var url;
+    try { url = C.buildSearchUrl(q); } catch (e) { setMsg(e.message, 'err'); return; }
+
+    var seq = searchGuard[which].next();
+    setMsg('Aranıyor…', 'info');
+    nominatimGet(url, function () { return !searchGuard[which].isCurrent(seq); }).then(function (data) {
+      if (!searchGuard[which].isCurrent(seq)) return;
+      var all = (Array.isArray(data) ? data : []).map(C.normalizePlace).filter(Boolean);
+      var kept = all.filter(function (p) {
+        try { return C.isInEuropeanSide(p.lat, p.lon); } catch (e) { return false; }
+      });
+      if (!kept.length) {
+        setMsg(all.length ? C.NOT_SUPPORTED_MESSAGE + '. Bulunan sonuçlar Avrupa yakası dışında.' : 'Sonuç bulunamadı.', all.length ? 'warn' : 'info');
+        return;
+      }
+      kept.forEach(function (p) {
+        var btn = el('button', { type: 'button', text: p.fullLabel || p.label });
+        btn.addEventListener('click', function () {
+          if (setPoint(which, p)) map.setView([p.lat, p.lon], 15);
+        });
+        list.appendChild(el('li', null, [btn]));
+      });
+      setMsg(all.length > kept.length ? 'Avrupa yakası dışındaki sonuçlar gizlendi. Bir sonuç seçin.' : 'Bir sonuç seçin.', 'info');
+    }).catch(function (err) {
+      if (!searchGuard[which].isCurrent(seq) || (err && err.skipped)) return;
+      setMsg(err && err.message ? err.message : 'Arama başarısız oldu.', 'err');
+    });
+  }
+
+  $('form-from').addEventListener('submit', function (e) { e.preventDefault(); doSearch('from'); });
+  $('form-to').addEventListener('submit', function (e) { e.preventDefault(); doSearch('to'); });
+
+  // Metin değişince eski seçim geçersiz sayılır (otomatik arama YOK)
+  ['from', 'to'].forEach(function (which) {
+    inputs[which].addEventListener('input', function () {
+      candLists[which].textContent = '';
+      searchGuard[which].invalidate();
+      setMsg('', ''); // bekleyen "Aranıyor…" ekranda kalmasın
+      if (state[which]) {
+        state[which] = null;
+        updateMarker(which);
+        clearRoute();
+      }
+    });
+  });
+
+  // ---------- Haritaya dokunma ----------
+  map.on('click', function (e) {
+    var lat = e.latlng.lat;
+    var lon = e.latlng.lng;
+    var box = el('div', { class: 'popup-actions' });
+    var inside = false;
+    try { inside = C.isInEuropeanSide(lat, lon); } catch (err) { /* geçersiz */ }
+
+    if (!inside) {
+      box.appendChild(el('p', { class: 'popup-title', text: C.NOT_SUPPORTED_MESSAGE }));
+    } else {
+      box.appendChild(el('p', { class: 'popup-title', text: coordLabel(lat, lon) }));
+      ['from', 'to'].forEach(function (which) {
+        var b = el('button', { type: 'button', text: which === 'from' ? 'Başlangıç yap' : 'Varış yap' });
+        b.addEventListener('click', function () {
+          map.closePopup();
+          var place = { lat: lat, lon: lon, label: coordLabel(lat, lon) };
+          if (setPoint(which, place)) reverseLabel(state[which]);
+        });
+        box.appendChild(b);
+      });
+    }
+    popup.setLatLng(e.latlng).setContent(box).openOn(map);
+  });
+
+  // ---------- Konumum ----------
+  $('btn-locate').addEventListener('click', function () {
+    try {
+      if (!('geolocation' in navigator)) {
+        setMsg('Bu tarayıcı konum özelliğini desteklemiyor.', 'err');
+        return;
+      }
+      setMsg('Konum alınıyor…', 'info');
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        try {
+          var place = { lat: pos.coords.latitude, lon: pos.coords.longitude, label: 'Konumum' };
+          if (setPoint('from', place)) map.setView([place.lat, place.lon], 15);
+        } catch (err) {
+          setMsg('Konum işlenemedi.', 'err');
+        }
+      }, function (err) {
+        var text = 'Konum alınamadı.';
+        if (err && err.code === 1) text = 'Konum izni reddedildi. Tarayıcı ayarlarından izin verin.';
+        else if (err && err.code === 2) text = 'Konum belirlenemedi. Sinyali kontrol edin.';
+        else if (err && err.code === 3) text = 'Konum isteği zaman aşımına uğradı.';
+        setMsg(text, 'err');
+      }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+    } catch (e) {
+      setMsg('Konum alınamadı: ' + (e && e.message ? e.message : 'bilinmeyen hata'), 'err');
+    }
+  });
+
+  // ---------- Değiştir ve mod ----------
+  $('btn-swap').addEventListener('click', function () {
+    searchGuard.from.invalidate(); searchGuard.to.invalidate();
+    var f = state.from, t = state.to;
+    var fv = inputs.from.value, tv = inputs.to.value;
+    state.from = t; state.to = f;
+    inputs.from.value = tv; inputs.to.value = fv;
+    candLists.from.textContent = ''; candLists.to.textContent = '';
+    updateMarker('from'); updateMarker('to');
+    clearRoute();
+    if (state.from && state.to) findRoute();
+  });
+
+  var modeButtons = Array.prototype.slice.call(document.querySelectorAll('.modes button'));
+  modeButtons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.mode = b.getAttribute('data-mode');
+      modeButtons.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      if (state.from && state.to) findRoute();
+    });
+  });
+
+  $('btn-route').addEventListener('click', function () {
+    if (!state.from || !state.to) {
+      setMsg('Önce başlangıç ve varış noktasını seçin.', 'warn');
+      return;
+    }
+    findRoute();
+  });
+
+  // ---------- Rota ----------
+  function findRoute() {
+    var url;
+    try {
+      url = C.buildRouteUrl(state.mode, state.from, state.to);
+    } catch (e) {
+      setMsg(e.message, 'err');
+      return;
+    }
+    var seq = routeGuard.next();
+    routeLayer.clearLayers();
+    resultEl.textContent = '';
+    setMsg('Rota hesaplanıyor…', 'info');
+
+    C.fetchJson(url, { timeoutMs: 15000 }).then(function (data) {
+      if (!routeGuard.isCurrent(seq)) return;
+      var routes = C.parseRouteResponse(data);
+      state.routes = routes;
+      state.best = routes.indexOf(C.pickBestRoute(routes));
+      if (state.best < 0) state.best = 0;
+      state.selected = state.best;
+      setMsg('', '');
+      drawRoutes(true, seq);
+      renderResult();
+    }).catch(function (err) {
+      if (!routeGuard.isCurrent(seq)) return;
+      setMsg(err && err.message ? err.message : 'Rota alınamadı.', 'err');
+    });
+  }
+
+  function drawRoutes(fit, seq) {
+    routeLayer.clearLayers();
+    var bestColor = cssVar('--route-best', '#0b6bcb');
+    var altColor = cssVar('--route-alt', '#7d8aa0');
+    var selectedLayer = null;
+    state.routes.forEach(function (r, i) {
+      if (!r || !r.geometry) return;
+      var isSel = i === state.selected;
+      var layer = L.geoJSON(r.geometry, {
+        style: {
+          color: isSel ? bestColor : altColor,
+          weight: isSel ? 8 : 5,
+          opacity: isSel ? 0.95 : 0.5,
+          lineJoin: 'round',
+          bubblingMouseEvents: false
+        },
+        bubblingMouseEvents: false
+      });
+      layer.on('click', function (ev) {
+        if (ev.originalEvent) L.DomEvent.stop(ev.originalEvent);
+        selectRoute(i);
+      });
+      layer.addTo(routeLayer);
+      if (isSel) selectedLayer = layer;
+    });
+    if (selectedLayer) {
+      selectedLayer.bringToFront();
+      if (fit) {
+        refreshMapSize();
+        setTimeout(function () {
+          if (seq !== undefined && !routeGuard.isCurrent(seq)) return;
+          map.fitBounds(selectedLayer.getBounds(), { padding: [30, 30] });
+        }, 10);
+      }
+    }
+  }
+
+  function selectRoute(i) {
+    if (i === state.selected || !state.routes[i]) return;
+    state.selected = i;
+    drawRoutes(false);
+    renderResult();
+  }
+
+  function renderResult() {
+    try {
+      renderResultUnsafe();
+    } catch (e) {
+      resultEl.textContent = '';
+      setMsg('Rota ayrıntıları gösterilemedi.', 'err');
+    }
+  }
+
+  function renderResultUnsafe() {
+    resultEl.textContent = '';
+    var r = state.routes[state.selected];
+    if (!r) return;
+
+    var summary = el('div', { class: 'summary' }, [
+      el('span', { class: 'big', text: C.formatDuration(r.duration) }),
+      el('span', { class: 'sub', text: C.formatDistance(r.distance) }),
+      el('span', { class: 'sub', text: C.MODES[state.mode].label })
+    ]);
+    resultEl.appendChild(summary);
+
+    if (state.routes.length > 1) {
+      var alts = el('div', { class: 'alts', role: 'group', 'aria-label': 'Alternatif rotalar' });
+      state.routes.forEach(function (ar, i) {
+        var kids = [document.createTextNode('Rota ' + (i + 1) + ' · ' + C.formatDuration(ar.duration) + ' · ' + C.formatDistance(ar.distance))];
+        if (i === state.best) kids.push(el('span', { class: 'badge', text: 'En iyi' }));
+        var b = el('button', { type: 'button', 'aria-pressed': String(i === state.selected) }, kids);
+        b.addEventListener('click', function () { selectRoute(i); });
+        alts.appendChild(b);
+      });
+      resultEl.appendChild(alts);
+    }
+
+    var steps = [];
+    (r.legs || []).forEach(function (leg) {
+      (leg.steps || []).forEach(function (s) { steps.push(s); });
+    });
+    var ol = el('ol', { class: 'steps' });
+    steps.forEach(function (s) {
+      var li = el('li', null, [
+        el('span', { class: 'txt', text: C.instructionFor(s) }),
+        el('span', { class: 'dist', text: s.distance > 0 ? C.formatDistance(s.distance) : '' })
+      ]);
+      ol.appendChild(li);
+    });
+    resultEl.appendChild(ol);
+    refreshMapSize();
+  }
+
+  window.addEventListener('resize', refreshMapSize);
+})();
+
+</script>
+</body>
+</html>
