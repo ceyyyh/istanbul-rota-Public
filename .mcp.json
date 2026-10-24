@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fli": {
+      "command": "uvx",
+      "args": ["--from", "flights", "fli-mcp"]
+    }
+  }
+}
